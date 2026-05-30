@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.erp.backend.auth.mapper.AuthMapper">
+
+    <!-- 로그인 -->
+    <select id="findEmployeeByLoginId" parameterType="String" resultType="map">
+    SELECT EMP_ID,
+    DEPT_ID,
+    LOGIN_ID,
+    PASSWORD,
+    EMP_NAME,
+    ROLE,
+    STATUS
+    FROM EMPLOYEE
+    WHERE LOGIN_ID = #{loginId}    <!-- empNo → loginId -->
+    AND STATUS = 'Y'
+    </select>
+</mapper>
