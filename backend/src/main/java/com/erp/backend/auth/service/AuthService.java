@@ -7,11 +7,13 @@ import com.erp.backend.auth.mapper.AuthMapper;
 import com.erp.backend.common.CustomException;
 import com.erp.backend.common.ErrorCode;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.Map;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthService {
@@ -23,6 +25,7 @@ public class AuthService {
     public LoginResponseDto login(LoginRequestDto requestDto) {
         // 사원 조회
         Map<String, Object> employee = authMapper.findEmployeeByLoginId(requestDto.getLoginId());
+
         if (employee == null) {
             throw new CustomException(ErrorCode.LOGIN_FAILED);
         }
@@ -34,7 +37,7 @@ public class AuthService {
         }
 
         String loginId = (String) employee.get("LOGIN_ID");
-        String role = (String) employee.get("ROLE");
+        String role = (String) employee.get("ROLE_CODE");
 
         // 토큰 생성
         String accessToken = jwtTokenProvider.generateAccessToken(loginId, role);

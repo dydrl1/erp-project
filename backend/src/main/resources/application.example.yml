@@ -28,3 +28,8 @@ springdoc:
     path: /swagger-ui.html
   api-docs:
     path: /api-docs
+
+jwt:
+  secret: 여기에_시크릿키_입력
+  acess-token-expiration: 180000 #30분 (ms)
+  refresh-token-expiration: 604800000 # 7일 (ms)
