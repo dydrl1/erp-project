@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/schema/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.erp.backend.sales.mapper.SalesMapper">
+    <select id="findAllSalesInvoices"
+            resultType="com.erp.backend.sales.vo.SalesInvoiceVO">
+        SELECT *
+        FROM SALES_INVOICE
+    </select>
+</mapper>
