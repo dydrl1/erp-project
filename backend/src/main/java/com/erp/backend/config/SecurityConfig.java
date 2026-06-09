@@ -34,6 +34,8 @@ public class SecurityConfig {
                         .requestMatchers("/swagger-ui/**", "/api-docs/**").permitAll()
                         // ADMIN 전용
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        // 임시 테스트용
+                        .requestMatchers("/api/sales/**").permitAll()
                         // 나머지는 인증 필요
                         .anyRequest().authenticated()
                 )

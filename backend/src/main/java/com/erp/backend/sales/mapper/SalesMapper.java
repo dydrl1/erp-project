@@ -9,25 +9,45 @@ import com.erp.backend.sales.vo.SettlementVO;
 import org.apache.ibatis.annotations.Mapper;
 
 import java.util.List;
+import java.util.Map;
 
 @Mapper
 public interface SalesMapper {
+    // 목록 조회
     // 매출청구 (Sales Invoice)
-    List<SalesInvoiceVO> findAllSalesInvoices();
+    List<SalesInvoiceVO> findAllSalesInvoices(Map<String, Object> params);
 
     // 매출채권 (Account Receivable)
-    List<AccountReceivableVO> findAllAccountReceivables();
+    List<AccountReceivableVO> findAllAccountReceivables(Map<String, Object> params);
 
     // 입금관리 (Payment)
-    List<PaymentVO> findAllPayments();
+    List<PaymentVO> findAllPayments(Map<String, Object> params);
 
     // 매입청구 (Purchase Invoice)
-    List<PurchaseInvoiceVO> findAllPurchaseInvoices();
+    List<PurchaseInvoiceVO> findAllPurchaseInvoices(Map<String, Object> params);
 
     // 매입채무 (Account Payable)
-    List<AccountPayableVO> findAllAccountPayables();
+    List<AccountPayableVO> findAllAccountPayables(Map<String, Object> params);
 
     // 손익정산 (Settlement)
-    List<SettlementVO> findAllSettlements();
+    List<SettlementVO> findAllSettlements(Map<String, Object> params);
+
+    // 매출청구 상세조회
+    SalesInvoiceVO findSalesInvoiceById(Long salesInvoiceId);
+
+    // 매출청구 상세조회
+    PurchaseInvoiceVO findPurchaseInvoiceById(Long purchaseInvoiceId);
+
+    // 미수금 상세조회
+    AccountReceivableVO findAccountReceivableById(Long arId);
+
+    // 미지급금 상세조회
+    AccountPayableVO findAccountPayableById(Long apId);
+
+    // 수금내역 상세조회
+    PaymentVO findPaymentById(Long paymentId);
+
+    // 손익정산 상세조회
+    SettlementVO findSettlementById(Long settlementId);
 
 }
