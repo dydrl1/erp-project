@@ -10,10 +10,20 @@
             LOGIN_ID,
             PASSWORD,
             EMP_NAME,
-            ROLE_CODE,
+            ROLE_CODE AS ROLE,
             STATUS
     FROM EMPLOYEE
     WHERE LOGIN_ID = #{loginId}
     AND STATUS = 'ACTIVE'
     </select>
+    <select id="findEmployeeByEmpId" parameterType="long" resultType="map">
+        SELECT  EMP_ID, DEPT_ID, LOGIN_ID, PASSWORD, EMP_NAME, ROLE_CODE AS ROLE, STATUS
+        FROM EMPLOYEE
+        WHERE EMP_ID = #{empId}
+            AND STATUS = 'ACTIVE'
+    </select>
+    <insert id="insertEmployee">
+        INSERT INTO EMPLOYEE (EMP_ID, LOGIN_ID, PASSWORD, EMP_NAME, DEPT_ID, PHONE, EMAIL, ROLE_CODE, STATUS)
+        VALUES (EMP_SEQ.NEXTVAL, #{dto.loginId}, #{encodedPassword}, #{dto.empName}, #{dto.deptId}, #{dto.phone}, #{dto.email}, #{dto.roleCode}, 'ACTIVE')
+    </insert>
 </mapper>
