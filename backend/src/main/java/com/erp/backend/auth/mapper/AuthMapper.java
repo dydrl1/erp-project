@@ -7,4 +7,6 @@ import java.util.Map;
 @Mapper
 public interface AuthMapper {
     Map<String, Object> findEmployeeByLoginId(String loginId);
+
+    Map<String, Object> findEmpIdByLoginId(String loginId);
 }

@@ -16,4 +16,11 @@
     WHERE LOGIN_ID = #{loginId}    <!-- empNo → loginId -->
     AND STATUS = 'ACTIVE'
     </select>
+
+    <select id="findEmpIdByLoginId" parameterType="String" resultType="map">
+        SELECT EMP_ID, ROLE_CODE
+        FROM EMPLOYEE
+        WHERE LOGIN_ID = #{loginId}
+            AND STATUS = 'ACTIVE'
+    </select>
 </mapper>

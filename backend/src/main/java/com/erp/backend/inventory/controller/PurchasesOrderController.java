@@ -1,13 +1,16 @@
 package com.erp.backend.inventory.controller;
 
 import com.erp.backend.common.ApiResponse;
+import com.erp.backend.common.AuthUitil;
 import com.erp.backend.inventory.dto.PurchaseOrderReqeustDto;
 import com.erp.backend.inventory.dto.PurchaseOrderResponseDto;
 import com.erp.backend.inventory.service.PurchaseOrderService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -20,6 +23,7 @@ import java.util.Map;
 public class PurchasesOrderController {
 
     private final PurchaseOrderService purchaseOrderService;
+    private final AuthUitil  authUtil;
 
     @Operation(summary = "공급처 목록 조회")
     @GetMapping("/suppliers")
@@ -52,4 +56,16 @@ public class PurchasesOrderController {
         return ResponseEntity.ok(
                 ApiResponse.success(purchaseOrderService.getPurchaseOrderById(poId)));
     }
+
+    @Operation(summary = "발주 등록 (STAFF)")
+    @PostMapping
+    public ResponseEntity<ApiResponse<Void>> createPurchaseOrder(
+            @Valid @RequestBody PurchaseOrderReqeustDto requestDto,
+            @AuthenticationPrincipal String loginId) {
+
+        Long empId = authUtil.getEmpId(loginId); // loginID로 empId 조회
+        purchaseOrderService.createPurchaseOrder(requestDto, empId);
+        return ResponseEntity.ok(ApiResponse.success("발주가 등록되었습니다.",null));
+    }
+
 }

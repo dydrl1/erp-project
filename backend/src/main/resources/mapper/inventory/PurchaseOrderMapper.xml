@@ -95,10 +95,72 @@
         ORDER BY POD.PO_DETAIL_ID
     </select>
 
+    <!-- 발주 헤더 등록-->
+    <insert id="insertPurchaseOrder" parameterType="map">
+        INSERT INTO PURCHASE_ORDER (
+            PO_ID,
+            SUPPLIER_ID,
+            REQUEST_EMP_ID,
+            PO_DATE,
+            STATUS,
+            TOTAL_AMOUNT,
+            MEMO,
+            CREATED_AT
+        ) VALUES (
+            SEQ_PO.NEXTVAL,
+            #{supplierId},
+            #{requestEmpId},
+            SYSDATE,
+            'REQUESTED',
+            #{totalAmount},
+            #{memo},
+            SYSDATE
+        )
+    </insert>
+
+    <insert id="insertPurchaseOrderDetail" parameterType="map">
+        INSERT INTO PURCHASE_ORDER_DETAIL (
+            PO_DETAIL_ID,
+            PO_ID,
+            PRODUCT_ID,
+            ORDER_QTY,
+            UNIT_PRICE,
+            AMOUNT
+        ) VALUES (
+            SEQ_PO_DETAIL.NEXTVAL,
+            #{poId},
+            #{productId},
+            #{orderQty},
+            #{unitPrice},
+            #{amount}
+        )
+    </insert>
+
     <!-- 현재 PO 시퀀스 값 조회 -->
-    <select id="getCurretPoId" resultType="Long">
+    <select id="getCurrentPoId" resultType="Long">
         SELECT SEQ_PO.CURRVAL FROM DUAL
     </select>
 
-
+                 <!-- @@@@@@@@@ 발주 관련 유효성 검사 쿼리 @@@@@@@@@@@@@-->
+    <!-- 공급처 존재여부 확인 -->
+    <select id="findSupplierById" parameterType="Long" resultType="map">
+        SELECT SUPPLIER_ID, SUPPLIER_NAME
+        FROM SUPPLIER
+        WHERE SUPPLIER_ID = #{supplierId}
+            AND STATUS = 'ACTIVE'
+    </select>
+    <!-- 의약품 존재여부 확인 -->
+    <select id="findProductById" parameterType="Long" resultType="map">
+    SELECT PRODUCT_ID, PRODUCT_NAME
+    FROM PRODUCT
+    WHERE PRODUCT_ID = #{productId}
+        AND STATUS = 'ACTIVE'
+    </select>
+    <!-- 중복 발주 확인 -->
+    <select id="countRequestedPo" parameterType="Long" resultType="int">
+        SELECT COUNT(*)
+        FROM PURCHASE_ORDER
+        WHERE SUPPLIER_ID = #{supplierId}
+            AND STATUS = 'REQUESTED'
+    </select>
 </mapper>

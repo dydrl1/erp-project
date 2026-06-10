@@ -20,5 +20,15 @@ public interface PurchaseOrderMapper {
     // 발주 상세조회
     PurchaseOrderResponseDto findPurchaseOrderById(Long id);
     List<PurchaseOrderDetailResponseDto> findPurchaseOrderDetails(Long poId);
-    Long getCurrentPoid();
+
+    // 발주 등록
+    int insertPurchaseOrder(Map<String, Object> params);
+    int insertPurchaseOrderDetail(Map<String, Object> params);
+    Long getCurrentPoId();
+
+    // 발주등록 유효성검사 위한 메서드
+    Map<String, Object> findSupplierById(Long supplierId); // 공급처 존재여부 확인
+    Map<String, Object> findProductById(Long productId);  // 의약품 존재여부 확인
+    int countRequestedPo(Long supplierId);               // 중복 발주 확인
+
 }

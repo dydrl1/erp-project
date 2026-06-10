@@ -28,10 +28,10 @@ public class JwtTokenProvider {
     }
 
     // Access Token 생성
-    public String generateAccessToken(String empNo, String role) {
+    public String generateAccessToken(String loginId, String roleCode) {
         return Jwts.builder()
-                .subject(empNo)
-                .claim("role", role)
+                .subject(loginId)
+                .claim("roleCode", roleCode)
                 .claim("type", "access")
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + accessTokenExpiration))
@@ -40,9 +40,9 @@ public class JwtTokenProvider {
     }
 
     // Refresh Token 생성
-    public String generateRefreshToken(String empNo) {
+    public String generateRefreshToken(String loginId) {
         return Jwts.builder()
-                .subject(empNo)
+                .subject(loginId)
                 .claim("type", "refresh")
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + refreshTokenExpiration))
@@ -51,13 +51,13 @@ public class JwtTokenProvider {
     }
 
     // 토큰에서 사원번호 추출
-    public String getEmpNo(String token) {
+    public String getLoginId(String token) {
         return getClaims(token).getSubject();
     }
 
     // 토큰에서 권한 추출
-    public String getRole(String token) {
-        return getClaims(token).get("role", String.class);
+    public String getRoleCode(String token) {
+        return getClaims(token).get("roleCode", String.class);
     }
 
     // 토큰 유효성 검사
