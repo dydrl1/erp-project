@@ -106,6 +106,16 @@ public class SalesService {
 
 
     public void createSalesInvoice(SalesInvoiceVO salesInvoiceVO, AccountReceivableVO accountReceivableVO) {
+        // 여신한도 임시 설정: 500만원
+        BigDecimal creditLimit = new BigDecimal("5000000");
+        // 거래처 현재 미수금 조회
+        BigDecimal currentReceivable = salesMapper.findCurrentReceivableAmount(salesInvoiceVO.getCustomerId());
+        // 현재 미수금 + 신규 매출청구 금액
+        BigDecimal expectedReceivable = currentReceivable.add(salesInvoiceVO.getTotalAmount());
+        // 여신한도 초과 여부 확인
+        if (expectedReceivable.compareTo(creditLimit) > 0) {
+            throw new RuntimeException("여신한도를 초과하여 매출청구를 등록할 수 없습니다.");
+        }
         // 매출청구 등록
         salesMapper.insertSalesInvoice(salesInvoiceVO);
         // 생성된 매출청구 ID를 미수금 정보에 설정

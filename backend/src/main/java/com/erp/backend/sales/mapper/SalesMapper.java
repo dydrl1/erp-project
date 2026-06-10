@@ -8,6 +8,7 @@ import com.erp.backend.sales.vo.AccountPayableVO;
 import com.erp.backend.sales.vo.SettlementVO;
 import org.apache.ibatis.annotations.Mapper;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
@@ -62,4 +63,7 @@ public interface SalesMapper {
 
     // 미수금 입금액/잔액 수정
     int updateAccountReceivablePayment(PaymentVO paymentVO);
+
+    // 여신한도 체크용 현재 미수금 조회
+    BigDecimal findCurrentReceivableAmount(Integer customerId);
 }
