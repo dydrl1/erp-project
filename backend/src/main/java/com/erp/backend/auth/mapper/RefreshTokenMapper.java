@@ -1,8 +1,8 @@
 package com.erp.backend.auth.mapper;
 
 import java.time.LocalDateTime;
-import java.util.Map;
 
+import com.erp.backend.auth.vo.RefreshTokenVo;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -12,7 +12,7 @@ public interface RefreshTokenMapper {
     void saveRefreshToken(@Param("jwtId") String jwtId, @Param("empId") Long empId,
             @Param("expiresAt") LocalDateTime expiresAt);
 
-    Map<String, Object> findByJwtId(String jwtId);
+    RefreshTokenVo findByJwtId(String jwtId);
 
     void deleteByJwtId(String jwtId);
 }

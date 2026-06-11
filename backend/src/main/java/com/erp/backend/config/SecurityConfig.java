@@ -29,7 +29,9 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // 로그인·토큰 재발급·회원 가입은 인증 없이 허용
+                        // 회원가입(직원)은 권리자 승인 필요
+                        .requestMatchers("/api/auth/signup").hasRole("ADMIN")
+                        // 로그인·토큰 재발급은 인증 없이 허용
                         .requestMatchers("/api/auth/**").permitAll()
                         // Swagger 허용
                         .requestMatchers("/swagger-ui/**", "/api-docs/**").permitAll()
