@@ -2,6 +2,7 @@ package com.erp.backend.sales.controller;
 
 import com.erp.backend.common.ApiResponse;
 import com.erp.backend.sales.dto.SalesRequestDto;
+import com.erp.backend.sales.dto.SettlementRequestDto;
 import com.erp.backend.sales.service.SalesService;
 import com.erp.backend.sales.vo.*;
 import io.swagger.v3.oas.annotations.Operation;
@@ -155,6 +156,13 @@ public class SalesController {
     public ResponseEntity<String> createPayment(@RequestBody PaymentVO paymentVO) {
         salesService.createPayment(paymentVO);
         return ResponseEntity.ok("수금 처리 완료");
+    }
+
+    @Operation(summary = "손익정산 등록")
+    @PostMapping("/settlements")
+    public ResponseEntity<String> createSettlement(@RequestBody SettlementRequestDto requestDto) {
+        salesService.createSettlement(requestDto);
+        return ResponseEntity.ok("손익정산 등록 완료");
     }
 
 }

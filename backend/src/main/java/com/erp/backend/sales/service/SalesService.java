@@ -1,11 +1,13 @@
 package com.erp.backend.sales.service;
 
+import com.erp.backend.sales.dto.SettlementRequestDto;
 import com.erp.backend.sales.mapper.SalesMapper;
 import com.erp.backend.sales.vo.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -135,6 +137,39 @@ public class SalesService {
     public void createPayment(PaymentVO paymentVO) {
         salesMapper.insertPayment(paymentVO);
         salesMapper.updateAccountReceivablePayment(paymentVO);
+    }
+
+    // 손익정산 등록
+    public void createSettlement(SettlementRequestDto requestDto) {
+        Map<String, Object> params = new HashMap<>();
+        params.put("startDate", requestDto.getStartDate());
+        params.put("endDate", requestDto.getEndDate());
+
+        BigDecimal totalSales = salesMapper.findTotalSalesAmount(params);
+        BigDecimal totalPurchase = salesMapper.findTotalPurchaseAmount(params);
+        BigDecimal totalReceivable = salesMapper.findTotalReceivableAmount(params);
+        BigDecimal totalPayable = salesMapper.findTotalPayableAmount(params);
+
+        BigDecimal grossProfit = totalSales.subtract(totalPurchase);
+        BigDecimal profitRate = BigDecimal.ZERO;
+
+        if (totalSales.compareTo(BigDecimal.ZERO) > 0) {
+            profitRate = grossProfit.divide(totalSales, 4, RoundingMode.HALF_UP)
+                                    .multiply(new BigDecimal("100"));
+        }
+
+        SettlementVO settlementVO = new SettlementVO();
+        settlementVO.setStartDate(requestDto.getStartDate());
+        settlementVO.setEndDate(requestDto.getEndDate());
+        settlementVO.setTotalPurchase(totalPurchase);
+        settlementVO.setTotalSales(totalSales);
+        settlementVO.setTotalReceivable(totalReceivable);
+        settlementVO.setTotalPayable(totalPayable);
+        settlementVO.setGrossProfit(grossProfit);
+        settlementVO.setProfitRate(profitRate);
+        settlementVO.setCreatedBy(requestDto.getCreatedBy());
+
+        salesMapper.insertSettlement(settlementVO);
     }
 
 }

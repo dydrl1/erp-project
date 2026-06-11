@@ -66,4 +66,19 @@ public interface SalesMapper {
 
     // 여신한도 체크용 현재 미수금 조회
     BigDecimal findCurrentReceivableAmount(Integer customerId);
+
+    // 기간별 총매출 조회
+    BigDecimal findTotalSalesAmount(Map<String, Object> params);
+
+    // 기간별 총매입 조회
+    BigDecimal findTotalPurchaseAmount(Map<String, Object> params);
+
+    // 기간별 총미수금 조회
+    BigDecimal findTotalReceivableAmount(Map<String, Object> params);
+
+    // 기간별 총미지급금 조회
+    BigDecimal findTotalPayableAmount(Map<String, Object> params);
+
+    // 손익정산 등록
+    int insertSettlement(SettlementVO settlementVO);
 }

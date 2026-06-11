@@ -262,4 +262,70 @@
         FROM ACCOUNT_RECEIVABLE
         WHERE CUSTOMER_ID = #{customerId}
     </select>
+
+    <!-- 기간별 총매출 조회 -->
+    <select id="findTotalSalesAmount"
+            parameterType="map"
+            resultType="java.math.BigDecimal">
+        SELECT NVL(SUM(TOTAL_AMOUNT), 0)
+        FROM SALES_INVOICE
+        WHERE ISSUE_DATE BETWEEN #{startDate} AND #{endDate}
+    </select>
+
+    <!-- 기간별 총매입 조회 -->
+    <select id="findTotalPurchaseAmount"
+            parameterType="map"
+            resultType="java.math.BigDecimal">
+        SELECT NVL(SUM(TOTAL_AMOUNT), 0)
+        FROM PURCHASE_INVOICE
+        WHERE ISSUE_DATE BETWEEN #{startDate} AND #{endDate}
+    </select>
+
+    <!-- 기간별 총미수금 조회 -->
+    <select id="findTotalReceivableAmount"
+            parameterType="map"
+            resultType="java.math.BigDecimal">
+        SELECT NVL(SUM(REMAIN_AMOUNT), 0)
+        FROM ACCOUNT_RECEIVABLE
+        WHERE CREATED_AT BETWEEN #{startDate} AND #{endDate}
+    </select>
+
+    <!-- 기간별 총미지급금 조회 -->
+    <select id="findTotalPayableAmount"
+            parameterType="map"
+            resultType="java.math.BigDecimal">
+        SELECT NVL(SUM(REMAIN_AMOUNT), 0)
+        FROM ACCOUNT_PAYABLE
+        WHERE CREATED_AT BETWEEN #{startDate} AND #{endDate}
+    </select>
+
+    <!-- 손익정산 등록 -->
+    <insert id="insertSettlement"
+            parameterType="com.erp.backend.sales.vo.SettlementVO">
+        INSERT INTO SETTLEMENT (
+            SETTLEMENT_ID,
+            START_DATE,
+            END_DATE,
+            TOTAL_PURCHASE,
+            TOTAL_SALES,
+            TOTAL_RECEIVABLE,
+            TOTAL_PAYABLE,
+            GROSS_PROFIT,
+            PROFIT_RATE,
+            CREATED_BY,
+            CREATED_AT
+        ) VALUES (
+            SETTLEMENT_SEQ.NEXTVAL,
+            #{startDate},
+            #{endDate},
+            #{totalPurchase},
+            #{totalSales},
+            #{totalReceivable},
+            #{totalPayable},
+            #{grossProfit},
+            #{profitRate},
+            #{createdBy},
+            SYSDATE
+        )
+    </insert>
 </mapper>
