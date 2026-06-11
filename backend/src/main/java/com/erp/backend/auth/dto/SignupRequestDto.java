@@ -26,6 +26,4 @@ public class SignupRequestDto {
     @NotEmpty(message = "전화번호를 입력해주세요.")
     private String phone;
 
-    @NotBlank(message = "역할을 입력해주세요.")
-    private String roleCode;
 }

@@ -6,8 +6,10 @@ import com.erp.backend.auth.dto.SignupRequestDto;
 import com.erp.backend.auth.jwt.JwtTokenProvider;
 import com.erp.backend.auth.mapper.AuthMapper;
 import com.erp.backend.auth.mapper.RefreshTokenMapper;
+import com.erp.backend.auth.vo.RefreshTokenVo;
 import com.erp.backend.common.CustomException;
 import com.erp.backend.common.ErrorCode;
+import com.erp.backend.employee.vo.EmployeeVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -18,7 +20,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.Map;
 
 @Slf4j
 @Service
@@ -36,20 +37,19 @@ public class AuthService {
     // 1. 로그인
     public LoginResponseDto login(LoginRequestDto requestDto) {
         // 사원 조회
-        Map<String, Object> employee = authMapper.findEmployeeByLoginId(requestDto.getLoginId());
+        EmployeeVO employee = authMapper.findEmployeeByLoginId(requestDto.getLoginId());
 
         if (employee == null) {
             throw new CustomException(ErrorCode.LOGIN_FAILED);
         }
 
         // 비밀번호 검증
-        if (!passwordEncoder.matches(requestDto.getPassword(),
-                (String) employee.get("PASSWORD"))) {
+        if (!passwordEncoder.matches(requestDto.getPassword(), employee.getPassword())) {
             throw new CustomException(ErrorCode.LOGIN_FAILED);
         }
 
-        Long empId = ((Number) employee.get("EMP_ID")).longValue();
-        String role = (String) employee.get("ROLE");
+        Long empId = employee.getEmpId();
+        String role = employee.getRoleCode();
 
         // 토큰 생성
         String accessToken = jwtTokenProvider.generateAccessToken(empId, role);
@@ -88,12 +88,12 @@ public class AuthService {
         refreshTokenMapper.deleteByJwtId(jwtId); // 오래된 Refresh Token 삭제
 
         Long empId = jwtTokenProvider.getEmpId(refreshToken);
-        Map<String, Object> employee = authMapper.findEmployeeByEmpId(empId);
+        EmployeeVO employee = authMapper.findEmployeeByEmpId(empId);
         if (employee == null) {
             throw new CustomException(ErrorCode.EMPLOYEE_NOT_FOUND);
         }
 
-        String role = (String) employee.get("ROLE");
+        String role = employee.getRoleCode();
         String newAccessToken = jwtTokenProvider.generateAccessToken(empId, role);
         String newRefreshToken = jwtTokenProvider.generateRefreshToken(empId);
 
@@ -121,22 +121,22 @@ public class AuthService {
         }
 
         // 3) JTI로 DB에 저장된 Refresh Token 조회 -> 있으면 삭제
-        Map<String, Object> stored = refreshTokenMapper.findByJwtId(jwtId);
+        RefreshTokenVo stored = refreshTokenMapper.findByJwtId(jwtId);
         if (stored != null)
             refreshTokenMapper.deleteByJwtId(jwtId);
 
     }
 
     // 5. 응답 DTO 빌더
-    private LoginResponseDto buildResponse(Map<String, Object> employee, String accessToken, String refreshToken) {
+    private LoginResponseDto buildResponse(EmployeeVO employee, String accessToken, String refreshToken) {
         return LoginResponseDto.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
-                .empId(((Number) employee.get("EMP_ID")).longValue())
-                .loginId((String) employee.get("LOGIN_ID"))
-                .empName((String) employee.get("EMP_NAME"))
-                .role((String) employee.get("ROLE"))
-                .deptId(((Number) employee.get("DEPT_ID")).longValue())
+                .empId(employee.getEmpId())
+                .loginId((employee.getLoginId()))
+                .empName(employee.getEmpName())
+                .role(employee.getRoleCode())
+                .deptId(employee.getDeptId())
                 .build();
     }
 }

@@ -8,7 +8,7 @@
         VALUES (#{jwtId}, #{empId}, #{expiresAt})
     </insert>
 
-    <select id="findByJwtId" resultType="map">
+    <select id="findByJwtId" resultType="com.erp.backend.auth.vo.RefreshTokenVo">
         SELECT JWT_ID, EMP_ID, EXPIRES_AT
         FROM REFRESH_TOKEN
         WHERE JWT_ID = #{jwtId}
