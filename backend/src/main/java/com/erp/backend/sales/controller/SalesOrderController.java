@@ -1,8 +1,10 @@
 package com.erp.backend.sales.controller;
 
 
+import com.erp.backend.sales.dto.SalesOrderRequestDTO;
 import com.erp.backend.sales.service.SalesOrderService;
-import com.erp.backend.sales.vo.ProductLotStockVO;
+import com.erp.backend.sales.vo.ProductVO;
+import com.erp.backend.sales.vo.SalesOrderAmountCheckVO;
 import com.erp.backend.sales.vo.SalesOrderVO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -23,14 +25,14 @@ public class SalesOrderController {
     }
 
     @GetMapping("/products/lot-stock")
-    public ResponseEntity<ProductLotStockVO> findProductLotStock(@RequestParam int productId){
-        ProductLotStockVO result = salesOrderService.findProductLotStocksByProductId(productId);
+    public ResponseEntity<ProductVO> findProductLotStock(@RequestParam int productId){
+        ProductVO result = salesOrderService.findProductLotStocksByProductId(productId);
         return ResponseEntity.ok(result);
     }
 
     @GetMapping("/products/available-lots")
-    public ResponseEntity<List<ProductLotStockVO>> findAvailableLotStock(@RequestParam int productId){
-        List<ProductLotStockVO> item = salesOrderService.findAvailableLotStocksByProductId(productId);
+    public ResponseEntity<List<ProductVO>> findAvailableLotStock(@RequestParam int productId){
+        List<ProductVO> item = salesOrderService.findAvailableLotStocksByProductId(productId);
         return ResponseEntity.ok(item);
     }
 
@@ -46,30 +48,42 @@ public class SalesOrderController {
         return ResponseEntity.ok(orders);
     }
 
-    @GetMapping("/header")
-    public ResponseEntity<SalesOrderVO> findSimpleOrderHeader(@RequestParam int soId, @RequestParam int customerId,@RequestParam int reqEmployeeId,@RequestParam int apprEmployeeId ){
+    @GetMapping("/{salesId}/header")
+    public ResponseEntity<SalesOrderVO> findSimpleOrderHeader(@PathVariable Integer salesId){
         SalesOrderVO salesOrderVO = new SalesOrderVO();
-        salesOrderVO.setSoId(soId);
-        salesOrderVO.setCustomerId(customerId);
-        salesOrderVO.setReqEmployeeId(reqEmployeeId);
-        salesOrderVO.setApproveEmpId(apprEmployeeId);
-        SalesOrderVO order = salesOrderService.findOrderHeaderById(salesOrderVO);
+        salesOrderVO.setSoId(salesId);
+        SalesOrderVO order = salesOrderService.findSalesOrderHeaderById(salesOrderVO);
         return ResponseEntity.ok(order);
     }
 
-    @GetMapping("/details") //리팩토링필요
-    public ResponseEntity<SalesOrderVO> findSimpleOrderDetailList(@RequestParam int soId, @RequestParam int customerId,@RequestParam int reqEmployeeId,@RequestParam int apprEmployeeId ){
+    @GetMapping("/{salesId}/details")
+    public ResponseEntity<SalesOrderVO> findSimpleOrderDetailList(@PathVariable Integer salesId){
         SalesOrderVO salesOrderVO = new SalesOrderVO();
-        salesOrderVO.setSoId(soId);
-        salesOrderVO.setCustomerId(customerId);
-        salesOrderVO.setReqEmployeeId(reqEmployeeId);
-        salesOrderVO.setApproveEmpId(apprEmployeeId);
+        salesOrderVO.setSoId(salesId);
         SalesOrderVO order = salesOrderService.findOrderDetailListByOrderId(salesOrderVO);
         return ResponseEntity.ok(order);
     }
 
-//    @GetMapping("/order-detail/{detail}")
-//    public ResponseEntity<Integer> checkOrderDetailExist(@PathVariable int detail){
-//        return ResponseEntity.ok(salesOrderService.existsRequestedOrderDetail(detail));
-//    }
+    @PostMapping("/{orderId}")
+    public ResponseEntity<Void> makeOrder(@PathVariable int orderId,
+                                           @RequestBody SalesOrderRequestDTO requestDTO){
+        salesOrderService.makeOrder(requestDTO);
+        return ResponseEntity.ok().build();
+    }
+
+    @PutMapping("/{orderId}")
+    public ResponseEntity<SalesOrderVO> approveRequest(@PathVariable int orderId,@RequestBody SalesOrderRequestDTO requestDTO){
+        SalesOrderVO salesOrderVO = new SalesOrderVO();
+        salesOrderVO.setSoId(orderId);
+        salesOrderVO.setAppEmployeeId(requestDTO.getEmployeeId());
+        SalesOrderVO updateSalesOrder = salesOrderService.approveRequest(salesOrderVO);
+        System.out.println(updateSalesOrder);
+        return ResponseEntity.ok(updateSalesOrder);
+    }
+
+    @GetMapping("/check/{orderId}")
+    public ResponseEntity<SalesOrderAmountCheckVO> checkView(@PathVariable int orderId){
+        SalesOrderAmountCheckVO salesOrderAmountCheckVO = salesOrderService.verifyAmount(orderId);
+        return ResponseEntity.ok(salesOrderAmountCheckVO);
+    }
 }

@@ -1,10 +1,12 @@
 package com.erp.backend.sales.vo;
 
 import lombok.Data;
+
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Data
-public class ProductLotStockVO {
+public class ProductVO {
     Integer productId;
     String productCode;
     String productName;
@@ -17,4 +19,5 @@ public class ProductLotStockVO {
     Integer currentQty;
     String location;
     String lotStatus;
+    BigDecimal standardSalesPrice;
 }

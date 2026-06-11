@@ -2,7 +2,7 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.erp.backend.sales.mapper.SalesOrderMapper">
-    <select id="checkOrderDetailExist" resultType="int" parameterType="int">
+    <select id="existsRequestedOrderDetail" resultType="int" parameterType="int">
     SELECT 1 FROM DUAL WHERE EXISTS(
         SELECT 1
         FROM sales_order so
@@ -13,7 +13,7 @@
     )
     </select>
 
-    <select id="findProductLotById" resultType="ProductLotStockVO" parameterType="int">
+    <select id="findProductLotById" resultType="ProductVO" parameterType="int">
     select
         p.product_id,
         p.product_code,
@@ -32,9 +32,23 @@
     where
         p.PRODUCT_ID = #{productId}
     </select>
-
-
-    <select id="checkAvailabilityStockLot" resultType="ProductLotStockVO" parameterType="int">
+    <select id="checkAvailableLot" resultType="INTEGER" parameterType="int">
+        select
+            SUM(il.current_qty)
+        from product p join inventory_lot il
+                            on p.product_id = il.product_id
+        where
+            p.product_id = #{productId}
+          and
+            il.status='NORMAL'
+          and
+            il.current_qty > 0
+          and
+            il.expiry_date >= TRUNC(SYSDATE) + 11
+        group by
+            p.product_id
+    </select>
+    <select id="checkAvailabilityStockLot" resultType="ProductVO" parameterType="int">
     select
         p.product_id,
         p.product_code,
@@ -59,7 +73,7 @@
         and
             il.expiry_date >= TRUNC(SYSDATE) + 11
     order by
-        il.expiry_date asc
+        il.expiry_date
     </select>
     <select id="findOrderStatus" resultType="SalesOrderVO" parameterType="int">
         SELECT
@@ -79,15 +93,15 @@
         FROM
             sales_order so
     </select>
-    <select id="findSalesOrder" resultType="SalesOrderVO" parameterType="SalesOrderVO">
-        SELECT
+    <select id="findOrderHeaderById" resultType="SalesOrderVO" parameterType="SalesOrderVO">
+        select
             so.so_id,
             so.customer_id,
             cu.customer_name,
-            req_em.emp_id as reqEmployeeId,
-            req_em.emp_name as reqEmployeeName,
-            so.approve_emp_id,
-            app_em.emp_name as appEmployeeName,
+            req_em.emp_id as req_employee_id,
+            req_em.emp_name as req_employee_name,
+            so.approve_emp_id as app_employee_id,
+            app_em.emp_name as app_employee_name,
             so.order_date,
             so.approve_date,
             so.status,
@@ -95,33 +109,6 @@
             so.memo,
             so.created_at,
             so.updated_at
-        FROM sales_order so
-                 join customer cu on
-            so.customer_id = cu.customer_id
-                 join employee req_em on
-            req_em.emp_id = so.request_emp_id
-                 left join employee app_em on
-            app_em.emp_id = so.approve_emp_id
-        WHERE
-            so.so_id=#{soId}
-    </select>
-    <select id="findSalesOrderDetail" resultType="SalesOrderVO" parameterType="SalesOrderVO">
-        select
-            so.so_id,
-            so.customer_id,
-            cu.customer_name,
-            req_em.emp_id as reqEmployeeId,
-            req_em.emp_name as reqEmployeeName,
-            so.approve_emp_id,
-            app_em.emp_name as appEmployeeName,
-            so.order_date,
-            so.approve_date,
-            so.status,
-            so.total_amount,
-            so.memo,
-            so.created_at,
-            so.updated_at,
-            sod.order_qty
         from sales_order so
                  join customer cu on
             so.customer_id = cu.customer_id
@@ -129,10 +116,100 @@
             req_em.emp_id = so.request_emp_id
                  left join employee app_em on
             app_em.emp_id = so.approve_emp_id
-                 join sales_order_detail sod on
-            sod.so_id = so.so_id
         where
             so.so_id=#{soId}
     </select>
-
+    <select id="findOrderDetailListByOrderId" resultType="SalesOrderDetailVO" parameterType="SalesOrderVO">
+        select
+            sod.so_id,
+            sod.so_detail_id,
+            sod.order_qty,
+            sod.unit_price,
+            sod.amount
+        from sales_order_detail sod
+        where
+            sod.so_id=#{soId}
+    </select>
+    <select id="currentSalesOrderSeq">
+        SELECT seq_sales_order.nextval FROM DUAL
+    </select>
+    <insert id="makeSalesOrder" parameterType="SalesOrderVO">
+        insert into sales_order (
+            SO_ID,
+            CUSTOMER_ID,
+            REQUEST_EMP_ID,
+            ORDER_DATE,
+            STATUS,
+            TOTAL_AMOUNT,
+            CREATED_AT
+        ) select
+              #{soId},
+              #{customerId},
+              #{reqEmployeeId},
+              #{orderDate},
+              #{status},
+              #{totalAmount},
+              SYSDATE
+        from customer c
+        where c.customer_id= #{customerId}
+    </insert>
+    <select id="currentSalesOrderDetailSeq">
+        SELECT seq_sales_order_detail.nextval FROM DUAL
+    </select>
+    <select id="checkProductById" resultType="productVO" parameterType="int">
+        SELECT pr.product_id,pr.status,pr.standard_sales_price
+        FROM product pr
+        WHERE
+            pr.product_id=#{productId}
+        AND
+            pr.status='ACTIVE'
+        AND
+            pr.standard_sales_price > 0
+    </select>
+    <insert id="makeSalesOrderDetail" parameterType="SalesOrderDetailVO">
+        insert into sales_order_detail (
+            SO_DETAIL_ID,
+            SO_ID,
+            PRODUCT_ID,
+            ORDER_QTY,
+            UNIT_PRICE,
+            AMOUNT
+        ) values (
+                  #{soDetailId},
+                  #{soId},
+                  #{productId},
+                  #{orderQty},
+                  #{unitPrice},
+                  #{amount}
+                 )
+    </insert>
+    <update id="approveRequest" parameterType="SalesOrderVO">
+    UPDATE sales_order
+        <set>
+        approve_emp_id=#{appEmployeeId},
+        approve_date=#{approveDate},
+        status=#{status},
+        updated_at=#{approveDate}
+        </set>
+    WHERE
+        so_id=#{soId}
+    AND
+        status='REQUESTED'
+    </update>
+    <select id="verifySalesOrderTotal" resultType="SalesOrderAmountCheckVO" parameterType="int">
+        SELECT
+            so_id,
+            customer_id,
+            status,
+            total_amount,
+            detail_amount_sum,
+            header_detail_amount_matched_yn as headerAmountMatched,
+            detail_line_count,
+            detail_calculated_amount_sum,
+            detail_amount_calculated_matched_yn as detailAmountMatched
+        FROM
+            v_sales_order_amount_check vsac
+        WHERE
+            vsac.so_id=#{soId}
+    </select>
 </mapper>

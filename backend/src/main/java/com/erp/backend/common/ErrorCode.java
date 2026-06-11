@@ -21,7 +21,10 @@ public enum ErrorCode {
 
     // 사원
     EMPLOYEE_NOT_FOUND(HttpStatus.NOT_FOUND, "사원을 찾을 수 없습니다."),
-    EMPLOYEE_ALREADY_EXISTS(HttpStatus.BAD_REQUEST, "이미 존재하는 사원입니다.");
+    EMPLOYEE_ALREADY_EXISTS(HttpStatus.BAD_REQUEST, "이미 존재하는 사원입니다."),
+
+    // 주문
+    SALES_NOT_AVAILABLE_STOCK(HttpStatus.BAD_REQUEST,"재고가 부족합니다.");
 
     private final HttpStatus status;
     private final String message;

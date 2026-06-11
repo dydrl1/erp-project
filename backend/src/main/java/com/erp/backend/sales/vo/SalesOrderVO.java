@@ -2,7 +2,8 @@ package com.erp.backend.sales.vo;
 import lombok.Data;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 public class SalesOrderVO {
@@ -11,14 +12,14 @@ public class SalesOrderVO {
     String customerName;
     Integer reqEmployeeId;
     String reqEmployeeName;
-    Integer approveEmpId;
+    Integer appEmployeeId;
     String appEmployeeName;
-    LocalDate orderDate;
-    LocalDate approveDate;
+    LocalDateTime orderDate;
+    LocalDateTime approveDate;
     String status;
     BigDecimal totalAmount;
     String memo;
-    LocalDate createdAt;
-    LocalDate updatedAt;
-    Integer orderQty;
+    LocalDateTime createdAt;
+    LocalDateTime updatedAt;
+    List<SalesOrderDetailVO> detailList;
 }
