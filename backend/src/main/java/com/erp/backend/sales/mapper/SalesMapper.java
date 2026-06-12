@@ -1,11 +1,6 @@
 package com.erp.backend.sales.mapper;
 
-import com.erp.backend.sales.vo.AccountReceivableVO;
-import com.erp.backend.sales.vo.SalesInvoiceVO;
-import com.erp.backend.sales.vo.PaymentVO;
-import com.erp.backend.sales.vo.PurchaseInvoiceVO;
-import com.erp.backend.sales.vo.AccountPayableVO;
-import com.erp.backend.sales.vo.SettlementVO;
+import com.erp.backend.sales.vo.*;
 import org.apache.ibatis.annotations.Mapper;
 
 import java.math.BigDecimal;
@@ -81,4 +76,7 @@ public interface SalesMapper {
 
     // 손익정산 등록
     int insertSettlement(SettlementVO settlementVO);
+
+    // 대시보드 요약 조회
+    DashboardVO getDashboardSummary();
 }

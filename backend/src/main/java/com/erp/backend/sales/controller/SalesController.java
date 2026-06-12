@@ -165,4 +165,13 @@ public class SalesController {
         return ResponseEntity.ok("손익정산 등록 완료");
     }
 
+    @Operation(summary = "대시보드 요약 조회")
+    @GetMapping("/dashboard")
+    public ResponseEntity<ApiResponse<DashboardVO>> getDashboardSummary() {
+        DashboardVO dashboardVO = salesService.getDashboardSummary();
+        return ResponseEntity.ok(
+                ApiResponse.success(dashboardVO)
+        );
+    }
+
 }

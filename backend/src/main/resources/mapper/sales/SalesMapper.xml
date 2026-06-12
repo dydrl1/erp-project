@@ -328,4 +328,44 @@
             SYSDATE
         )
     </insert>
+
+    <!-- 대시보드 요약 조회 -->
+    <select id="getDashboardSummary"
+            resultType="com.erp.backend.sales.vo.DashboardVO">
+        SELECT
+            (SELECT NVL(SUM(TOTAL_AMOUNT),0)
+            FROM SALES_INVOICE) AS TOTAL_SALES,
+            (SELECT NVL(SUM(TOTAL_AMOUNT),0)
+            FROM PURCHASE_INVOICE) AS TOTAL_PURCHASE,
+            (SELECT NVL(SUM(REMAIN_AMOUNT),0)
+            FROM ACCOUNT_RECEIVABLE) AS TOTAL_RECEIVABLE,
+            (SELECT NVL(SUM(REMAIN_AMOUNT),0)
+            FROM ACCOUNT_PAYABLE) AS TOTAL_PAYABLE,
+            (
+                (SELECT NVL(SUM(TOTAL_AMOUNT),0)
+                 FROM SALES_INVOICE)
+                                      -
+                (SELECT NVL(SUM(TOTAL_AMOUNT),0)
+                 FROM PURCHASE_INVOICE)
+            ) AS GROSS_PROFIT,
+            ROUND(
+                (
+                    (
+                        (SELECT NVL(SUM(TOTAL_AMOUNT), 0)
+                         FROM SALES_INVOICE)
+                            -
+                        (SELECT NVL(SUM(TOTAL_AMOUNT), 0)
+                         FROM PURCHASE_INVOICE)
+                    )
+                    /
+                    NULLIF(
+                            (SELECT NVL(SUM(TOTAL_AMOUNT),0)
+                            FROM SALES_INVOICE),
+                            0
+                    )
+            ) * 100,
+            2
+            ) AS PROFIT_RATE
+        FROM DUAL
+    </select>
 </mapper>

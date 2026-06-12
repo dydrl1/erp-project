@@ -172,4 +172,9 @@ public class SalesService {
         salesMapper.insertSettlement(settlementVO);
     }
 
+    // 대시보드 요약 조회
+    public DashboardVO getDashboardSummary() {
+        return salesMapper.getDashboardSummary();
+    }
+
 }
