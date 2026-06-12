@@ -75,16 +75,16 @@
     order by
         il.expiry_date
     </select>
-    <select id="findOrderStatus" resultType="SalesOrderVO" parameterType="int">
+    <select id="findOrderStatus" resultType="SalesOrderVO">
         SELECT
             so.so_id,
             so.status
         FROM
             sales_order so
         WHERE
-            so.so_id=#{salesOrderId}
+            so.so_id = #{salesOrderId}
          AND
-            so.status='REQUESTED'
+            so.status = #{status}
     </select>
     <select id="findAllOrderStatus" resultType="SalesOrderVO">
         SELECT

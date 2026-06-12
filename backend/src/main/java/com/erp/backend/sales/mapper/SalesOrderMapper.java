@@ -4,6 +4,7 @@ import com.erp.backend.sales.vo.SalesOrderAmountCheckVO;
 import com.erp.backend.sales.vo.SalesOrderDetailVO;
 import com.erp.backend.sales.vo.SalesOrderVO;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 import java.util.List;
 
 @Mapper
@@ -16,7 +17,8 @@ public interface SalesOrderMapper {
     List<SalesOrderVO> findAllOrderStatusList();
     SalesOrderVO findOrderHeaderById(SalesOrderVO salesOrderVO);
     List<SalesOrderDetailVO> findOrderDetailListByOrderId(SalesOrderVO salesOrderVO);
-    int existsRequestedOrderDetail(int salesOrderId);
+    SalesOrderVO findOrderStatus(@Param("salesOrderId") int salesOrderId,@Param("status") String status);
+    Integer existsRequestedOrderDetail(int salesOrderId);
     int makeSalesOrder(SalesOrderVO salesOrderVO);
     int makeSalesOrderDetail(SalesOrderDetailVO salesOrderDetailVO);
     int currentSalesOrderSeq();
