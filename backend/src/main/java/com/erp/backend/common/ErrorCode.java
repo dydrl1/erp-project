@@ -24,7 +24,9 @@ public enum ErrorCode {
     EMPLOYEE_ALREADY_EXISTS(HttpStatus.BAD_REQUEST, "이미 존재하는 사원입니다."),
 
     // 주문
-    SALES_NOT_AVAILABLE_STOCK(HttpStatus.BAD_REQUEST,"재고가 부족합니다.");
+    SALES_NOT_AVAILABLE_STOCK(HttpStatus.BAD_REQUEST,"재고가 부족합니다."),
+    SALES_NOT_AMOUNT_MATCHED(HttpStatus.BAD_REQUEST,"금액이 일치하지 않습니다"),
+    SALES_APPROVE_FAILED(HttpStatus.BAD_REQUEST,"승인이 되지 않았습니다");
 
     private final HttpStatus status;
     private final String message;

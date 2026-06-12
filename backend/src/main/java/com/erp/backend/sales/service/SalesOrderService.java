@@ -10,7 +10,6 @@ import com.erp.backend.sales.vo.SalesOrderAmountCheckVO;
 import com.erp.backend.sales.vo.SalesOrderDetailVO;
 import com.erp.backend.sales.vo.SalesOrderVO;
 import lombok.RequiredArgsConstructor;
-import org.jspecify.annotations.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -72,7 +71,6 @@ public class SalesOrderService {
             salesOrderDetailVO.setOrderQty(requestDTO.getOrderQty());
             salesOrderDetailVO.setUnitPrice(productVO.getStandardSalesPrice());
             salesOrderDetailVO.setAmount(productVO.getStandardSalesPrice().multiply(BigDecimal.valueOf(requestDTO.getOrderQty())));
-            System.out.print(salesOrderDetailVO);
             salesOrderMapper.makeSalesOrderDetail(salesOrderDetailVO);
         }
     }
@@ -81,14 +79,15 @@ public class SalesOrderService {
     public SalesOrderVO approveRequest(SalesOrderVO salesOrderVO){
         SalesOrderAmountCheckVO salesOrderAmountCheckVO;
         salesOrderAmountCheckVO=verifyAmount(salesOrderVO.getSoId());
-        if(salesOrderAmountCheckVO.amountMatched()){
-            salesOrderVO.setStatus(OrderStatus.APPROVED.name());
-            salesOrderVO.setApproveDate(LocalDateTime.now());
-            salesOrderMapper.approveRequest(salesOrderVO);
-            return salesOrderMapper.findOrderHeaderById(salesOrderVO);
+        if(!salesOrderAmountCheckVO.amountMatched()){
+            throw new CustomException(ErrorCode.SALES_NOT_AMOUNT_MATCHED);
         }
-        System.out.println("상태가 업데이트 되지 않았습니다");
-        return null;
+        salesOrderVO.setStatus(OrderStatus.APPROVED.name());
+        salesOrderVO.setApproveDate(LocalDateTime.now());
+        if(salesOrderMapper.approveRequest(salesOrderVO)!=1){
+            throw new CustomException(ErrorCode.SALES_APPROVE_FAILED);
+        }
+        return salesOrderMapper.findOrderHeaderById(salesOrderVO);
     }
 
     public SalesOrderAmountCheckVO verifyAmount(int salesId){
