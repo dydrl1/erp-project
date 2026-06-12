@@ -24,6 +24,7 @@ public class AdminEmployeeService {
     }
 
     // 관리자 : 직원(PENDING) 승인(approve), PENDING -> ACTIVE
+    @Transactional
     public void approve(Long empId) {
         if (adminEmployeeMapper.updateStatus(empId, "ACTIVE") == 0) {
             throw new CustomException(ErrorCode.EMPLOYEE_NOT_FOUND);
@@ -31,6 +32,7 @@ public class AdminEmployeeService {
     }
 
     // 관리자 : 직원(PENDING) 등록 거절, PENDING -> REJECT
+    @Transactional
     public void reject(Long empId) {
         if (adminEmployeeMapper.updateStatus(empId, "REJECTED") == 0) {
             throw new CustomException(ErrorCode.EMPLOYEE_NOT_FOUND);

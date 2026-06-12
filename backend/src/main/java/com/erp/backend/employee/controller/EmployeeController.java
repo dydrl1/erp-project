@@ -19,6 +19,7 @@ public class EmployeeController {
 
     private final EmployeeService employeeService;
 
+    // TODO : (직원용) 직원 등록
     @PostMapping
     public Long createEmployee(@RequestBody EmployeeCreateRequestDto request) {
         return employeeService.createEmployee(request);

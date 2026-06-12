@@ -1,16 +1,12 @@
 package com.erp.backend.admin.controller;
 
 import com.erp.backend.admin.service.AdminEmployeeService;
-import com.erp.backend.auth.service.AuthService;
 import com.erp.backend.common.ApiResponse;
 import com.erp.backend.employee.dto.EmployeeResponseDto;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -20,7 +16,6 @@ import java.util.List;
 @RestController
 public class AdminEmployeeController {
 
-    private final AuthService authService;
     private final AdminEmployeeService adminEmployeeService;
 
 
@@ -29,8 +24,15 @@ public class AdminEmployeeController {
         return ResponseEntity.ok(ApiResponse.success(adminEmployeeService.getPendingEmployees()));
     }
 
+    @PostMapping("/{empId}/approve")
     public ResponseEntity<ApiResponse<Void>> approve(@PathVariable Long empId) {
         adminEmployeeService.approve(empId);
-        return ResponseEntity.ok(ApiResponse.success("사원 등록 완료", null));
+        return ResponseEntity.ok(ApiResponse.success("사원 가입 승인 완료", null));
+    }
+
+    @PostMapping("/{empId}/reject")
+    public ResponseEntity<ApiResponse<Void>> reject(@PathVariable Long empId){
+        adminEmployeeService.reject(empId);
+        return ResponseEntity.ok(ApiResponse.success("사원 가입 승인 거절", null));
     }
 }

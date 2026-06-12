@@ -5,7 +5,7 @@ import lombok.Getter;
 import java.time.LocalDateTime;
 
 @Getter
-public class RefreshTokenVo {
+public class RefreshTokenVO {
 
     private String jwtId;
     private Long empId;

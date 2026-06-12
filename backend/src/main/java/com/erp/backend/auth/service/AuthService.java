@@ -6,8 +6,9 @@ import com.erp.backend.auth.dto.SignupRequestDto;
 import com.erp.backend.auth.jwt.JwtTokenProvider;
 import com.erp.backend.auth.mapper.AuthMapper;
 import com.erp.backend.auth.mapper.RefreshTokenMapper;
-import com.erp.backend.auth.vo.RefreshTokenVo;
+import com.erp.backend.auth.vo.RefreshTokenVO;
 import com.erp.backend.common.CustomException;
+import com.erp.backend.common.EmployeeStatus;
 import com.erp.backend.common.ErrorCode;
 import com.erp.backend.employee.vo.EmployeeVO;
 import lombok.RequiredArgsConstructor;
@@ -48,6 +49,14 @@ public class AuthService {
             throw new CustomException(ErrorCode.LOGIN_FAILED);
         }
 
+        // 계정 상태 검증 (비밀번호 검증 후에 해야 계정 존재 여부가 노출되지 않음)
+        if (EmployeeStatus.PENDING.name().equals(employee.getStatus())) {
+            throw new CustomException(ErrorCode.ACCOUNT_PENDING);
+        }
+        if (!EmployeeStatus.ACTIVE.name().equals(employee.getStatus())) {
+            throw new CustomException(ErrorCode.ACCOUNT_REJECTED);
+        }
+
         Long empId = employee.getEmpId();
         String role = employee.getRoleCode();
 
@@ -65,7 +74,7 @@ public class AuthService {
     // 2. 회원 가입
     @Transactional
     public void signup(SignupRequestDto dto) {
-        if (authMapper.findEmployeeByLoginId(dto.getLoginId()) != null) {
+        if (authMapper.existsEmployeeByLoginId(dto.getLoginId())) {
             throw new CustomException(ErrorCode.EMPLOYEE_ALREADY_EXISTS);
         }
         authMapper.insertEmployee(dto, passwordEncoder.encode(dto.getPassword()));
@@ -121,7 +130,7 @@ public class AuthService {
         }
 
         // 3) JTI로 DB에 저장된 Refresh Token 조회 -> 있으면 삭제
-        RefreshTokenVo stored = refreshTokenMapper.findByJwtId(jwtId);
+        RefreshTokenVO stored = refreshTokenMapper.findByJwtId(jwtId);
         if (stored != null)
             refreshTokenMapper.deleteByJwtId(jwtId);
 

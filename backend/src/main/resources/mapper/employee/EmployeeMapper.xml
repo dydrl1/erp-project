@@ -9,7 +9,7 @@
         <selectKey keyProperty="empId"
                    resultType="long"
                    order="BEFORE">
-            SELECT EMPLOYEE_SEQ.NEXTVAL
+            SELECT EMP_SEQ.nextval
             FROM DUAL
         </selectKey>
 
@@ -21,7 +21,7 @@
         PHONE,
         EMAIL,
         DEPT_ID,
-        ROLE_CODE AS ROLE,
+        ROLE_CODE,
         STATUS,
         HIRE_DATE,
         CREATED_AT,

@@ -5,6 +5,7 @@ import com.erp.backend.auth.jwt.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -29,14 +30,14 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // 회원가입(직원)은 권리자 승인 필요
-                        .requestMatchers("/api/auth/signup").hasRole("ADMIN")
                         // 로그인·토큰 재발급은 인증 없이 허용
                         .requestMatchers("/api/auth/**").permitAll()
                         // Swagger 허용
-                        .requestMatchers("/swagger-ui/**", "/api-docs/**").permitAll()
-                        // ADMIN 전용
-                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/swagger-ui/**", "swagger-ui.html", "/api-docs/**").permitAll()
+                        // 부서 조회는 회원가입 폼에서 필요하므로 인증 없이 허용
+                        .requestMatchers(HttpMethod.GET, "/api/departments/**").permitAll()
+                        // ADMIN, MANAGER 전용
+                        .requestMatchers("/api/admin/**").hasAnyRole("MANAGER","ADMIN")
                         // 나머지는 인증 필요
                         .anyRequest().authenticated())
                 .addFilterBefore(new JwtAuthFilter(jwtTokenProvider),

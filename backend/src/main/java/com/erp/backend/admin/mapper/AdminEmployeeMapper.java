@@ -11,6 +11,5 @@ import java.util.List;
 public interface AdminEmployeeMapper {
 
     List<EmployeeResponseDto> findByStatus(String status);
-    EmployeeVO findEmployeeByStatus(String status);
     int updateStatus(@Param("empId") Long empId, @Param("status") String status);
 }
