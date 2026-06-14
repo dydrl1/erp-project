@@ -1,0 +1,232 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.erp.backend.shipment.mapper.ShipmentMapper">
+    <update id="updateInventory">
+        UPDATE inventory_lot
+            <set>
+            current_qty=#{currentQty},
+            last_modified_at=#{updateAt},
+            <if test="currentQty &lt;=0 ">
+                status='SOLD_OUT',
+            </if>
+            </set>
+        WHERE
+            inventory_lot_id=#{inventoryId}
+    </update>
+    <insert id="changeStockMovement" parameterType="StockMovementVO">
+        INSERT INTO stock_movement (
+            movement_id,
+            inventory_lot_id,
+            movement_type,
+            qty,
+            before_qty,
+            after_qty,
+            source_type,
+            source_id,
+            created_by
+        ) SELECT
+                  #{movementId},
+                  il.inventory_lot_id,
+                  #{movementType},
+                  #{quantity},
+                  il.current_qty,
+                  il.current_qty-#{quantity},
+                  #{sourceType},
+                  #{sourceId},
+                  #{employeeId}
+        FROM
+            inventory_lot il
+        WHERE
+            il.inventory_lot_id=#{inventoryLotId}
+    </insert>
+    <update id="decreaseInventory" parameterType="StockMovementVO">
+        UPDATE inventory_lot
+        SET
+            current_qty = current_qty-#{quantity},
+            last_modified_at=#{updateAt},
+            status= CASE
+                WHEN current_qty - #{quantity} &lt;=0 THEN 'SOLD_OUT'
+                ELSE status
+            END
+        WHERE INVENTORY_LOT_ID=#{inventoryLotId}
+            AND current_qty>=#{quantity}
+            AND status='NORMAL'
+    </update>
+    <select id="currentStockMovementSeq" resultType="int">
+        SELECT seq_stock_movement.nextval FROM dual
+    </select>
+    <select id="currentShipmentSeq" resultType="int">
+        SELECT seq_shipment.nextval FROM dual
+    </select>
+    <select id="currentShipmentDetailSeq" resultType="int">
+        SELECT seq_shipment_detail.nextval from dual
+    </select>
+    <insert id="arrangeShipmentHeader" parameterType="ShipmentVO">
+        INSERT INTO shipment (
+                              shipment_id,
+                              so_id,
+                              shipped_emp_id,
+                              shipment_date,
+                              status,
+                              <if test="memo != null and memo != ''">
+                                  memo,
+                              </if>
+                              created_at
+        ) VALUES (
+                  #{shipmentId},
+                  #{soId},
+                  #{shippedEmpId},
+                  #{shipmentDate},
+                  #{status},
+                  <if test="memo != null and memo != ''">
+                  #{memo},
+                  </if>
+                  #{createdAt}
+                )
+    </insert>
+    <insert id="arrangeShipmentDetail" parameterType="ShipmentDetailVO">
+        INSERT INTO shipment_detail (
+                                     shipment_detail_id,
+                                     shipment_id,
+                                     so_detail_id,
+                                     inventory_lot_id,
+                                     product_id,
+                                     shipped_qty
+        ) VALUES (
+                  #{shipmentDetailId},
+                  #{shipmentId},
+                  #{salesOrderDetailId},
+                  #{inventoryLotId},
+                  #{productId},
+                  #{shippedQty}
+                 )
+    </insert>
+    <update id="updateSaleOrderStatus">
+        UPDATE sales_order
+        SET
+            status=#{status}
+        WHERE
+            sales_order.so_id=#{salesOrderId}
+        AND
+            status='APPROVED'
+    </update>
+    <select id="findShipmentList">
+        SELECT
+            sh.shipment_id,
+            sh.so_id,
+            cu.customer_name,
+            so.order_date,
+            sh.shipment_date,
+            sh.shipped_emp_id,
+            em.emp_name,
+            sh.status
+        FROM
+            shipment sh
+        JOIN sales_order so
+        ON so.so_id=sh.so_id
+        JOIN customer cu
+        ON cu.customer_id = so.customer_id
+        JOIN employee em
+        ON em.emp_id = sh.shipped_emp_id
+    </select>
+    <select id="findShipment">
+        SELECT
+            shipment_id,
+            so_id,
+            shipped_emp_id,
+            shipment_date,
+            status,
+            memo,
+            created_at
+        FROM
+            shipment
+        WHERE
+            shipment_id=#{shipmentId}
+    </select>
+    <update id="updateShippingStatus">
+        UPDATE shipment
+        SET
+            status=#{status}
+        WHERE
+            shipment_id=#{shipmentId}
+        AND
+            status='SHIPPED'
+    </update>
+    <select id="findShipmentDetail" resultType="ShipmentDetailVO">
+        SELECT
+            sh.shipment_id,
+            sdh.shipment_detail_id,
+            sh.so_id as salesOrderId,
+            cu.customer_name,
+            so.order_date,
+            shipment_date,
+            sh.shipped_emp_id,
+            em.emp_name as employeeName,
+            sh.status,
+            product_name,
+            sdh.inventory_lot_id,
+            il.lot_no,
+            il.expiry_date,
+            sdh.shipped_qty,
+            pr.product_id
+        FROM
+            shipment sh
+        JOIN shipment_detail sdh
+        ON sdh.shipment_id=sh.shipment_id
+        JOIN sales_order so
+        ON so.so_id=sh.so_id
+        JOIN customer cu
+        ON cu.customer_id=so.customer_id
+        JOIN product pr
+        ON pr.product_id=sdh.product_id
+        JOIN employee em
+        ON em.emp_id=sh.shipped_emp_id
+        JOIN inventory_lot il
+        ON il.inventory_lot_id=sdh.inventory_lot_id
+        WHERE
+            sh.shipment_id=#{shipmentId}
+    </select>
+    <select id="trackProductHistory" resultType="StockMovementVO">
+        SELECT * FROM stock_movement WHERE movement_id=#{moveId}
+    </select>
+    <select id="verifySalesOrderStatus" resultType="SalesOrderVO" parameterType="int">
+        SELECT
+            so.so_id,
+            so.status
+        FROM
+            sales_order so
+        WHERE
+            so.so_id=#{salesOrderId}
+          AND
+            so.status='APPROVED'
+    </select>
+    <select id="findApprovedSalesOrderDetails" resultType="SalesOrderDetailVO">
+        SELECT
+            so.so_id,
+            so_detail_id,
+            so.status,
+            sod.product_id,
+            sod.order_qty
+        FROM
+            sales_order so
+        JOIN sales_order_detail sod
+            ON sod.so_id=so.so_id
+        WHERE
+            so.so_id=#{salesOrderId}
+        AND
+            so.status='APPROVED'
+    </select>
+    <select id="preventDuplicatedShipment">
+        SELECT
+            shipment_id,
+            shipment_date,
+            status
+            FROM
+                shipment sh
+            WHERE
+                status!='CANCELED'
+            AND
+                sh.so_id=#{salesOrderId}
+    </select>
+</mapper>
