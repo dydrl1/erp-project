@@ -108,6 +108,10 @@ public class SalesService {
 
 
     public void createSalesInvoice(SalesInvoiceVO salesInvoiceVO, AccountReceivableVO accountReceivableVO) {
+        // 매출청구 금액 유효성 검사
+        if (salesInvoiceVO.getTotalAmount() == null || salesInvoiceVO.getTotalAmount().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new RuntimeException("매출청구 금액은 0보다 커야 합니다.");
+        }
         // 여신한도 임시 설정: 500만원
         BigDecimal creditLimit = new BigDecimal("5000000");
         // 거래처 현재 미수금 조회
@@ -135,6 +139,17 @@ public class SalesService {
 
     // 수금 처리
     public void createPayment(PaymentVO paymentVO) {
+        // 수금 금액 유효성 검사
+        BigDecimal remainAmount = salesMapper.findRemainAmountByArId(paymentVO.getArId());
+        if (remainAmount == null) {
+            throw new RuntimeException("해당 미수금 정보를 찾을 수 없습니다.");
+        }
+        if (paymentVO.getPaymentAmount().compareTo(remainAmount) > 0) {
+            throw new RuntimeException("수금 금액은 미수금보다 클 수 없습니다.");
+        }
+        if (paymentVO.getPaymentAmount() == null || paymentVO.getPaymentAmount().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new RuntimeException("수금 금액은 0보다 커야 합니다.");
+        }
         salesMapper.insertPayment(paymentVO);
         salesMapper.updateAccountReceivablePayment(paymentVO);
     }
@@ -172,9 +187,19 @@ public class SalesService {
         salesMapper.insertSettlement(settlementVO);
     }
 
-    // 대시보드 요약 조회
-    public DashboardVO getDashboardSummary() {
-        return salesMapper.getDashboardSummary();
+    // 대시보드 조회
+    public DashboardVO getDashboardSummary(
+            String startDate,
+            String endDate,
+            Integer customerId,
+            Integer itemId) {
+        Map<String, Object> params = new HashMap<>();
+        params.put("startDate", startDate);
+        params.put("endDate", endDate);
+        params.put("customerId", customerId);
+        params.put("itemId", itemId);
+
+        return salesMapper.getDashboardSummary(params);
     }
 
 }

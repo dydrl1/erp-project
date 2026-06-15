@@ -77,6 +77,9 @@ public interface SalesMapper {
     // 손익정산 등록
     int insertSettlement(SettlementVO settlementVO);
 
-    // 대시보드 요약 조회
-    DashboardVO getDashboardSummary();
+    // 대시보드 조회
+    DashboardVO getDashboardSummary(Map<String, Object> params);
+
+    // 미수금 잔액 조회
+    BigDecimal findRemainAmountByArId(Integer arId);
 }

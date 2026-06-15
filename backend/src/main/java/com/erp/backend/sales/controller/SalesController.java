@@ -165,10 +165,14 @@ public class SalesController {
         return ResponseEntity.ok("손익정산 등록 완료");
     }
 
-    @Operation(summary = "대시보드 요약 조회")
+    @Operation(summary = "대시보드 조회")
     @GetMapping("/dashboard")
-    public ResponseEntity<ApiResponse<DashboardVO>> getDashboardSummary() {
-        DashboardVO dashboardVO = salesService.getDashboardSummary();
+    public ResponseEntity<ApiResponse<DashboardVO>> getDashboardSummary(
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate,
+            @RequestParam(required = false) Integer customerId,
+            @RequestParam(required = false) Integer itemId) {
+        DashboardVO dashboardVO = salesService.getDashboardSummary(startDate, endDate, customerId, itemId);
         return ResponseEntity.ok(
                 ApiResponse.success(dashboardVO)
         );

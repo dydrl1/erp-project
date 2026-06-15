@@ -39,7 +39,7 @@
             AND ISSUE_DATE &gt;= TO_DATE(#{startDate}, 'YYYY-MM-DD')
         </if>
         <if test="endDate != null and endDate != ''">
-            AND iSSUE_DATE &lt;= TO_DATE(#{endDate}, 'YYYY-MM-DD')
+            AND ISSUE_DATE &lt;= TO_DATE(#{endDate}, 'YYYY-MM-DD')
         </if>
 
         ORDER BY PURCHASE_INVOICE_ID DESC
@@ -59,7 +59,7 @@
             AND DUE_DATE &gt;= TO_DATE(#{startDate}, 'YYYY-MM-DD')
         </if>
         <if test="endDate != null and endDate != ''">
-            AND DUE_DATE &gt;= TO_DATE(#{endDate}, 'YYYY-MM-DD')
+            AND DUE_DATE &lt;= TO_DATE(#{endDate}, 'YYYY-MM-DD')
         </if>
         ORDER BY AR_ID DESC
     </select>
@@ -110,7 +110,7 @@
             AND START_DATE &gt;= TO_DATE(#{startDate}, 'YYYY-MM-DD')
         </if>
         <if test="endDate != null and endDate != ''">
-            AND END_DATE &gt;= TO_DATE(#{endDate}, 'YYYY-MM-DD')
+            AND END_DATE &lt;= TO_DATE(#{endDate}, 'YYYY-MM-DD')
         </if>
         ORDER BY SETTLEMENT_ID DESC
     </select>
@@ -329,43 +329,140 @@
         )
     </insert>
 
-    <!-- 대시보드 요약 조회 -->
+    <!-- 대시보드 조회 -->
     <select id="getDashboardSummary"
+            parameterType="map"
             resultType="com.erp.backend.sales.vo.DashboardVO">
         SELECT
             (SELECT NVL(SUM(TOTAL_AMOUNT),0)
-            FROM SALES_INVOICE) AS TOTAL_SALES,
+            FROM SALES_INVOICE
+            WHERE 1 = 1
+              <if test="startDate != null and startDate != ''">
+                AND ISSUE_DATE &gt;= TO_DATE(#{startDate}, 'YYYY-MM-DD')
+              </if>
+              <if test="endDate != null and endDate != ''">
+                AND ISSUE_DATE &lt;= TO_DATE(#{endDate}, 'YYYY-MM-DD')
+              </if>
+              <if test="customerId != null">
+                AND CUSTOMER_ID = #{customerId}
+              </if>
+            ) AS TOTAL_SALES,
             (SELECT NVL(SUM(TOTAL_AMOUNT),0)
-            FROM PURCHASE_INVOICE) AS TOTAL_PURCHASE,
+            FROM PURCHASE_INVOICE
+            WHERE 1 = 1
+              <if test="startDate != null and startDate != ''">
+                AND ISSUE_DATE &gt;= TO_DATE(#{startDate}, 'YYYY-MM-DD')
+              </if>
+              <if test="endDate != null and endDate != ''">
+                AND ISSUE_DATE &lt;= TO_DATE(#{endDate}, 'YYYY-MM-DD')
+              </if>
+            ) AS TOTAL_PURCHASE,
             (SELECT NVL(SUM(REMAIN_AMOUNT),0)
-            FROM ACCOUNT_RECEIVABLE) AS TOTAL_RECEIVABLE,
+            FROM ACCOUNT_RECEIVABLE
+            WHERE 1 = 1
+              <if test="startDate != null and startDate != ''">
+                AND DUE_DATE &gt;= TO_DATE(#{startDate}, 'YYYY-MM-DD')
+              </if>
+              <if test="endDate != null and endDate != ''">
+                AND DUE_DATE &lt;= TO_DATE(#{endDate}, 'YYYY-MM-DD')
+              </if>
+              <if test="customerId != null">
+                AND CUSTOMER_ID = #{customerId}
+              </if>
+            ) AS TOTAL_RECEIVABLE,
             (SELECT NVL(SUM(REMAIN_AMOUNT),0)
-            FROM ACCOUNT_PAYABLE) AS TOTAL_PAYABLE,
+            FROM ACCOUNT_PAYABLE
+            WHERE 1 = 1
+              <if test="startDate != null and startDate != ''">
+                AND DUE_DATE &gt;= TO_DATE(#{startDate}, 'YYYY-MM-DD')
+              </if>
+              <if test="endDate != null and endDate != ''">
+                AND DUE_DATE &lt;= TO_DATE(#{endDate}, 'YYYY-MM-DD')
+              </if>
+            ) AS TOTAL_PAYABLE,
             (
                 (SELECT NVL(SUM(TOTAL_AMOUNT),0)
-                 FROM SALES_INVOICE)
+                 FROM SALES_INVOICE
+                 WHERE 1 = 1
+                   <if test="startDate != null and startDate != ''">
+                    AND ISSUE_DATE &gt;= TO_DATE(#{startDate}, 'YYYY-MM-DD')
+                   </if>
+                   <if test="endDate != null and endDate != ''">
+                    AND ISSUE_DATE &lt;= TO_DATE(#{endDate}, 'YYYY-MM-DD')
+                   </if>
+                   <if test="customerId != null">
+                    AND CUSTOMER_ID = #{customerId}
+                   </if>
+                 )
                                       -
                 (SELECT NVL(SUM(TOTAL_AMOUNT),0)
-                 FROM PURCHASE_INVOICE)
+                 FROM PURCHASE_INVOICE
+                 WHERE 1 = 1
+                   <if test="startDate != null and startDate != ''">
+                    AND ISSUE_DATE &gt;= TO_DATE(#{startDate}, 'YYYY-MM-DD')
+                   </if>
+                   <if test="endDate != null and endDate != ''">
+                    AND ISSUE_DATE &lt;= TO_DATE(#{endDate}, 'YYYY-MM-DD')
+                   </if>
+                 )
             ) AS GROSS_PROFIT,
             ROUND(
                 (
                     (
                         (SELECT NVL(SUM(TOTAL_AMOUNT), 0)
-                         FROM SALES_INVOICE)
+                         FROM SALES_INVOICE
+                         WHERE 1 = 1
+                           <if test="startDate != null and startDate != ''">
+                           AND ISSUE_DATE &gt;= TO_DATE(#{startDate}, 'YYYY-MM-DD')
+                           </if>
+                           <if test="endDate != null and endDate != ''">
+                           AND ISSUE_DATE &lt;= TO_DATE(#{endDate}, 'YYYY-MM-DD')
+                           </if>
+                           <if test="customerId != null">
+                           AND CUSTOMER_ID = #{customerId}
+                           </if>
+                         )
                             -
                         (SELECT NVL(SUM(TOTAL_AMOUNT), 0)
-                         FROM PURCHASE_INVOICE)
-                    )
-                    /
-                    NULLIF(
+                         FROM PURCHASE_INVOICE
+                         WHERE 1 = 1
+                           <if test="startDate != null and startDate != ''">
+                            AND ISSUE_DATE &gt;= TO_DATE(#{startDate}, 'YYYY-MM-DD')
+                           </if>
+                           <if test="endDate != null and endDate != ''">
+                            AND ISSUE_DATE &lt;= TO_DATE(#{endDate}, 'YYYY-MM-DD')
+                           </if>
+                         )
+                        )
+                        /
+                        NULLIF(
                             (SELECT NVL(SUM(TOTAL_AMOUNT),0)
-                            FROM SALES_INVOICE),
-                            0
-                    )
-            ) * 100,
-            2
+                             FROM SALES_INVOICE
+                             WHERE 1 = 1
+                               <if test="startDate != null and startDate != ''">
+                                AND ISSUE_DATE &gt;= TO_DATE(#{startDate}, 'YYYY-MM-DD')
+                               </if>
+                               <if test="endDate != null and endDate != ''">
+                                AND ISSUE_DATE &lt;= TO_DATE(#{endDate}, 'YYYY-MM-DD')
+                               </if>
+                               <if test="customerId != null">
+                                AND CUSTOMER_ID = #{customerId}
+                             </if>
+                             ),
+                             0
+                        )
+                ) * 100,
+                2
             ) AS PROFIT_RATE
         FROM DUAL
+    </select>
+
+    <!-- 미수금 잔액 조회 -->
+    <select id="findRemainAmountByArId"
+            parameterType="int"
+            resultType="java.math.BigDecimal">
+        SELECT REMAIN_AMOUNT
+        FROM ACCOUNT_RECEIVABLE
+        WHERE AR_ID = #{arId}
     </select>
 </mapper>
