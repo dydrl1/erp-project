@@ -14,6 +14,8 @@ public class EmployeeCreateRequestDto {
     private String phone; //직원연락처
     private String email; //직원이메일
     private Long deptId; //직원부서
+    private String deptCode;
+    private String deptName;
     private String roleCode; //직원 권한부여코드
     private String status; //직원 재직여부
     private LocalDate hireDate; //입사일
