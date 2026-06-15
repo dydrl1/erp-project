@@ -1,4 +1,4 @@
-package com.erp.backend.sales.Util;
+package com.erp.backend.sales.util;
 
 public enum OrderStatus {
     REQUESTED,
