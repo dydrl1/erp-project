@@ -1,8 +1,11 @@
 package com.erp.backend.sales.controller;
 
 
+import com.erp.backend.common.ApiResponse;
+import com.erp.backend.sales.dto.SalesOrderListResponseDTO;
 import com.erp.backend.sales.dto.SalesOrderRequestDTO;
 import com.erp.backend.sales.service.SalesOrderService;
+import com.erp.backend.sales.util.OrderStatus;
 import com.erp.backend.sales.vo.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -20,6 +23,12 @@ public class SalesOrderController {
     @Autowired
     public SalesOrderController(SalesOrderService salesOrderService){
         this.salesOrderService = salesOrderService;
+    }
+
+    @GetMapping
+    public ResponseEntity<ApiResponse<List<SalesOrderListResponseDTO>>> findAllSalesOrders(@RequestParam(required = false) String status){
+        List<SalesOrderListResponseDTO> orders = salesOrderService.findAllSalesOrders(status);
+        return ResponseEntity.ok(ApiResponse.success(orders.size()+"의건이 조회되었습니다.",orders));
     }
 
     @GetMapping("/productLots")
@@ -40,13 +49,7 @@ public class SalesOrderController {
         return ResponseEntity.ok(orders);
     }
 
-    @GetMapping("/status")
-    public ResponseEntity<List<SalesOrderVO>> findAllOrderStatus(){
-        List<SalesOrderVO> orders = salesOrderService.findAllOrderStatusList();
-        return ResponseEntity.ok(orders);
-    }
-
-    @GetMapping("/{salesOrderId}/header")
+    @GetMapping("/{salesOrderId}")
     public ResponseEntity<SalesOrderVO> findSimpleOrderHeader(@PathVariable Integer salesOrderId){
         SalesOrderVO order = salesOrderService.findSalesOrderHeaderById(salesOrderId);
         return ResponseEntity.ok(order);

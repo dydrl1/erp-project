@@ -2,6 +2,7 @@ package com.erp.backend.sales.service;
 
 import com.erp.backend.common.CustomException;
 import com.erp.backend.common.ErrorCode;
+import com.erp.backend.sales.dto.SalesOrderListResponseDTO;
 import com.erp.backend.sales.util.OrderStatus;
 import com.erp.backend.sales.dto.SalesOrderRequestDTO;
 import com.erp.backend.sales.mapper.SalesOrderMapper;
@@ -12,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 
@@ -20,6 +22,26 @@ import java.util.List;
 public class SalesOrderService {
 
     private final SalesOrderMapper salesOrderMapper;
+    public List<SalesOrderListResponseDTO> findAllSalesOrders(String status){
+        List<SalesOrderVO> salesOrderList = salesOrderMapper.findAllSalesOrders(status);
+        List<SalesOrderListResponseDTO> list = new ArrayList<>();
+        for(SalesOrderVO salesOrderVO:salesOrderList) {
+            SalesOrderListResponseDTO salesOrderListResponseDTO = new SalesOrderListResponseDTO();
+            salesOrderListResponseDTO.setSo_id(salesOrderVO.getSoId());
+            salesOrderListResponseDTO.setCustomer_name(salesOrderVO.getCustomerName());
+            salesOrderListResponseDTO.setReq_employee_name(salesOrderVO.getReqEmployeeName());
+            salesOrderListResponseDTO.setApp_employee_name(salesOrderVO.getAppEmployeeName());
+            salesOrderListResponseDTO.setOrder_date(salesOrderVO.getOrderDate());
+            salesOrderListResponseDTO.setStatus(salesOrderVO.getStatus());
+            salesOrderListResponseDTO.setApprove_date(salesOrderVO.getApproveDate());
+            salesOrderListResponseDTO.setTotal_amount(salesOrderVO.getTotalAmount());
+            salesOrderListResponseDTO.setMemo(salesOrderVO.getMemo());
+            salesOrderListResponseDTO.setCreated_at(salesOrderVO.getCreatedAt());
+            salesOrderListResponseDTO.setUpdated_at(salesOrderVO.getUpdatedAt());
+            list.add(salesOrderListResponseDTO);
+        }
+        return list;
+    }
     public List<ProductVO> findProductLotsByProductId(int productId){
         return salesOrderMapper.findProductLotsById(productId);
     }
@@ -56,7 +78,6 @@ public class SalesOrderService {
         if(productVO==null){
             throw new CustomException(ErrorCode.NOT_FOUND);
         }
-//        BigDecimal requestedAmount = productVO.getStandardSalesPrice().multiply(BigDecimal.valueOf(requestDTO.getOrderQty()));
         salesOrderVO.setTotalAmount(requestDTO.getAmount());
         salesOrderVO.setOrderDate(LocalDateTime.now());
         salesOrderVO.setStatus(OrderStatus.REQUESTED.name());

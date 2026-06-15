@@ -97,6 +97,27 @@
         FROM
             sales_order so
     </select>
+    <select id="findAllSalesOrders" resultType="SalesOrderVO">
+    select
+        sales_order_id as so_id,
+        customer_name,
+        request_employee_name as req_employee_name,
+        approve_employee_name as app_employee_name,
+        order_date,
+        status,
+        approve_date as approve_date,
+        total_amount,
+        memo,
+        created_at,
+        updated_at
+    from
+        VW_SALES_ORDER_LIST
+    <where>
+        <if test="status != null and status != ''">
+            status = UPPER(#{status})
+        </if>
+    </where>
+    </select>
     <select id="findOrderHeaderById" resultType="SalesOrderVO" parameterType="int">
         select
             so.so_id,
