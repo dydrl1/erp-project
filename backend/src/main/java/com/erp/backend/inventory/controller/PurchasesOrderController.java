@@ -51,6 +51,23 @@ public class PurchasesOrderController {
         );
     }
 
+    @Operation(summary = "발주 목록 조회 (페이징)")
+    @GetMapping("/paging")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getPurchaseOrdersPaging(
+            @RequestParam(required = false) String status,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return ResponseEntity.ok(
+                ApiResponse.success(purchaseOrderService.getPurchaseOrdersPaging(status, page, size)));
+    }
+
+    @Operation(summary = "상태별 발주 개수")
+    @GetMapping("/status-counts")
+    public ResponseEntity<ApiResponse<Map<String, Integer>>> getStatusCounts() {
+        return ResponseEntity.ok(
+                ApiResponse.success(purchaseOrderService.getStatusCounts()));
+    }
+
     @Operation(summary = "발주 상세 조회")
     @GetMapping("/{poId}")
     public ResponseEntity<ApiResponse<PurchaseOrderResponseDto>> getPurchaseOrder(

@@ -17,6 +17,11 @@ public interface PurchaseOrderMapper {
     // 발주 목록 조회
     List<Map<String, Object>> findAllPurchaseOrders(Map<String, Object> params);
 
+    // 발주 목록 페이징 처리
+    List<Map<String, Object>> findPurchaseOrdersPaging(Map<String, Object> params);
+    int countPurchaseOrders(Map<String, Object> params);
+    List<Map<String, Object>> countByStatus();
+
     // 발주 상세조회
     PurchaseOrderResponseDto findPurchaseOrderById(Long id);
     List<PurchaseOrderDetailResponseDto> findPurchaseOrderDetails(Long poId);

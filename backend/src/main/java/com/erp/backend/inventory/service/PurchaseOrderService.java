@@ -5,29 +5,64 @@ import com.erp.backend.common.ErrorCode;
 import com.erp.backend.inventory.dto.*;
 import com.erp.backend.inventory.mapper.PurchaseOrderMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class PurchaseOrderService {
 
     private final PurchaseOrderMapper purchaseOrderMapper;
+    private final RedisTemplate<String, Object> redisTemplate;
 
-    // 공급처 목록 조회
-    public List<Map<String, Object>> getSuppliers(){
-        return purchaseOrderMapper.findAllSuppliers();
+    private static final String SUPPLIERS_KEY = "suppliers:active";
+    private static final String PRODUCTS_KEY = "products:active";
+
+    // 공급처 목록 조회 (캐싱)
+    @SuppressWarnings("unchecked")
+    public List<Map<String, Object>> getSuppliers() {
+        // 1. Redis에서 먼저 조회
+        Object cached = redisTemplate.opsForValue().get(SUPPLIERS_KEY);
+        if (cached != null) {
+            log.info("공급처 목록 - 캐시 HIT");
+            return (List<Map<String, Object>>) cached;
+        }
+
+        // 2. 캐시 없으면 DB 조회
+        log.info("공급처 목록 - 캐시 MISS, DB 조회");
+        List<Map<String, Object>> suppliers = purchaseOrderMapper.findAllSuppliers();
+
+        // 3. Redis에 저장 (10분 유효)
+        redisTemplate.opsForValue().set(SUPPLIERS_KEY, suppliers, Duration.ofMinutes(10));
+        return suppliers;
     }
 
-    // 의약품 목록 조회
-    public List<Map<String, Object>> getProducts(){
-        return purchaseOrderMapper.findAllProducts();
+
+    // 의약품 목록 조회 (캐싱)
+    @SuppressWarnings("unchecked")
+    public List<Map<String, Object>> getProducts() {
+        Object cached = redisTemplate.opsForValue().get(PRODUCTS_KEY);
+        if (cached != null) {
+            log.info("의약품 목록 - 캐시 HIT");
+            return (List<Map<String, Object>>) cached;
+        }
+
+        log.info("의약품 목록 - 캐시 MISS, DB 조회");
+        List<Map<String, Object>> products = purchaseOrderMapper.findAllProducts();
+
+        redisTemplate.opsForValue().set(PRODUCTS_KEY, products, Duration.ofMinutes(10));
+        return products;
     }
+
 
     // 발주 목록 조회
     public List<Map<String, Object>> getPurchaseOrders(String status, Long supplierId){
@@ -35,6 +70,39 @@ public class PurchaseOrderService {
         params.put("status", status);
         params.put("supplierId", supplierId);
         return purchaseOrderMapper.findAllPurchaseOrders(params);
+    }
+
+    // 발주 목록 (페이징)
+    public Map<String, Object> getPurchaseOrdersPaging(String status, int page, int size) {
+        int startRow = (page - 1) * size + 1;
+        int endRow = page * size;
+
+        Map<String, Object> params = new HashMap<>();
+        params.put("status", status);
+        params.put("startRow", startRow);
+        params.put("endRow", endRow);
+
+        List<Map<String, Object>> list = purchaseOrderMapper.findPurchaseOrdersPaging(params);
+        int total = purchaseOrderMapper.countPurchaseOrders(params);
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("list", list);
+        result.put("total", total);
+        result.put("page", page);
+        result.put("size", size);
+        result.put("totalPages", (int) Math.ceil((double) total / size));
+        return result;
+    }
+
+    // 상태별 개수 (탭 뱃지)
+    public Map<String, Integer> getStatusCounts() {
+        List<Map<String, Object>> counts = purchaseOrderMapper.countByStatus();
+        Map<String, Integer> result = new HashMap<>();
+        for (Map<String, Object> row : counts) {
+            result.put((String) row.get("status"),
+                    ((Number) row.get("count")).intValue());
+        }
+        return result;
     }
 
     // 발주 상세 조회
@@ -52,60 +120,89 @@ public class PurchaseOrderService {
     }
 
 
-    // 발주 등록
+    // 발주 등록 (분산 락 적용)
     @Transactional
-    public void createPurchaseOrder(PurchaseOrderRequestDto requestDto, Long requestEmpId){
+    public Long createPurchaseOrder(PurchaseOrderRequestDto requestDto, Long requestEmpId) {
 
-        // 공급처 유효성 검사
-        Map<String, Object> supplier = purchaseOrderMapper.findSupplierById(requestDto.getSupplierId());
-        if (supplier == null){
-            throw new CustomException(ErrorCode.SUPPLIER_NOT_FOUND);
-        }
+        // 분산 락 키 (같은 직원이 같은 공급처에 동시 발주 방지)
+        String lockKey = "lock:po:" + requestDto.getSupplierId() + ":" + requestEmpId;
 
-        // 중복 발주 방지
-        int count = purchaseOrderMapper.countRequestedPo(requestDto.getSupplierId());
-        if (count > 0){
+        // 락 획득 시도 (3초 유효)
+        Boolean locked = redisTemplate.opsForValue()
+                .setIfAbsent(lockKey, "locked", Duration.ofSeconds(3));
+
+        if (Boolean.FALSE.equals(locked)) {
             throw new CustomException(ErrorCode.DUPLICATE_ORDER);
         }
 
-        // 의약품 유효성 검사
-        for (PurchaseOrderDetailDto detail : requestDto.getDetails()){
-            Map<String, Object> product = purchaseOrderMapper.findProductById(detail.getProductId());
-            if  (product == null){
-                throw new CustomException(ErrorCode.PRODUCT_NOT_FOUND);
+        try {
+            // 1. 공급처 유효성 검사
+            Map<String, Object> supplier = purchaseOrderMapper.findSupplierById(requestDto.getSupplierId());
+            if (supplier == null) {
+                throw new CustomException(ErrorCode.SUPPLIER_NOT_FOUND);
             }
+
+            // 2. 중복 발주 방지
+            int count = purchaseOrderMapper.countRequestedPo(requestDto.getSupplierId());
+            if (count > 0) {
+                throw new CustomException(ErrorCode.DUPLICATE_ORDER);
+            }
+
+            // 3. 의약품 유효성 검사
+            for (PurchaseOrderDetailDto detail : requestDto.getDetails()) {
+                Map<String, Object> product = purchaseOrderMapper.findProductById(detail.getProductId());
+                if (product == null) {
+                    throw new CustomException(ErrorCode.PRODUCT_NOT_FOUND);
+                }
+            }
+
+            // 4. 총금액 계산
+            java.math.BigDecimal totalAmount = requestDto.getDetails().stream()
+                    .map(d -> d.getUnitPrice().multiply(java.math.BigDecimal.valueOf(d.getOrderQty())))
+                    .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
+
+            // 5. 발주 헤더 INSERT
+            Map<String, Object> poParams = new HashMap<>();
+            poParams.put("supplierId", requestDto.getSupplierId());
+            poParams.put("requestEmpId", requestEmpId);
+            poParams.put("totalAmount", totalAmount);
+            poParams.put("memo", requestDto.getMemo());
+            purchaseOrderMapper.insertPurchaseOrder(poParams);
+
+            // 6. PO_ID 조회
+            Long poId = purchaseOrderMapper.getCurrentPoId();
+
+            // 7. 발주 상세 INSERT
+            for (PurchaseOrderDetailDto detail : requestDto.getDetails()) {
+                java.math.BigDecimal amount = detail.getUnitPrice()
+                        .multiply(java.math.BigDecimal.valueOf(detail.getOrderQty()));
+
+                Map<String, Object> detailParams = new HashMap<>();
+                detailParams.put("poId", poId);
+                detailParams.put("productId", detail.getProductId());
+                detailParams.put("orderQty", detail.getOrderQty());
+                detailParams.put("unitPrice", detail.getUnitPrice());
+                detailParams.put("amount", amount);
+                purchaseOrderMapper.insertPurchaseOrderDetail(detailParams);
+            }
+
+            return poId;
+
+        } finally {
+            // 락 해제
+            redisTemplate.delete(lockKey);
         }
+    }
 
-        // 총 금액 계산
-        BigDecimal totalAmount = requestDto.getDetails().stream()
-                .map(d -> d.getUnitPrice()
-                        .multiply(BigDecimal.valueOf(d.getOrderQty())))
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    // 캐시 무효화 (의약품·공급처 수정 시 호출)
+    public void evictSuppliersCache() {
+        redisTemplate.delete(SUPPLIERS_KEY);
+        log.info("공급처 캐시 무효화");
+    }
 
-        // 발주 헤더 INSERT
-        Map<String,Object> poParams = new HashMap<>();
-        poParams.put("supplierId", requestDto.getSupplierId());
-        poParams.put("requestEmpId", requestEmpId);
-        poParams.put("totalAmount", totalAmount);
-        poParams.put("memo", requestDto.getMemo());
-        purchaseOrderMapper.insertPurchaseOrder(poParams);
-
-        // 방금 생선된 PO_ID 조회
-        Long poId = purchaseOrderMapper.getCurrentPoId();
-
-        // 발주 상세 INSERT (품목별 반복)
-        for (PurchaseOrderDetailDto detail : requestDto.getDetails()) {
-            BigDecimal amount = detail.getUnitPrice()
-                    .multiply(BigDecimal.valueOf(detail.getOrderQty()));
-
-            Map<String,Object> detailParams = new HashMap<>();
-            detailParams.put("poId", poId);
-            detailParams.put("productId", detail.getProductId());
-            detailParams.put("orderQty", detail.getOrderQty());
-            detailParams.put("unitPrice", detail.getUnitPrice());
-            detailParams.put("amount", amount);
-            purchaseOrderMapper.insertPurchaseOrderDetail(detailParams);
-        }
+    public void evictProductsCache() {
+        redisTemplate.delete(PRODUCTS_KEY);
+        log.info("의약품 캐시 무효화");
     }
 
     // 발주 승인
