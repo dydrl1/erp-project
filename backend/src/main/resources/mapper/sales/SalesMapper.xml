@@ -465,4 +465,50 @@
         FROM ACCOUNT_RECEIVABLE
         WHERE AR_ID = #{arId}
     </select>
+
+    <!-- 기간별 매출 차트 조회 -->
+    <select id="getSalesChart"
+            parameterType="map"
+            resultType="com.erp.backend.sales.vo.SalesChartVO">
+        SELECT
+        TO_CHAR(ISSUE_DATE, 'YYYY-MM') AS PERIOD,
+        NVL(SUM(TOTAL_AMOUNT), 0) AS SALES_AMOUNT
+        FROM SALES_INVOICE
+        WHERE 1 = 1
+        <if test="startDate != null and startDate != ''">
+            AND ISSUE_DATE &gt;= TO_DATE(#{startDate}, 'YYYY-MM-DD')
+        </if>
+        <if test="endDate != null and endDate != ''">
+            AND ISSUE_DATE &lt;= TO_DATE(#{endDate}, 'YYYY-MM-DD')
+        </if>
+        <if test="customerId != null">
+            AND CUSTOMER_ID = #{customerId}
+        </if>
+        GROUP BY TO_CHAR(ISSUE_DATE, 'YYYY-MM')
+        ORDER BY PERIOD
+    </select>
+
+    <!-- 거래처별 매출 TOP 5 조회 -->
+    <select id="getCustomerTop5"
+            parameterType="map"
+            resultType="com.erp.backend.sales.vo.SalesChartVO">
+        SELECT
+        NULL AS PERIOD,
+        CUSTOMER_ID,
+        NULL AS CUSTOMER_NAME,
+        SUM(TOTAL_AMOUNT) AS SALES_AMOUNT
+        FROM SALES_INVOICE
+        WHERE 1 = 1
+        <if test="startDate != null and startDate != ''">
+            AND ISSUE_DATE &gt;= TO_DATE(#{startDate}, 'YYYY-MM-DD')
+        </if>
+        <if test="endDate != null and endDate != ''">
+            AND ISSUE_DATE &lt;= TO_DATE(#{endDate}, 'YYYY-MM-DD')
+        </if>
+        GROUP BY CUSTOMER_ID
+        ORDER BY SALES_AMOUNT DESC
+        FETCH FIRST 5 ROWS ONLY
+    </select>
+
+    <!-- TODO: 주문상세/상품 테이블 연동 후 품목별 매출 TOP 5 조회 구현 -->
 </mapper>

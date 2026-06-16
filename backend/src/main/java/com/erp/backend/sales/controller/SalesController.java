@@ -178,4 +178,40 @@ public class SalesController {
         );
     }
 
+    @Operation(summary = "기간별 매출 차트 조회")
+    @GetMapping("/dashboard/sales-chart")
+    public ResponseEntity<ApiResponse<List<SalesChartVO>>> getSalesChart(
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate,
+            @RequestParam(required = false) Integer customerId,
+            @RequestParam(required = false) Integer itemId) {
+        List<SalesChartVO> salesChart = salesService.getSalesChart(startDate, endDate, customerId, itemId);
+        return ResponseEntity.ok(
+                ApiResponse.success(salesChart)
+        );
+    }
+
+    @Operation(summary = "거래처별 매출 TOP 5 조회")
+    @GetMapping("/dashboard/customer-top5")
+    public ResponseEntity<ApiResponse<List<SalesChartVO>>> getCustomerTop5(
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate) {
+        List<SalesChartVO> customerTop5 = salesService.getCustomerTop5(startDate, endDate);
+        return ResponseEntity.ok(
+                ApiResponse.success(customerTop5)
+        );
+    }
+
+    @Operation(summary = "품목별 매출 TOP 5 조회")
+    @GetMapping("/dashboard/product-top5")
+    public ResponseEntity<ApiResponse<List<SalesChartVO>>> getProductTop5(
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate) {
+        List<SalesChartVO> productTop5 = salesService.getProductTop5(startDate, endDate);
+
+        return ResponseEntity.ok(
+                ApiResponse.success(productTop5)
+        );
+    }
+
 }

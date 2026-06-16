@@ -202,4 +202,32 @@ public class SalesService {
         return salesMapper.getDashboardSummary(params);
     }
 
+    // 대시보드 차트
+    public List<SalesChartVO> getSalesChart(
+            String startDate,
+            String endDate,
+            Integer customerId,
+            Integer itemId) {
+        Map<String, Object> params = new HashMap<>();
+        params.put("startDate", startDate);
+        params.put("endDate", endDate);
+        params.put("customerId", customerId);
+        params.put("itemId", itemId);
+
+        return salesMapper.getSalesChart(params);
+    }
+
+    // 거래처별 매출 TOP 5 조회
+    public List<SalesChartVO> getCustomerTop5(String startDate, String endDate) {
+        Map<String, Object> params = new HashMap<>();
+        params.put("startDate", startDate);
+        params.put("endDate", endDate);
+        return salesMapper.getCustomerTop5(params);
+    }
+
+    // 품목별 매출 TOP5 조회
+    public List<SalesChartVO> getProductTop5(String startDate, String endDate) {
+        // TODO: 주문상세/상품 테이블 연동 후 구현
+        return List.of();
+    }
 }

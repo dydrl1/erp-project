@@ -82,4 +82,13 @@ public interface SalesMapper {
 
     // 미수금 잔액 조회
     BigDecimal findRemainAmountByArId(Integer arId);
+
+    // 대시보드 차트
+    List<SalesChartVO> getSalesChart(Map<String, Object> params);
+
+    // 거래처별 매출 TOP5
+    List<SalesChartVO> getCustomerTop5(Map<String, Object> params);
+
+    // 품목별 매출 TOP5
+    List<SalesChartVO> getProductTop5(Map<String, Object> params);
 }
