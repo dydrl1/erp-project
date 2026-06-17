@@ -30,8 +30,8 @@ public enum ErrorCode {
     SALES_APPROVE_FAILED(HttpStatus.BAD_REQUEST,"승인이 되지 않았습니다"),
     SALES_LOT_ALLOCATE_FAILED(HttpStatus.CONFLICT,"로트번호 배정 작업이 실패했습니다"),
 
-    SHIPMENT_ALREADY_EXISTS(HttpStatus.CONFLICT,"이미 배정된 배송이 있습니다.");
-
+    SHIPMENT_ALREADY_EXISTS(HttpStatus.CONFLICT,"이미 배정된 배송이 있습니다."),
+    SHIPMENT_NOT_FOUND(HttpStatus.NOT_FOUND,"배송중인 주문이 없습니다.");
     private final HttpStatus status;
     private final String message;
 
