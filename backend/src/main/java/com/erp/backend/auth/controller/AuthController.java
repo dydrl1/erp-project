@@ -1,5 +1,6 @@
 package com.erp.backend.auth.controller;
 
+import com.erp.backend.auth.dto.ChangePasswordRequestDto;
 import com.erp.backend.auth.dto.LoginRequestDto;
 import com.erp.backend.auth.dto.LoginResponseDto;
 import com.erp.backend.auth.dto.RefreshTokenRequestDto;
@@ -12,6 +13,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "인증", description = "로그인·토큰 관련 API")
@@ -50,5 +52,15 @@ public class AuthController {
     public ResponseEntity<ApiResponse<Void>> logout(@Valid @RequestBody RefreshTokenRequestDto dto) {
         authService.logout(dto.getRefreshToken());
         return ResponseEntity.ok(ApiResponse.success("로그아웃 성공", null));
+    }
+
+    @Operation(summary = "비밀번호 변경")
+    @PatchMapping("/password")
+    public
+    ResponseEntity<ApiResponse<Void>> changePassword(
+            @AuthenticationPrincipal Long empId,
+            @Valid @RequestBody ChangePasswordRequestDto dto) {
+        authService.changePassword(empId, dto);
+        return ResponseEntity.ok(ApiResponse.success("비밀번호 변경 성공", null));
     }
 }

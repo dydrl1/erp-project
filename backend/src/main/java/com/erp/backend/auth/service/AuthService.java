@@ -1,5 +1,6 @@
 package com.erp.backend.auth.service;
 
+import com.erp.backend.auth.dto.ChangePasswordRequestDto;
 import com.erp.backend.auth.dto.LoginRequestDto;
 import com.erp.backend.auth.dto.LoginResponseDto;
 import com.erp.backend.auth.dto.SignupRequestDto;
@@ -52,6 +53,9 @@ public class AuthService {
         // 계정 상태 검증 (비밀번호 검증 후에 해야 계정 존재 여부가 노출되지 않음)
         if (EmployeeStatus.PENDING.name().equals(employee.getStatus())) {
             throw new CustomException(ErrorCode.ACCOUNT_PENDING);
+        }
+        if (EmployeeStatus.INACTIVE.name().equals(employee.getStatus())) {
+            throw new CustomException(ErrorCode.ACCOUNT_INACTIVE);
         }
         if (!EmployeeStatus.ACTIVE.name().equals(employee.getStatus())) {
             throw new CustomException(ErrorCode.ACCOUNT_REJECTED);
@@ -138,7 +142,33 @@ public class AuthService {
 
     }
 
-    // 5. 응답 DTO 빌더
+    // 5. 비밀번호 변경
+    @Transactional
+    public void changePassword(Long empId, ChangePasswordRequestDto dto) {
+        EmployeeVO employee = authMapper.findEmployeeByEmpId(empId);
+        if (employee == null) {
+            throw new CustomException(ErrorCode.EMPLOYEE_NOT_FOUND);
+        }
+
+        // 1) 현재 비밀번호 확인
+        if (!passwordEncoder.matches(dto.getCurrentPassword(), employee.getPassword())) {
+            throw new CustomException(ErrorCode.PASSWORD_MISMATCH);
+        }
+
+        // 2) 새 비밀번호와 확인 일치 여부
+        if (!dto.getNewPassword().equals(dto.getCheckNewPassword())) {
+            throw new CustomException(ErrorCode.PASSWORD_CONFIRM_MISMATCH);
+        }
+
+        // 3) 기존 비밀번호와 동일한지 확인
+        if (passwordEncoder.matches(dto.getNewPassword(), employee.getPassword())) {
+            throw new CustomException(ErrorCode.SAME_AS_CURRENT_PASSWORD);
+        }
+
+        authMapper.updatePassword(empId, passwordEncoder.encode(dto.getNewPassword()));
+    }
+
+    // 6. 응답 DTO 빌더
     private LoginResponseDto buildResponse(EmployeeVO employee, String accessToken, String refreshToken) {
         return LoginResponseDto.builder()
                 .accessToken(accessToken)

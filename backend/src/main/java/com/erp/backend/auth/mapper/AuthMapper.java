@@ -15,4 +15,6 @@ public interface AuthMapper {
     boolean existsEmployeeByLoginId(String loginId);
     // 관리자(MANAGER)의 직원 등록
     void insertEmployee(@Param("dto") SignupRequestDto dto, @Param("encodedPassword") String encodedPassword);
+
+    int updatePassword(@Param("empId") Long empId, @Param("encodedPassword") String encodedPassword);
 }

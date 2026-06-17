@@ -32,6 +32,8 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+                        // 비밀번호 변경은 로그인 상태에서만 허용 (permitAll 보다 먼저 선언)
+                        .requestMatchers(HttpMethod.PATCH, "/api/auth/password").authenticated()
                         // 로그인·토큰 재발급은 인증 없이 허용
                         .requestMatchers("/api/auth/**").permitAll()
                         // Swagger 허용

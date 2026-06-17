@@ -34,4 +34,11 @@
         FROM EMPLOYEE
         WHERE LOGIN_ID = #{loginId}
     </select>
+    <!-- 비밀번호 변경 -->
+    <update id="updatePassword">
+        UPDATE EMPLOYEE
+        SET PASSWORD = #{encodedPassword},
+            UPDATED_AT = SYSDATE
+        WHERE EMP_ID = #{empId}
+    </update>
 </mapper>
