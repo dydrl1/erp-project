@@ -1,8 +1,6 @@
 package com.erp.backend.sales.mapper;
-import com.erp.backend.sales.util.OrderStatus;
 import com.erp.backend.sales.vo.*;
 import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Param;
 import java.util.List;
 
 @Mapper
