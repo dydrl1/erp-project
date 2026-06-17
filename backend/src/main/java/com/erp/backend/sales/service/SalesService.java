@@ -227,7 +227,9 @@ public class SalesService {
 
     // 품목별 매출 TOP5 조회
     public List<SalesChartVO> getProductTop5(String startDate, String endDate) {
-        // TODO: 주문상세/상품 테이블 연동 후 구현
-        return List.of();
+        Map<String, Object> params = new HashMap<>();
+        params.put("startDate", startDate);
+        params.put("endDate", endDate);
+        return salesMapper.getProductTop5(params);
     }
 }
