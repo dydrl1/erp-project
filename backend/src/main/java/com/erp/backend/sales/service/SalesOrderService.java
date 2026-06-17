@@ -101,15 +101,18 @@ public class SalesOrderService {
         if (detailResult != 1){
             throw new CustomException(ErrorCode.SALES_ORDER_FAILED);
         }
-        //실패시 로직 추가 필요
         return orderId;
     }
 
     @Transactional
     public SalesOrderVO approveRequest(SalesOrderVO salesOrderVO){
+        int exists = existsRequestedOrderDetail(salesOrderVO.getSoId());
+        if(exists != 1){
+            throw new CustomException(ErrorCode.SALES_APPROVE_FAILED);
+        }
         SalesOrderAmountCheckVO salesOrderAmountCheckVO;
         salesOrderAmountCheckVO=verifyAmount(salesOrderVO.getSoId());
-        if(!salesOrderAmountCheckVO.amountMatched()){
+        if(salesOrderAmountCheckVO == null || !salesOrderAmountCheckVO.amountMatched()){
             throw new CustomException(ErrorCode.SALES_NOT_AMOUNT_MATCHED);
         }
         salesOrderVO.setStatus(OrderStatus.APPROVED.name());
@@ -124,8 +127,8 @@ public class SalesOrderService {
         return salesOrderMapper.verifySalesOrderTotal(salesId);
     }
 
-    public void existsRequestedOrderDetail(int salesOrderId){
-        System.out.println(salesOrderMapper.existsRequestedOrderWithDetail(salesOrderId));
+    public int existsRequestedOrderDetail(int salesOrderId){
+        return salesOrderMapper.existsRequestedOrderWithDetail(salesOrderId);
     }
 
 }
