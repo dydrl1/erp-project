@@ -39,12 +39,14 @@
             inventory_lot il
         WHERE
             il.inventory_lot_id=#{inventoryLotId}
+        AND
+            il.current_qty>=#{quantity}
     </insert>
     <update id="decreaseInventory" parameterType="StockMovementVO">
         UPDATE inventory_lot
         SET
             current_qty = current_qty-#{quantity},
-            last_modified_at=#{updateAt},
+            last_modified_at=SYSTIMESTAMP,
             status= CASE
                 WHEN current_qty - #{quantity} &lt;=0 THEN 'SOLD_OUT'
                 ELSE status
