@@ -59,9 +59,10 @@ public class AuthService {
 
         Long empId = employee.getEmpId();
         String role = employee.getRoleCode();
+        String deptCode = employee.getDeptCode();
 
         // 토큰 생성
-        String accessToken = jwtTokenProvider.generateAccessToken(empId, role);
+        String accessToken = jwtTokenProvider.generateAccessToken(empId, deptCode, role);
         String refreshToken = jwtTokenProvider.generateRefreshToken(empId);
 
         // Refresh Token DB 저장
@@ -103,7 +104,8 @@ public class AuthService {
         }
 
         String role = employee.getRoleCode();
-        String newAccessToken = jwtTokenProvider.generateAccessToken(empId, role);
+        String deptCode = employee.getDeptCode();
+        String newAccessToken = jwtTokenProvider.generateAccessToken(empId, deptCode, role);
         String newRefreshToken = jwtTokenProvider.generateRefreshToken(empId);
 
         refreshTokenMapper.saveRefreshToken(

@@ -16,6 +16,7 @@ public class EmployeeVO {
     private String phone;
     private String email;
     private Long deptId;
+    private String deptCode;
     private String roleCode;
     private String status;
     private LocalDate hireDate;

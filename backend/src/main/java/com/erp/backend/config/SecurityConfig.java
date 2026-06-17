@@ -6,6 +6,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
+import org.springframework.security.access.hierarchicalroles.RoleHierarchyImpl;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -33,7 +35,7 @@ public class SecurityConfig {
                         // 로그인·토큰 재발급은 인증 없이 허용
                         .requestMatchers("/api/auth/**").permitAll()
                         // Swagger 허용
-                        .requestMatchers("/swagger-ui/**", "swagger-ui.html", "/api-docs/**").permitAll()
+                        .requestMatchers("/swagger-ui/**", "/api-docs/**").permitAll()
                         // 부서 조회는 회원가입 폼에서 필요하므로 인증 없이 허용
                         .requestMatchers(HttpMethod.GET, "/api/departments/**").permitAll()
                         // ADMIN, MANAGER 전용
@@ -49,5 +51,10 @@ public class SecurityConfig {
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    static RoleHierarchy roleHierarchy() {
+        return RoleHierarchyImpl.fromHierarchy("ROLE_ADMIN > ROLE_MANAGER > ROLE_EMPLOYEE");
     }
 }

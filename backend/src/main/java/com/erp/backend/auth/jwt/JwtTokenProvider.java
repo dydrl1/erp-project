@@ -29,9 +29,10 @@ public class JwtTokenProvider {
     }
 
     // Access Token 생성
-    public String generateAccessToken(Long empId, String role) {
+    public String generateAccessToken(Long empId, String deptcode,String role) {
         return Jwts.builder()
                 .subject(String.valueOf(empId))
+                .claim("dept", deptcode)
                 .claim("role", role)
                 .claim("type", "access")
                 .issuedAt(new Date())
@@ -61,6 +62,9 @@ public class JwtTokenProvider {
     public String getRole(String token) {
         return getClaims(token).get("role", String.class);
     }
+
+    // 토큰에서 부서 추출
+    public String getDeptCode(String token) { return getClaims(token).get("dept", String.class) ;}
 
     // 토큰 유효성 검사
     public boolean validateToken(String token) {
