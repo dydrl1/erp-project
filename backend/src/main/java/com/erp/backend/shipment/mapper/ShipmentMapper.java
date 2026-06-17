@@ -35,7 +35,7 @@ public interface ShipmentMapper {
     //주문 출고 승인 여부 검사
     SalesOrderVO verifySalesOrderStatus(int salesOrderId);
     //출고처리가 필요한 상세목록 조회
-    List<SalesOrderDetailVO> findSalesOrderDetailsForShipment(int salesOrderId);
+    List<SalesOrderDetailVO> findApprovedSalesOrderDetails(int salesOrderId);
     //중복 출고 방지
     ShipmentVO preventDuplicatingShipment(int salesOrderId);
     //조건에 따른 출고 상세 목록 조회

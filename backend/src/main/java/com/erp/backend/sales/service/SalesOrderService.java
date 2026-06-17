@@ -2,6 +2,7 @@ package com.erp.backend.sales.service;
 
 import com.erp.backend.common.CustomException;
 import com.erp.backend.common.ErrorCode;
+import com.erp.backend.sales.dto.SalesOrderDetailRequestDTO;
 import com.erp.backend.sales.dto.SalesOrderListResponseDTO;
 import com.erp.backend.sales.util.OrderStatus;
 import com.erp.backend.sales.dto.SalesOrderRequestDTO;
@@ -77,40 +78,69 @@ public class SalesOrderService {
 
     //주문생성
     @Transactional
-    public Integer makeOrder(SalesOrderRequestDTO requestDTO){
+    public SalesOrderVO makeOrder(SalesOrderRequestDTO requestDTO){
+        if(requestDTO==null){
+            throw new CustomException(ErrorCode.NOT_FOUND);
+        }
+        if(requestDTO.getDetails() == null || requestDTO.getDetails().isEmpty()){
+            throw new CustomException(ErrorCode.SALES_ORDER_FAILED);
+        }
+
         int orderId = salesOrderMapper.currentSalesOrderSeq();
         SalesOrderVO salesOrderVO = new SalesOrderVO();
         salesOrderVO.setSoId(orderId);
         salesOrderVO.setCustomerId(requestDTO.getCustomerId());
         salesOrderVO.setReqEmployeeId(requestDTO.getEmployeeId());
-        ProductVO productVO = salesOrderMapper.findActiveProduct(requestDTO.getProductId());
-        if(productVO==null){
-            throw new CustomException(ErrorCode.NOT_FOUND);
-        }
-        salesOrderVO.setTotalAmount(requestDTO.getAmount());
         salesOrderVO.setOrderDate(LocalDateTime.now());
         salesOrderVO.setStatus(OrderStatus.REQUESTED.name());
-
-        if(requestDTO.getOrderQty() > salesOrderMapper.findAvailableQtyByProductId(productVO.getProductId())){
-            throw new CustomException(ErrorCode.SALES_NOT_AVAILABLE_STOCK);
+        salesOrderVO.setCreatedAt(LocalDateTime.now());
+        BigDecimal totalAmount = BigDecimal.ZERO;
+        List<SalesOrderDetailVO> detailList = new ArrayList<>();
+        for(SalesOrderDetailRequestDTO detailRequest:requestDTO.getDetails()){
+            if(detailRequest.getProductId()==null||detailRequest.getOrderQty()==null){
+                throw new CustomException(ErrorCode.SALES_ORDER_FAILED);
+            }
+            if(detailRequest.getOrderQty()<=0){
+                throw new CustomException(ErrorCode.SALES_ORDER_FAILED);
+            }
+            ProductVO productVO = salesOrderMapper.findActiveProduct(detailRequest.getProductId());
+            if(productVO==null){
+                throw new CustomException(ErrorCode.NOT_FOUND);
+            }
+            BigDecimal unitPrice = productVO.getStandardSalesPrice();
+            if(unitPrice==null){
+                throw new CustomException(ErrorCode.SALES_ORDER_FAILED);
+            }
+            BigDecimal detailAmount = unitPrice.multiply(BigDecimal.valueOf(detailRequest.getOrderQty()));
+            int detailId = salesOrderMapper.currentSalesOrderDetailSeq();
+            System.out.print("------------------"+detailId);
+            SalesOrderDetailVO salesOrderDetailVO = new SalesOrderDetailVO();
+            salesOrderDetailVO.setSoDetailId(detailId);
+            salesOrderDetailVO.setSoId(orderId);
+            salesOrderDetailVO.setProductId(detailRequest.getProductId());
+            salesOrderDetailVO.setOrderQty(detailRequest.getOrderQty());
+            salesOrderDetailVO.setUnitPrice(unitPrice);
+            salesOrderDetailVO.setAmount(detailAmount);
+            detailList.add(salesOrderDetailVO);
+            totalAmount = totalAmount.add(detailAmount);
         }
+        salesOrderVO.setTotalAmount(totalAmount);
         int result = salesOrderMapper.makeSalesOrder(salesOrderVO);
         if (result != 1){
             throw new CustomException(ErrorCode.SALES_ORDER_FAILED);
         }
-        int detailId = salesOrderMapper.currentSalesOrderDetailSeq();
-        SalesOrderDetailVO salesOrderDetailVO = new SalesOrderDetailVO();
-        salesOrderDetailVO.setSoDetailId(detailId);
-        salesOrderDetailVO.setSoId(orderId);
-        salesOrderDetailVO.setProductId(requestDTO.getProductId());
-        salesOrderDetailVO.setOrderQty(requestDTO.getOrderQty());
-        salesOrderDetailVO.setUnitPrice(productVO.getStandardSalesPrice());
-        salesOrderDetailVO.setAmount(productVO.getStandardSalesPrice().multiply(BigDecimal.valueOf(requestDTO.getOrderQty())));
-        int detailResult =salesOrderMapper.makeSalesOrderDetail(salesOrderDetailVO);
-        if (detailResult != 1){
+        for(SalesOrderDetailVO salesOrderDetailVO:detailList){
+            int detailResult =salesOrderMapper.makeSalesOrderDetail(salesOrderDetailVO);
+            if (detailResult != 1){
+                throw new CustomException(ErrorCode.SALES_ORDER_FAILED);
+            }
+        }
+        SalesOrderAmountCheckVO amountCheckVO = salesOrderMapper.verifySalesOrderTotal(orderId);
+        if(amountCheckVO==null || !"Y".equals(amountCheckVO.getHeaderAmountMatched())
+        || !"Y".equals(amountCheckVO.getDetailAmountMatched())){
             throw new CustomException(ErrorCode.SALES_ORDER_FAILED);
         }
-        return orderId;
+        return findSalesOrderWithDetails(orderId);
     }
 
     //승인요청

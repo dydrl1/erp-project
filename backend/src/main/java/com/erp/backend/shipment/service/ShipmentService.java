@@ -96,7 +96,7 @@ public class ShipmentService {
         if(headerInserted!=1){
             throw new CustomException(ErrorCode.NOT_FOUND);
         }
-        List<SalesOrderDetailVO> salesOrderDetails = shipmentMapper.findSalesOrderDetailsForShipment(salesOrderId);
+        List<SalesOrderDetailVO> salesOrderDetails = shipmentMapper.findApprovedSalesOrderDetails(salesOrderId);
         if(salesOrderDetails==null || salesOrderDetails.isEmpty()){
             throw new CustomException(ErrorCode.NOT_FOUND);
         }

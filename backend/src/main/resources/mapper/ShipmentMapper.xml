@@ -24,7 +24,8 @@
             after_qty,
             source_type,
             source_id,
-            created_by
+            created_by,
+            created_at
         ) SELECT
                   #{movementId},
                   il.inventory_lot_id,
@@ -34,7 +35,8 @@
                   il.current_qty-#{quantity},
                   #{sourceType},
                   #{sourceId},
-                  #{employeeId}
+                  #{employeeId},
+                  SYSTIMESTAMP
         FROM
             inventory_lot il
         WHERE

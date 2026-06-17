@@ -63,8 +63,7 @@ public class SalesOrderController {
     //주문생성
     @PostMapping
     public ResponseEntity<ApiResponse<SalesOrderVO>> makeOrder(@RequestBody SalesOrderRequestDTO requestDTO){
-        SalesOrderVO responseVO = new SalesOrderVO();
-        responseVO.setSoId(salesOrderService.makeOrder(requestDTO));
+        SalesOrderVO responseVO = salesOrderService.makeOrder(requestDTO);
         return ResponseEntity.ok(ApiResponse.success("주문이 생성되었습니다",responseVO));
     }
 
