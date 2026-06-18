@@ -25,7 +25,6 @@ import java.util.Map;
 public class PurchasesOrderController {
 
     private final PurchaseOrderService purchaseOrderService;
-    private final AuthUtil authUtil;
 
     @Operation(summary = "공급처 목록 조회")
     @GetMapping("/suppliers")
@@ -80,11 +79,10 @@ public class PurchasesOrderController {
     @PostMapping
     public ResponseEntity<ApiResponse<Void>> createPurchaseOrder(
             @Valid @RequestBody PurchaseOrderRequestDto requestDto,
-            @AuthenticationPrincipal String loginId) {
+            @AuthenticationPrincipal Long empId) {
 
-        Long empId = authUtil.getEmpId(loginId); // loginID로 empId 조회
         purchaseOrderService.createPurchaseOrder(requestDto, empId);
-        return ResponseEntity.ok(ApiResponse.success("발주가 등록되었습니다.",null));
+        return ResponseEntity.ok(ApiResponse.success("발주가 등록되었습니다.", null));
     }
 
 
@@ -92,10 +90,8 @@ public class PurchasesOrderController {
     @PutMapping("/{poId}/approve")
     public ResponseEntity<ApiResponse<Void>> approvePurchaseOrder(
             @PathVariable Long poId,
-            @AuthenticationPrincipal String loginId,
+            @AuthenticationPrincipal Long empId,        // ← Long empId 직접
             Authentication authentication) {
-
-        Long empId = authUtil.getEmpId(loginId);
 
         String roleCode = authentication.getAuthorities().stream()
                 .findFirst()
@@ -103,7 +99,7 @@ public class PurchasesOrderController {
                 .orElse("");
 
         purchaseOrderService.approvePurchaseOrder(poId, empId, roleCode);
-        return ResponseEntity.ok(ApiResponse.success("발주가 승인되었습니다.",null));
+        return ResponseEntity.ok(ApiResponse.success("발주가 승인되었습니다.", null));
     }
 
     @Operation(summary = "발주 반려 (MANAGER)")
@@ -111,16 +107,15 @@ public class PurchasesOrderController {
     public ResponseEntity<ApiResponse<Void>> rejectPurchaseOrder(
             @PathVariable Long poId,
             @Valid @RequestBody PurchaseOrderApproveRequestDto requestDto,
-            @AuthenticationPrincipal String loginId, Authentication authentication) {
-
-        Long empId = authUtil.getEmpId(loginId);
+            @AuthenticationPrincipal Long empId,        // ← Long empId 직접
+            Authentication authentication) {
 
         String roleCode = authentication.getAuthorities().stream()
                 .findFirst()
                 .map(a -> a.getAuthority().replace("ROLE_", ""))
                 .orElse("");
 
-        purchaseOrderService.rejectPurchaseOrder(poId, empId, roleCode,requestDto.getRejectReason());
-        return ResponseEntity.ok(ApiResponse.success("발주가 반려되었습니다.",null));
+        purchaseOrderService.rejectPurchaseOrder(poId, empId, roleCode, requestDto.getRejectReason());
+        return ResponseEntity.ok(ApiResponse.success("발주가 반려되었습니다.", null));
     }
 }
