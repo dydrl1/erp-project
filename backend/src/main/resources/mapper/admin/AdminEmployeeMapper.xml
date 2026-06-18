@@ -4,26 +4,26 @@
 <mapper namespace="com.erp.backend.admin.mapper.AdminEmployeeMapper">
 
     <!-- PENDING 직원 조회(등록 시) -->
-    <select id="findByStatus" parameterType="String" resultType="com.erp.backend.employee.vo.EmployeeVO">
+    <select id="findByStatus" resultType="com.erp.backend.employee.dto.EmployeeResponseDto">
         SELECT EMP_ID,
                DEPT_ID,
                EMP_NAME,
                LOGIN_ID,
-               PASSWORD,
                EMAIL,
                PHONE,
                ROLE_CODE,
                STATUS
         FROM EMPLOYEE
         WHERE ROLE_CODE = 'EMPLOYEE'
-          AND STATUS = 'PENDING'
+          AND STATUS = #{status}
 
     </select>
     <!-- 직원 STATUS 상태 변경 -->
-    <update id="updateStatus" parameterType="String">
+    <update id="updateStatus">
         UPDATE EMPLOYEE
-        SET STATUS=#{status}
-            AND UPDATED_AT=SYSDATE
+        SET STATUS=#{status}, UPDATED_AT=SYSDATE
         WHERE EMP_ID=#{empId}
+          AND ROLE_CODE = 'EMPLOYEE'
+          AND STATUS = 'PENDING'
     </update>
 </mapper>

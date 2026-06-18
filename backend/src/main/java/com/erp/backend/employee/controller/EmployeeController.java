@@ -8,6 +8,7 @@ import com.erp.backend.employee.dto.EmployeeResponseDto;
 import com.erp.backend.employee.dto.EmployeeUpdateRequestDto;
 import com.erp.backend.employee.service.EmployeeService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -42,6 +43,7 @@ public class EmployeeController {
         employeeService.updateEmployee(empId, request);
     }
 
+    @PreAuthorize("hasAuthority('DEPT_HR')")
     @DeleteMapping("/{empId}")
     public void deleteEmployee(@PathVariable Long empId) {
         employeeService.deleteEmployee(empId);

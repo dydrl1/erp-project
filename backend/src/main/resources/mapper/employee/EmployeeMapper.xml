@@ -9,7 +9,7 @@
         <selectKey keyProperty="empId"
                    resultType="long"
                    order="BEFORE">
-            SELECT EMPLOYEE_SEQ.NEXTVAL
+            SELECT EMP_SEQ.nextval
             FROM DUAL
         </selectKey>
 
@@ -21,7 +21,7 @@
         PHONE,
         EMAIL,
         DEPT_ID,
-        ROLE_CODE AS ROLE,
+        ROLE_CODE,
         STATUS,
         HIRE_DATE,
         CREATED_AT,
@@ -60,6 +60,7 @@
         FROM EMPLOYEE E
                  LEFT JOIN DEPARTMENT D
                            ON E.DEPT_ID = D.DEPT_ID
+        WHERE E.STATUS != 'INACTIVE'
         ORDER BY E.EMP_ID DESC
     </select>
 
@@ -83,6 +84,7 @@
                  LEFT JOIN DEPARTMENT D
                            ON E.DEPT_ID = D.DEPT_ID
         WHERE E.EMP_ID = #{empId}
+          AND E.STATUS != 'INACTIVE'
     </select>
 
     <update id="updateEmployee"
@@ -101,11 +103,17 @@
         WHERE EMP_ID = #{empId}
     </update>
 
-    <delete id="deleteEmployee"
+    <!-- 소프트 삭제 : 실제 행 삭제 대신 STATUS를 INACTIVE로 변경 -->
+    <!-- LOGIN_ID를 변경해 원래 아이디를 재사용 가능하게 함 (EMP_ID 접미사로 유일성 보장, VARCHAR2(50) 초과 방지) -->
+    <update id="deleteEmployee"
             parameterType="long">
-        DELETE FROM EMPLOYEE
+        UPDATE EMPLOYEE
+        SET STATUS = 'INACTIVE',
+            LOGIN_ID = SUBSTR(LOGIN_ID, 1, 30) || '_del_' || EMP_ID,
+            UPDATED_AT = SYSDATE
         WHERE EMP_ID = #{empId}
-    </delete>
+          AND STATUS != 'INACTIVE'
+    </update>
 
     <select id="countByLoginId"
             parameterType="string"
