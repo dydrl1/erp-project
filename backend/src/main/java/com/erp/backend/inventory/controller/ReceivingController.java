@@ -23,7 +23,6 @@ import java.util.Map;
 public class ReceivingController {
 
     private final ReceivingService receivingService;
-    private final AuthUtil authUtil;
 
     @Operation(summary = "입고 가능 목록 조회 (APPROVED 상태 발주)")
     @GetMapping
@@ -44,9 +43,8 @@ public class ReceivingController {
     @PostMapping
     public ResponseEntity<ApiResponse<Void>> processReceiving(
             @Valid @RequestBody ReceivingRequestDto requestDto,
-            @AuthenticationPrincipal String loginId) {
+            @AuthenticationPrincipal Long empId) {
 
-        Long empId = authUtil.getEmpId(loginId);
         receivingService.processReceiving(requestDto, empId);
         return ResponseEntity.ok(ApiResponse.success("입고 처리가 완료되었습니다.", null));
     }
