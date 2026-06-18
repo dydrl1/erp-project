@@ -60,6 +60,7 @@ public class SecurityConfig {
                         .hasAnyRole("MANAGER", "ADMIN")
                         // STORE 허용
                         .requestMatchers("/api/sales/**").permitAll()
+                        .requestMatchers("/api/settlement/**").permitAll()
                         // 나머지는 인증 필요
                         .anyRequest().authenticated())
                 .addFilterBefore(new JwtAuthFilter(jwtTokenProvider),
