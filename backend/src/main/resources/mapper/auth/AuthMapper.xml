@@ -4,23 +4,26 @@
 <mapper namespace="com.erp.backend.auth.mapper.AuthMapper">
 
     <!-- 로그인 -->
-    <select id="findEmployeeByLoginId" parameterType="String" resultType="map">
+    <select id="findEmployeeByLoginId" parameterType="String" resultType="com.erp.backend.employee.vo.EmployeeVO">
     SELECT EMP_ID,
-    DEPT_ID,
-    LOGIN_ID,
-    PASSWORD,
-    EMP_NAME,
-    ROLE_CODE,
-    STATUS
+            DEPT_ID,
+            LOGIN_ID,
+            PASSWORD,
+            EMP_NAME,
+            ROLE_CODE,
+            STATUS
     FROM EMPLOYEE
-    WHERE LOGIN_ID = #{loginId}    <!-- empNo → loginId -->
+    WHERE LOGIN_ID = #{loginId}
     AND STATUS = 'ACTIVE'
     </select>
-
-    <select id="findEmpIdByLoginId" parameterType="String" resultType="map">
-        SELECT EMP_ID, ROLE_CODE
+    <select id="findEmployeeByEmpId" parameterType="long" resultType="com.erp.backend.employee.vo.EmployeeVO">
+        SELECT  EMP_ID, DEPT_ID, LOGIN_ID, PASSWORD, EMP_NAME, ROLE_CODE, STATUS
         FROM EMPLOYEE
-        WHERE LOGIN_ID = #{loginId}
-            AND STATUS = 'ACTIVE'
+        WHERE EMP_ID = #{empId}
+            AND STATUS = 'ACITVE'
     </select>
+    <insert id="insertEmployee">
+        INSERT INTO EMPLOYEE (EMP_ID, LOGIN_ID, PASSWORD, EMP_NAME, DEPT_ID, PHONE, EMAIL, ROLE_CODE , STATUS)
+        VALUES (EMP_SEQ.NEXTVAL, #{dto.loginId}, #{encodedPassword}, #{dto.empName}, #{dto.deptId}, #{dto.phone}, #{dto.email}, 'EMPLOYEE', 'PENDING')
+    </insert>
 </mapper>

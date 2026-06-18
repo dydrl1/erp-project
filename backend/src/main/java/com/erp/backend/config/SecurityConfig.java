@@ -7,6 +7,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -23,6 +24,7 @@ import java.util.List;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
 
@@ -34,9 +36,10 @@ public class SecurityConfig {
 
                 .cors(Customizer.withDefaults())
                 .csrf(AbstractHttpConfigurer::disable)
-                .sessionManagement(session ->
-                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+                        // 회원가입(직원)은 권리자 승인 필요
+                        .requestMatchers("/api/auth/signup").hasRole("ADMIN")
                         // 로그인·토큰 재발급은 인증 없이 허용
                         .requestMatchers("/api/auth/**").permitAll()
                         // Swagger 허용
@@ -51,8 +54,7 @@ public class SecurityConfig {
                         .hasAnyRole("MANAGER", "ADMIN")
 
                         // 나머지는 인증 필요
-                        .anyRequest().authenticated()
-                )
+                        .anyRequest().authenticated())
                 .addFilterBefore(new JwtAuthFilter(jwtTokenProvider),
                         UsernamePasswordAuthenticationFilter.class);
 

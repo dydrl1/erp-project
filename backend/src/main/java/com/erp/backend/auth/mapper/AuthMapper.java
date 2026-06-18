@@ -1,12 +1,16 @@
 package com.erp.backend.auth.mapper;
 
-import com.erp.backend.auth.dto.LoginRequestDto;
+import com.erp.backend.auth.dto.SignupRequestDto;
+
+import com.erp.backend.employee.vo.EmployeeVO;
 import org.apache.ibatis.annotations.Mapper;
-import java.util.Map;
+import org.apache.ibatis.annotations.Param;
 
 @Mapper
 public interface AuthMapper {
-    Map<String, Object> findEmployeeByLoginId(String loginId);
 
-    Map<String, Object> findEmpIdByLoginId(String loginId);
+    EmployeeVO findEmployeeByLoginId(String loginId);
+    EmployeeVO findEmployeeByEmpId(Long empId);
+
+    void insertEmployee(@Param("dto") SignupRequestDto dto, @Param("encodedPassword") String encodedPassword);
 }

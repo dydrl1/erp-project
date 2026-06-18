@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
+import java.util.UUID;
 
 @Slf4j
 @Component
@@ -28,10 +29,10 @@ public class JwtTokenProvider {
     }
 
     // Access Token 생성
-    public String generateAccessToken(String loginId, String roleCode) {
+    public String generateAccessToken(Long empId, String role) {
         return Jwts.builder()
-                .subject(loginId)
-                .claim("roleCode", roleCode)
+                .subject(String.valueOf(empId))
+                .claim("role", role)
                 .claim("type", "access")
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + accessTokenExpiration))
@@ -40,9 +41,10 @@ public class JwtTokenProvider {
     }
 
     // Refresh Token 생성
-    public String generateRefreshToken(String loginId) {
+    public String generateRefreshToken(Long empId) {
         return Jwts.builder()
-                .subject(loginId)
+                .id(UUID.randomUUID().toString()) // Refresh Token 고유 ID (JWT ID)
+                .subject(String.valueOf(empId))
                 .claim("type", "refresh")
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + refreshTokenExpiration))
@@ -50,14 +52,14 @@ public class JwtTokenProvider {
                 .compact();
     }
 
-    // 토큰에서 사원번호 추출
-    public String getLoginId(String token) {
-        return getClaims(token).getSubject();
+    // 토큰에서 사원 ID(empId) 추출
+    public Long getEmpId(String token) {
+        return Long.valueOf(getClaims(token).getSubject());
     }
 
     // 토큰에서 권한 추출
-    public String getRoleCode(String token) {
-        return getClaims(token).get("roleCode", String.class);
+    public String getRole(String token) {
+        return getClaims(token).get("role", String.class);
     }
 
     // 토큰 유효성 검사
@@ -79,5 +81,15 @@ public class JwtTokenProvider {
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
+    }
+
+    // 토큰에서 JWT ID 추출
+    public String getTokenId(String token) {
+        return getClaims(token).getId();
+    }
+
+    // 토큰에서 타입 추출 -> Refresh인지 Access인지 구분하기 위함
+    public String getTokenType(String token) {
+        return getClaims(token).get("type", String.class);
     }
 }

@@ -1,6 +1,7 @@
 package com.erp.backend.common;
 
 import com.erp.backend.auth.mapper.AuthMapper;
+import com.erp.backend.employee.vo.EmployeeVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -14,10 +15,10 @@ public class AuthUtil {
 
     // loginId로 empId 조회
     public Long getEmpId(String loginId){
-        Map<String,Object> employee = authMapper.findEmpIdByLoginId(loginId);
+        EmployeeVO employee = authMapper.findEmployeeByLoginId(loginId);
         if (employee == null) {
             throw new CustomException(ErrorCode.EMPLOYEE_NOT_FOUND);
         }
-        return ((Number) employee.get("EMP_ID")).longValue();
+        return employee.getEmpId();
     }
 }

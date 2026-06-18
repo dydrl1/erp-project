@@ -79,18 +79,17 @@ chore    : 빌드, 패키지 수정
 ```
 
 **예시**
-
 ```
-feat: 사입 발주 등록 API 구현
-fix: 발주 승인 시 본인 발주 검증 오류 수정
-docs: README 팀원 담당 영역 업데이트
+feat: 직원 근태 조회 API 추가
+fix: 발주 등록 시 유효성 검사 오류 수정
+docs: README 브랜치 전략 업데이트
 ```
 
 > Jira 연동 시 `ERP-{번호} feat: 설명` 형식 사용
 
 ---
 
-## 🚀 시작하는 방법
+## 🚀 시작하는 방법 (Getting Started)
 
 ### Frontend
 
@@ -104,7 +103,6 @@ npm run dev
 > `.env.local` 에 `NEXT_PUBLIC_API_URL=http://localhost:8080` 설정 필요
 
 ### Backend
-
 ```bash
 cd backend
 ./gradlew bootRun

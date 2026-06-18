@@ -23,20 +23,25 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
-                                    HttpServletResponse response,
-                                    FilterChain filterChain) throws ServletException, IOException {
+            HttpServletResponse response,
+            FilterChain filterChain) throws ServletException, IOException {
         String token = resolveToken(request);
 
         if (StringUtils.hasText(token) && jwtTokenProvider.validateToken(token)) {
-            String loginId = jwtTokenProvider.getLoginId(token);
-            String roleCode = jwtTokenProvider.getRoleCode(token);
 
-            UsernamePasswordAuthenticationToken authentication =
-                    new UsernamePasswordAuthenticationToken(
-                            loginId,
-                            null,
-                            List.of(new SimpleGrantedAuthority("ROLE_" + roleCode))
-                    );
+            // Access Token인지 확인 (refresh token을 access token으로 사용 못하도록 타입 검증)
+            if (!"access".equals(jwtTokenProvider.getTokenType(token))) {
+                filterChain.doFilter(request, response);
+                return;
+            }
+
+            Long empId = jwtTokenProvider.getEmpId(token);
+            String role = jwtTokenProvider.getRole(token);
+
+            UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                    empId,
+                    null,
+                    List.of(new SimpleGrantedAuthority("ROLE_" + role)));
             SecurityContextHolder.getContext().setAuthentication(authentication);
         }
 
