@@ -81,7 +81,7 @@
                   #{shipmentId},
                   #{soId},
                   #{shippedEmpId},
-                  #{shipmentDate},
+                  SYSTIMESTAMP,
                   #{status},
                   <if test="memo != null and memo != ''">
                   #{memo},
@@ -292,7 +292,7 @@
             AND il.current_qty>0
             AND il.expiry_date>=SYSDATE+11
         WHERE
-            so.so_id=${soId}
+            so.so_id=#{soId}
           AND
             so.status='APPROVED'
           AND
