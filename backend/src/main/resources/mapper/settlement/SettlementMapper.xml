@@ -577,12 +577,22 @@
             NVL(SUM(SI.TOTAL_AMOUNT), 0) AS SALES_AMOUNT
         FROM SALES_INVOICE SI
         WHERE 1 = 1
-        <if test="startDate != null and startDate != ''">
-            AND SI.ISSUE_DATE &gt;= TO_DATE(#{startDate}, 'YYYY-MM-DD')
-        </if>
-        <if test="endDate != null and endDate != ''">
-            AND SI.ISSUE_DATE &lt;= TO_DATE(#{endDate}, 'YYYY-MM-DD')
-        </if>
+        <choose>
+            <when test="startDate != null and startDate != ''">
+                AND SI.ISSUE_DATE &gt;= TO_DATE(#{startDate}, 'YYYY-MM-DD')
+            </when>
+            <otherwise>
+                AND SI.ISSUE_DATE &gt;= ADD_MONTHS(TRUNC(SYSDATE, 'MM'), -5)
+            </otherwise>
+        </choose>
+        <choose>
+            <when test="endDate != null and endDate != ''">
+                AND SI.ISSUE_DATE &lt;= TO_DATE(#{endDate}, 'YYYY-MM-DD')
+            </when>
+            <otherwise>
+                AND SI.ISSUE_DATE &lt; ADD_MONTHS(TRUNC(SYSDATE, 'MM'), 1)
+            </otherwise>
+        </choose>
         <if test="customerId != null">
             AND SI.CUSTOMER_ID = #{customerId}
         </if>
