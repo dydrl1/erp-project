@@ -1,0 +1,20 @@
+.settlement-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.settlement-chart-full {
+  height: 360px;
+}
+
+.settlement-chart-inner {
+  width: 100%;
+  height: 290px;
+}
+
+.settlement-bottom-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
