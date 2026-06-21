@@ -48,6 +48,11 @@ public class SettlementService {
         return settlementMapper.findAllAccountReceivables(params);
     }
 
+    // 거래처별 미수금 목록
+    public List<AccountReceivableVO> findCustomerReceivableSummary(Map<String, Object> params) {
+        return settlementMapper.findCustomerReceivableSummary(params);
+    }
+
     // 미지급금/매입채무 조회
     public List<AccountPayableVO> getAccountPayableList(
             String status, String startDate, String endDate) {

@@ -10,7 +10,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
@@ -49,6 +51,18 @@ public class SettlementController {
             @RequestParam(required = false) String endDate) {
         return ResponseEntity.ok(
                 ApiResponse.success(settlementService.getAccountReceivableList(status, startDate, endDate))
+        );
+    }
+
+    @Operation(summary = "거래처별 미수금 목록")
+    @GetMapping("/receivables/customer-summary")
+    public ResponseEntity<ApiResponse<List<AccountReceivableVO>>> getCustomerReceivableSummary(
+            @RequestParam(required = false) String customerName) {
+        Map<String, Object> params = new HashMap<>();
+        params.put("customerName", customerName);
+
+        return ResponseEntity.ok(
+                ApiResponse.success(settlementService.findCustomerReceivableSummary(params))
         );
     }
 
