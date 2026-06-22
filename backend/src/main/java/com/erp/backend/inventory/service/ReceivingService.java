@@ -106,10 +106,10 @@ public class ReceivingService {
             lotParams.put("lotNo", detail.getLotNo());
             lotParams.put("expiryDate", detail.getExpiryDate());
             lotParams.put("receivedQty", detail.getReceivedQty());
-            receivingMapper.insertInventoryLot(lotParams);
+            receivingMapper.upsertInventoryLot(lotParams);
 
             // 방금 생성된 INVENTORY_LOT_ID 조회
-            Long inventoryLotId = receivingMapper.getCurrentInventoryLotId();
+            Long inventoryLotId = receivingMapper.findInventoryLotId(lotParams);
 
             // 입출고 이력 INSERT (STOCK_MOVEMENT)
             Map<String, Object> movementParams = new HashMap<>();
