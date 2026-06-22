@@ -1,76 +1,190 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { ReactNode, useEffect, useState } from "react";
-import { tokenStorage } from "@/lib/api";
+import { ReactNode, useEffect, useMemo, useState } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
+import { App, Button, Layout, Menu, Space, Typography } from 'antd';
+import {
+  BarChartOutlined,
+  BellOutlined,
+  HomeOutlined,
+  MedicineBoxOutlined,
+  ShoppingCartOutlined,
+  TruckOutlined,
+  UserOutlined,
+  WalletOutlined,
+} from '@ant-design/icons';
+import { tokenStorage } from '@/lib/api';
+import NotificationBell from '@/components/notification/NotificationBell';
+import NotificationDrawer from '@/components/notification/NotificationDrawer';
 
-const MENUS = [
-  { href: "/", label: "홈" },
-  { href: "/attendance", label: "근태 관리" },
-  { href: "/customers", label: "거래처 관리" },
-  { href: "/products", label: "의약품 관리" },
-  { href: "/purchase-orders", label: "입고 / 승인" },
-  { href: "/inventory", label: "출고 / 재고" },
-  { href: "/settlement", label: "정산 / 매출" },
-  { href: "/ai", label: "AI 분석" },
+const { Header, Sider, Content } = Layout;
+const { Text } = Typography;
+
+const MENU_GROUPS = [
+  {
+    key: 'base',
+    label: '기준정보',
+    children: [
+      { key: '/', label: '홈', icon: <HomeOutlined /> },
+      { key: '/attendance', label: '근태 관리', icon: <UserOutlined /> },
+      { key: '/customers', label: '거래처 관리', icon: <UserOutlined /> },
+      { key: '/products', label: '의약품 관리', icon: <MedicineBoxOutlined /> },
+    ],
+  },
+  {
+    key: 'purchase',
+    label: '구매 / 입고',
+    children: [
+      {
+        key: '/purchase-orders',
+        label: '발주 관리',
+        icon: <ShoppingCartOutlined />,
+      },
+      {
+        key: '/receivings',
+        label: '입고 관리',
+        icon: <TruckOutlined />,
+      },
+    ],
+  },
+  {
+    key: 'stock',
+    label: '재고 / 출고',
+    children: [
+      { key: '/inventory', label: '재고 관리', icon: <MedicineBoxOutlined /> },
+      { key: '/sales-orders', label: '출고 관리', icon: <TruckOutlined /> },
+    ],
+  },
+  {
+    key: 'finance',
+    label: '정산 / 분석',
+    children: [
+      { key: '/settlement', label: '정산 / 매출', icon: <WalletOutlined /> },
+      { key: '/ai', label: 'AI 분석', icon: <BarChartOutlined /> },
+    ],
+  },
+  {
+    key: 'notifications',
+    label: '알람',
+    children: [{ key: '/notifications', label: '알람 관리', icon: <BellOutlined /> }],
+  },
 ];
+
+function getSelectedKey(pathname: string) {
+  const items = MENU_GROUPS.flatMap((group) => group.children);
+
+  const found = items
+    .filter((item) => (item.key === '/' ? pathname === '/' : pathname.startsWith(item.key)))
+    .sort((a, b) => b.key.length - a.key.length)[0];
+
+  return found?.key ?? '/';
+}
 
 export default function ErpLayout({ title, children }: { title: string; children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const [empName, setEmpName] = useState("");
+  const { modal } = App.useApp();
 
-  // localStorage에서 사용자명 가져오기
+  const [empName, setEmpName] = useState('사용자');
+  const [role, setRole] = useState('');
+
   useEffect(() => {
-    setEmpName(localStorage.getItem("empName") ?? "사용자");
+    setEmpName(localStorage.getItem('empName') ?? '사용자');
+    setRole(localStorage.getItem('role') ?? '');
   }, []);
 
-  // 로그아웃
+  const selectedKeys = useMemo(() => [getSelectedKey(pathname)], [pathname]);
+
   const handleLogout = () => {
-    if (!confirm("로그아웃 하시겠습니까?")) return;
-    tokenStorage.clear();
-    localStorage.removeItem("empName");
-    localStorage.removeItem("role");
-    router.push("/login");
+    modal.confirm({
+      title: '로그아웃',
+      content: '로그아웃 하시겠습니까?',
+      okText: '로그아웃',
+      cancelText: '취소',
+      onOk: () => {
+        tokenStorage.clear();
+        localStorage.removeItem('empId');
+        localStorage.removeItem('loginId');
+        localStorage.removeItem('empName');
+        localStorage.removeItem('role');
+        localStorage.removeItem('deptId');
+        router.push('/login');
+      },
+    });
   };
 
   return (
-    <div className="erp-layout">
-      <aside className="erp-sidebar">
-        <div className="erp-logo">
+    <Layout style={{ minHeight: '100vh' }}>
+      <Sider
+        width={240}
+        style={{
+          borderRight: '1px solid #DCE8DF',
+          position: 'sticky',
+          top: 0,
+          height: '100vh',
+          overflow: 'auto',
+          background: '#fff',
+        }}
+      >
+        <div
+          style={{
+            height: 64,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            padding: '0 18px',
+            fontWeight: 800,
+            fontSize: 16,
+          }}
+        >
           <span className="erp-logo-mark">약</span>
           약통 ERP
         </div>
-        <nav className="erp-menu">
-          {MENUS.map((menu) => (
-            <Link
-              key={menu.href}
-              href={menu.href}
-              className={pathname.startsWith(menu.href) && menu.href !== "/" ? "active" : ""}
-            >
-              {menu.label}
-            </Link>
-          ))}
-        </nav>
-      </aside>
 
-      <div className="erp-main">
-        <header className="erp-header">
-          <h1>{title}</h1>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <span className="erp-user">{empName} 님</span>
-            <button
-              className="erp-btn"
-              style={{ height: 30, padding: "0 12px", fontSize: 12 }}
-              onClick={handleLogout}
-            >
+        <Menu
+          mode="inline"
+          selectedKeys={selectedKeys}
+          defaultOpenKeys={['base', 'purchase', 'stock', 'finance', 'notifications']}
+          items={MENU_GROUPS}
+          onClick={({ key }) => router.push(String(key))}
+          style={{ borderInlineEnd: 'none' }}
+        />
+      </Sider>
+
+      <Layout>
+        <Header
+          style={{
+            height: 64,
+            borderBottom: '1px solid #DCE8DF',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            padding: '0 24px',
+            background: '#fff',
+          }}
+        >
+          <Typography.Title level={4} style={{ margin: 0 }}>
+            {title}
+          </Typography.Title>
+
+          <Space size={12}>
+            <NotificationBell />
+            <Text type="secondary">
+              {empName} 님{role ? ` · ${role}` : ''}
+            </Text>
+            <Button size="small" onClick={handleLogout}>
               로그아웃
-            </button>
-          </div>
-        </header>
-        <main className="erp-content">{children}</main>
-      </div>
-    </div>
+            </Button>
+          </Space>
+        </Header>
+
+        <Content style={{ padding: 24 }}>
+          <Space orientation="vertical" size={16} style={{ width: '100%' }}>
+            {children}
+          </Space>
+        </Content>
+        <NotificationDrawer />
+      </Layout>
+    </Layout>
   );
 }

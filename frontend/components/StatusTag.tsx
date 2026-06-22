@@ -11,14 +11,13 @@ const STATUS_META: Record<string, { label: string; color: string }> = {
   SHIPPED: { label: '출고 완료', color: 'green' },
   NORMAL: { label: '정상', color: 'green' },
   SOLD_OUT: { label: '품절', color: 'red' },
-  CANCELED: { label: '취소됨', color: 'red' },
 
   GOOD: { label: '양호', color: 'green' },
   WARNING: { label: '주의', color: 'gold' },
   DANGER: { label: '위험', color: 'red' },
 };
 
-export default function StatusBadge({ status }: { status?: string }) {
+export default function StatusTag({ status }: { status?: string }) {
   if (!status) return <Tag>미지정</Tag>;
 
   const meta = STATUS_META[status] ?? {
