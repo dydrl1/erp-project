@@ -9,15 +9,15 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 public class SalesOrderListResponseDTO {
-    private Integer so_id;
-    private String customer_name;
-    private String req_employee_name;
-    private String app_employee_name;
-    private LocalDateTime order_date;
+    private Integer soId;
+    private String customerName;
+    private String reqEmployeeName;
+    private String appEmployeeName;
+    private LocalDateTime orderDate;
     private String status;
-    private LocalDateTime approve_date;
-    private BigDecimal total_amount;
+    private LocalDateTime approveDate;
+    private BigDecimal totalAmount;
     private String memo;
-    private LocalDateTime created_at;
-    private LocalDateTime updated_at;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 }

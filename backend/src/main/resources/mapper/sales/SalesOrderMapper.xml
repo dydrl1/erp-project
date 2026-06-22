@@ -120,6 +120,11 @@
             status = UPPER(#{status})
         </if>
     </where>
+    ORDER BY
+        created_at DESC,
+        so_id DESC
+    OFFSET #{offset} ROWS
+    FETCH NEXT #{size} ROWS ONLY
     </select>
     <select id="findOrderHeaderById" resultType="SalesOrderVO" parameterType="int">
         select
@@ -155,6 +160,7 @@
             sod.unit_price,
             sod.amount,
             sod.product_id,
+            p.product_code,
             p.product_name
         from sales_order_detail sod
         JOIN
@@ -176,6 +182,7 @@
             REQUEST_EMP_ID,
             ORDER_DATE,
             STATUS,
+            MEMO,
             TOTAL_AMOUNT,
             CREATED_AT
         ) select
@@ -184,6 +191,7 @@
               #{reqEmployeeId},
               SYSDATE,
               #{status},
+              #{memo},
               #{totalAmount},
               SYSDATE
         from customer c
@@ -281,5 +289,25 @@
         FROM product p
         WHERE p.product_id = #{productId}
           AND p.status = 'ACTIVE'
+    </select>
+    <select id="findCountsForSalesOrders" resultType="int">
+        SELECT COUNT(*)
+        FROM sales_order
+        <where>
+            <if test="status != null and status != ''">
+                status=#{status}
+            </if>
+        </where>
+    </select>
+    <select id="findCountsByStatus" resultType="SalesOrderStatusCountDTO">
+        SELECT status AS "status",COUNT(*) AS "count"
+        FROM sales_order
+        GROUP BY status
+    </select>
+    <select id="findAllActiveProducts" resultType="ProductVO">
+        SELECT * FROM product pr WHERE pr.status ='ACTIVE'
+    </select>
+    <select id="findAllCustomers" resultType="SalesOrderVO">
+        SELECT customer_id,customer_name FROM customer WHERE status='ACTIVE'
     </select>
 </mapper>

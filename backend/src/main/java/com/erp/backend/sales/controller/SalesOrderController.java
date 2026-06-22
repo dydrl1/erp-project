@@ -2,6 +2,7 @@ package com.erp.backend.sales.controller;
 
 
 import com.erp.backend.common.ApiResponse;
+import com.erp.backend.common.PageResponse;
 import com.erp.backend.sales.dto.SalesOrderListResponseDTO;
 import com.erp.backend.sales.dto.SalesOrderRequestDTO;
 import com.erp.backend.sales.service.SalesOrderService;
@@ -11,7 +12,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/sales-order")
@@ -26,10 +29,19 @@ public class SalesOrderController {
     }
 
     //주문전체조회
-    @GetMapping
-    public ResponseEntity<ApiResponse<List<SalesOrderListResponseDTO>>> findAllSalesOrders(@RequestParam(required = false) String status){
-        List<SalesOrderListResponseDTO> orders = salesOrderService.findAllSalesOrders(status);
-        return ResponseEntity.ok(ApiResponse.success(orders.size()+"의건이 조회되었습니다",orders));
+    @GetMapping("/paging")
+    public ResponseEntity<ApiResponse<PageResponse<SalesOrderListResponseDTO>>> findAllSalesOrders(@RequestParam(required = false) String status,
+                                                                                                   @RequestParam(defaultValue = "1") Integer offset,
+                                                                                                   @RequestParam(defaultValue = "10") Integer size) {
+        size = salesOrderService.findCountsForSalesOrders(status);
+        PageResponse<SalesOrderListResponseDTO> result = salesOrderService.findALllSalesOrdersPaging(status, offset, size);
+        return ResponseEntity.ok(ApiResponse.success(result.getSize()+"의건이 조회되었습니다",result));
+    }
+
+    @GetMapping("/status-count")
+    public ResponseEntity<ApiResponse<Map<String,Integer>>> getCountByStatus(){
+        Map<String,Integer> result = salesOrderService.findCountsByStatus();
+        return ResponseEntity.ok(ApiResponse.success("상태별 갯수",result));
     }
 
     //주문 조회 1건
@@ -82,6 +94,18 @@ public class SalesOrderController {
     public ResponseEntity<ApiResponse<SalesOrderAmountCheckVO>> checkView(@PathVariable int salesOrderId){
         SalesOrderAmountCheckVO salesOrderAmountCheckVO = salesOrderService.verifyAmount(salesOrderId);
         return ResponseEntity.ok(ApiResponse.success("액수가 일치합니다",salesOrderAmountCheckVO));
+    }
+
+    @GetMapping("/customers")
+    public ResponseEntity<ApiResponse<List<SalesOrderVO>>> findAllCustomer(){
+        List<SalesOrderVO> customers = salesOrderService.findAllCustomers();
+        return ResponseEntity.ok(ApiResponse.success("판매처를 조회했습니다",customers));
+    }
+
+    @GetMapping("/products")
+    public ResponseEntity<ApiResponse<List<ProductVO>>> findAllProducts(){
+        List<ProductVO> results = salesOrderService.findAllActiveProducts();
+        return ResponseEntity.ok(ApiResponse.success("의약품을 조회했습니다",results));
     }
 
 }

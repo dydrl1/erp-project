@@ -15,4 +15,5 @@ public class SalesOrderDetailVO {
     BigDecimal unitPrice;
     BigDecimal amount;
     String productName;
+    String productCode;
 }
