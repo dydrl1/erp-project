@@ -77,6 +77,15 @@ public class SettlementController {
         );
     }
 
+    @Operation(summary = "수금 대상 목록 조회")
+    @GetMapping("/payments/receivables")
+    public ResponseEntity<ApiResponse<List<AccountReceivableVO>>> getPaymentTargets(
+            @RequestParam(required = false) String customerName) {
+        return ResponseEntity.ok(
+                ApiResponse.success(settlementService.getPaymentTargets(customerName))
+        );
+    }
+
     @Operation(summary = "수금내역 조회")
     @GetMapping("/payments")
     public ResponseEntity<ApiResponse<List<PaymentVO>>> getPaymentList(

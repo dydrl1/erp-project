@@ -63,6 +63,13 @@ public class SettlementService {
         return settlementMapper.findAllAccountPayables(params);
     }
 
+    // 수금 대상 목록 조회
+    public List<AccountReceivableVO> getPaymentTargets(String customerName) {
+        Map<String, Object> params = new HashMap<>();
+        params.put("customerName", customerName);
+        return settlementMapper.findPaymentTargets(params);
+    }
+
     // 수금내역 조회
     public List<PaymentVO> getPaymentList(
             String startDate, String endDate) {

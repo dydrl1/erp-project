@@ -41,6 +41,9 @@ public interface SettlementMapper {
     // 미지급금 상세조회
     AccountPayableVO findAccountPayableById(Long apId);
 
+    // 수금 대상 목록 조회
+    List<AccountReceivableVO> findPaymentTargets(Map<String, Object> params);
+
     // 수금내역 상세조회
     PaymentVO findPaymentById(Long paymentId);
 
