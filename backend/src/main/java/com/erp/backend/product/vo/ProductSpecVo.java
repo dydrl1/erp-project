@@ -8,11 +8,10 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 public class ProductSpecVo {
-    private Long specId; // 상세 분류 PK
-    private String specName;    // 상품분류 -- api 의약품 품목허가정보
-    private String description;    // 상품설명 -- api 의약품 상세정보
-    private String productCode;    // 상품코드 -- api 의약품 품목허가정보
-    private String useYn;    // 사용여부 -- api 의약품 품목허가정보
-    private LocalDateTime createdAt;    // 생성일
-
+    private Long specId;              // 상품 상세 정보 PK
+    private String specName;          // 상세 정보명
+    private String description;       // 상세 설명
+    private String productCode;       // 상품 코드
+    private String useYn;             // 사용 여부, Y/N
+    private LocalDateTime createdAt;  // 생성 일시
 }

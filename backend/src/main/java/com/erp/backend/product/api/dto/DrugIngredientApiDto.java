@@ -7,14 +7,14 @@ import lombok.ToString;
 @Getter
 @Setter
 @ToString
-public class DrugIngredentApiDto {
-    /* ERP 저장 대상 */
+public class DrugIngredientApiDto {
+    /* ERP 저장 대상 정보 */
 
-    private String itemSeq;          // 품목기준코드
+    private String itemSeq;          // 품목 기준 코드
     private String itemIngrName;     // 주성분명
-    private String itemIngrCnt;      // 주성분 개수
+    private String itemIngrCnt;      // 주성분 순번/개수 식별값
 
-    /* 향후 확장 후보 */
+    /* 향후 확장 정보 */
 
     private String mainItemIngr;     // 대표 주성분
     private String ingrEngName;      // 영문 성분명
