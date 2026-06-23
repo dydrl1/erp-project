@@ -475,6 +475,19 @@ export interface EmployeeSearchCondition {
   roleCode?: string;
 }
 
+// 관리자 직원 직접 등록 요청 (백엔드 EmployeeCreateRequestDto와 매핑)
+export interface EmployeeCreateInput {
+  loginId: string;
+  password: string;
+  empName: string;
+  deptId: number;
+  phone?: string;
+  email?: string;
+  roleCode?: RoleCode;          // 미지정 시 STAFF
+  status?: "ACTIVE" | "INACTIVE"; // 미지정 시 ACTIVE
+  hireDate?: string;            // yyyy-MM-dd, 미지정 시 오늘
+}
+
 export const employeeApi = {
   // 직원 목록 (DEPT_HR) — 검색 조건은 쿼리스트링
   list: (condition: EmployeeSearchCondition = {}) => {
@@ -486,6 +499,8 @@ export const employeeApi = {
     return api.get<Employee[]>(`/api/employees${qs ? `?${qs}` : ""}`);
   },
   detail: (empId: number) => api.get<Employee>(`/api/employees/${empId}`),
+  // 관리자 직원 직접 등록 (ADMIN 전용) — 생성된 empId 반환
+  create: (data: EmployeeCreateInput) => api.post<number>("/api/employees", data),
   // 마이페이지
   me: () => api.get<Employee>("/api/employees/me"),
   updateMyInfo: (data: { phone?: string; email?: string }) =>

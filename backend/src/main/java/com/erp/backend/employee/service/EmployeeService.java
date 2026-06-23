@@ -9,9 +9,11 @@ import com.erp.backend.employee.vo.EmployeeVO;
 import com.erp.backend.common.CustomException;
 import com.erp.backend.common.ErrorCode;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Service
@@ -21,8 +23,46 @@ public class EmployeeService {
 
     private final EmployeeMapper employeeMapper;
     private final RefreshTokenMapper refreshTokenMapper;
+    private final PasswordEncoder passwordEncoder;
 
-    // create Employee 삭제 (signup과 동일한 기능)
+    // 관리자 직원 직접 등록 : 승인 절차 없이 역할·상태·입사일을 지정해 바로 생성한다.
+    // (일반 가입은 signup → PENDING 승인 흐름을 사용한다.)
+    public Long createEmployee(EmployeeCreateRequestDto request) {
+        if (employeeMapper.countByLoginId(request.getLoginId()) > 0) {
+            throw new CustomException(ErrorCode.EMPLOYEE_ALREADY_EXISTS);
+        }
+
+        // 역할: 미지정이면 STAFF, 지정 시 STAFF/MANAGER/ADMIN 만 허용
+        String roleCode = (request.getRoleCode() == null || request.getRoleCode().isBlank())
+                ? RoleCode.STAFF.name() : request.getRoleCode();
+        try {
+            RoleCode.valueOf(roleCode);
+        } catch (IllegalArgumentException e) {
+            throw new CustomException(ErrorCode.INVALID_ROLE);
+        }
+
+        // 상태: 미지정이면 ACTIVE, 직접 등록은 ACTIVE/INACTIVE 만 허용 (PENDING/REJECTED 흐름 제외)
+        String status = (request.getStatus() == null || request.getStatus().isBlank())
+                ? EmployeeStatus.ACTIVE.name() : request.getStatus();
+        if (!EmployeeStatus.ACTIVE.name().equals(status)
+                && !EmployeeStatus.INACTIVE.name().equals(status)) {
+            throw new CustomException(ErrorCode.INVALID_STATUS);
+        }
+
+        EmployeeVO employee = new EmployeeVO();
+        employee.setLoginId(request.getLoginId());
+        employee.setPassword(passwordEncoder.encode(request.getPassword()));
+        employee.setEmpName(request.getEmpName());
+        employee.setPhone(request.getPhone());
+        employee.setEmail(request.getEmail());
+        employee.setDeptId(request.getDeptId());
+        employee.setRoleCode(roleCode);
+        employee.setStatus(status);
+        employee.setHireDate(request.getHireDate() != null ? request.getHireDate() : LocalDate.now());
+
+        employeeMapper.insertEmployee(employee);
+        return employee.getEmpId();
+    }
 
     @Transactional(readOnly = true)
     public List<EmployeeResponseDto> getEmployees() {

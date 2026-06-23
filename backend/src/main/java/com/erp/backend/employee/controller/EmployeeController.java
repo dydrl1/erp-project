@@ -4,6 +4,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 
 import com.erp.backend.common.ApiResponse;
+import com.erp.backend.employee.dto.EmployeeCreateRequestDto;
 import com.erp.backend.employee.dto.EmployeeResponseDto;
 import com.erp.backend.employee.dto.EmployeeSearchCondition;
 import com.erp.backend.employee.dto.EmployeeUpdateRequestDto;
@@ -29,7 +30,12 @@ public class EmployeeController {
     private final EmployeeService employeeService;
     private final AuthService authService;
 
-    // create Employee 삭제 -> signup과 동일한 기능
+    // 관리자 직원 직접 등록 : 승인 절차 없이 역할·상태·입사일을 지정해 생성 (ADMIN 전용)
+    @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
+    public ApiResponse<Long> createEmployee(@Valid @RequestBody EmployeeCreateRequestDto request) {
+        return ApiResponse.success("직원 등록 완료", employeeService.createEmployee(request));
+    }
 
     @GetMapping
     @PreAuthorize("hasAuthority('DEPT_HR')") // HR 부서 + ADMIN(부서권한 자동 보유)
