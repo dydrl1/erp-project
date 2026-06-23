@@ -2,10 +2,12 @@ package com.erp.backend.product.vo;
 
 import lombok.Getter;
 import lombok.Setter;
+import org.apache.ibatis.type.Alias;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+@Alias("DrugProductVo")
 @Getter
 @Setter
 public class ProductVo {

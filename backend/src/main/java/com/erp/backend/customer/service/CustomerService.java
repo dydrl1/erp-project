@@ -29,16 +29,21 @@ public class CustomerService {
     @Transactional
     public void createCustomer(CustomerCreateRequestDto dto) {
 
+        // 사업자번호 필수 검증
+        if (dto.getBusinessNo() == null || dto.getBusinessNo().isBlank()) {
+            throw new CustomException(ErrorCode.BUSINESS_NO_REQUIRED);
+        }
+
         // 사업자번호를 입력한 경우에만 검증 (선택 입력)
         if (dto.getBusinessNo() != null && !dto.getBusinessNo().isBlank()) {
 
-            // 1) 중복 확인
+            // 중복 확인
             int count = customerMapper.countByBusinessNo(dto.getBusinessNo());
             if (count > 0) {
                 throw new CustomException(ErrorCode.DUPLICATE_BUSINESS_NO);
             }
 
-            // 2) 국세청 상태조회 - 정상 영업(계속사업자)만 등록 허용
+            // 국세청 상태조회 - 정상 영업(계속사업자)만 등록 허용
             Map<String, Object> status = businessVerifyService.checkStatus(dto.getBusinessNo());
             boolean registered = Boolean.TRUE.equals(status.get("registered"));
             boolean valid = Boolean.TRUE.equals(status.get("valid"));
