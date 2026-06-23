@@ -16,8 +16,8 @@
         USING (
             SELECT
                 TRIM(#{itemSeq}) AS PRODUCT_CODE,
-                NVL(SUBSTR(TRIM(#{itemName}), 1, 150), 'UNKNOWN') AS PRODUCT_NAME,
-                SUBSTR(TRIM(#{entpName}), 1, 100) AS MAKER_NAME,
+                NVL(SUBSTRB(TRIM(#{itemName}), 1, 150), 'UNKNOWN') AS PRODUCT_NAME,
+                SUBSTRB(TRIM(#{entpName}), 1, 100) AS MAKER_NAME,
                 NVL(TRIM(#{spcltyPblc}), 'N') AS IS_PRESCRIPTION
             FROM DUAL
             WHERE TRIM(#{itemSeq}) IS NOT NULL
@@ -40,6 +40,7 @@
             PRODUCT_NAME,
             MAKER_NAME,
             UNIT,
+            SAFETY_QTY,
             STANDARD_PURCHASE_PRICE,
             STANDARD_SALES_PRICE,
             IS_PRESCRIPTION,
@@ -53,6 +54,7 @@
             src.PRODUCT_NAME,
             src.MAKER_NAME,
             'EA',
+            0,
             0,
             0,
             src.IS_PRESCRIPTION,
@@ -122,8 +124,8 @@
         USING (
             SELECT
                 TRIM(#{itemSeq}) AS PRODUCT_CODE,
-                NVL(SUBSTR(TRIM(#{packUnit}), 1, 20), 'EA') AS UNIT,
-                NVL(TRIM(#{storageType}), 'ROOM') AS STORAGE_TYPE
+                NVL(SUBSTRB(TRIM(#{packUnit}), 1, 20), 'EA') AS UNIT,
+                NVL(SUBSTRB(TRIM(#{storageType}), 1, 20), 'ROOM') AS STORAGE_TYPE
             FROM DUAL
             WHERE TRIM(#{itemSeq}) IS NOT NULL
         ) src
