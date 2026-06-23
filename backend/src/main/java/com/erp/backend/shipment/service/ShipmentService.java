@@ -2,11 +2,15 @@ package com.erp.backend.shipment.service;
 
 import com.erp.backend.common.CustomException;
 import com.erp.backend.common.ErrorCode;
+import com.erp.backend.common.PageResponse;
 import com.erp.backend.notification.mapper.AlertMapper;
 import com.erp.backend.notification.service.AlertService;
+import com.erp.backend.sales.dto.SalesOrderListResponseDTO;
+import com.erp.backend.sales.dto.SalesOrderStatusCountDTO;
 import com.erp.backend.sales.mapper.SalesOrderMapper;
 import com.erp.backend.sales.util.OrderStatus;
 import com.erp.backend.sales.vo.*;
+import com.erp.backend.shipment.dto.ShipmentStatusCountDTO;
 import com.erp.backend.shipment.util.MovementType;
 import com.erp.backend.shipment.util.ShipmentStatus;
 import com.erp.backend.shipment.util.SourceType;
@@ -52,8 +56,27 @@ public class ShipmentService {
     }
 
     //출고 목록조회(주문번호,상태,담장자명)
-    public List<ShipmentVO> findShipments(Integer salesOrderId, String status, String employeeName) {
-        return shipmentMapper.findShipmentList(salesOrderId, status, employeeName);
+    public PageResponse<ShipmentVO> findShipments(Integer salesOrderId, String status, String employeeName, int page, int size) {
+        int safePage = Math.max(page, 1);
+        int safeSize = Math.max(size, 1);
+
+        int offset = (safePage - 1) * safeSize;
+        List<ShipmentVO> list = shipmentMapper.findShipmentList(salesOrderId,status,employeeName, offset, safeSize);
+        int total = shipmentMapper.findCountsForShipments(status);
+        return new PageResponse<>(list,safePage,safeSize,total);
+    }
+
+    public Map<String,Integer> findCountsByStatus(){
+        List<ShipmentStatusCountDTO> counts = shipmentMapper.findCountsByStatus();
+        Map<String,Integer> result = new HashMap<>();
+        for(ShipmentStatusCountDTO count:counts) {
+            result.put(count.getStatus(),count.getCount());
+        }
+        return result;
+    }
+
+    public Integer findCountsForShipments(String status) {
+        return shipmentMapper.findCountsForShipments(status);
     }
 
     //출고 상태 변경
@@ -95,7 +118,7 @@ public class ShipmentService {
      */
 
     @Transactional
-    public void processShipment(Integer salesOrderId, Integer employeeId) {
+    public int processShipment(Integer salesOrderId, Integer employeeId) {
         SalesOrderVO order = verifySalesOrderStatus(salesOrderId);
         if (order == null) {
             throw new CustomException(ErrorCode.SALES_APPROVE_FAILED);
@@ -134,6 +157,7 @@ public class ShipmentService {
         for (Integer productId : shippedProductIds) {
             alertService.checkAfterShipment(productId);
         }
+        return shipmentId;
     }
 
     //주문 상세 수량을 FEFO기준으로 로트에 배정
@@ -252,6 +276,11 @@ public class ShipmentService {
         return shipmentMapper.findShipmentResult(shipmentId);
     }
 
+    //로트별 재고 조회
+    public List<StockMovementSearchVO> findLotStockList() {
+        return shipmentMapper.findLotStockList();
+    }
+
     //재고 변동 이력을 조회
     public List<StockMovementSearchVO> searchStockMovementHistory(StockMovementSearchVO stockMovementSearchVO) {
         return shipmentMapper.searchStockMovement(stockMovementSearchVO);
@@ -262,7 +291,9 @@ public class ShipmentService {
         return shipmentMapper.searchShipmentHistory(salesOrderId);
     }
 
-    //재고 조회
-//    public
+    //상품별 재고 조회
+    public List<ProductStockVO> findProductStockList() {
+        return shipmentMapper.findProductStockList();
+    }
 
 }

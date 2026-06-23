@@ -2,6 +2,7 @@ package com.erp.backend.shipment.mapper;
 import com.erp.backend.sales.vo.ProductStockCheckVO;
 import com.erp.backend.sales.vo.SalesOrderDetailVO;
 import com.erp.backend.sales.vo.SalesOrderVO;
+import com.erp.backend.shipment.dto.ShipmentStatusCountDTO;
 import com.erp.backend.shipment.vo.*;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -42,7 +43,7 @@ public interface ShipmentMapper {
     //조건에 따른 출고 상세 목록 조회
     List<ShipmentDetailVO> findShipmentDetails(@Param("shipmentId") int shipmentId,@Param("status") String status);
     //조건에 따른 출고 목록 조회
-    List<ShipmentVO> findShipmentList(@Param("salesOrderId") Integer salesOrderId,@Param("status") String status,@Param("employeeName") String employeeName);
+    List<ShipmentVO> findShipmentList(@Param("salesOrderId") Integer salesOrderId,@Param("status") String status,@Param("employeeName") String employeeName, int offset, int size);
     //출고 정보 조회
     ShipmentVO findShipment(int shipmentId,boolean isShipped);
     //출고 가능 상태 정보 조회
@@ -56,4 +57,8 @@ public interface ShipmentMapper {
     //안전재고 검사 결과 조회
     ProductStockCheckVO findShippableProductForShipment(int productId);
     StockMovementSearchVO searchStockMovementHeader(int productId);
+    List<ShipmentStatusCountDTO> findCountsByStatus();
+    int findCountsForShipments(String status );
+    List<ProductStockVO> findProductStockList();
+    List<StockMovementSearchVO> findLotStockList();
 }

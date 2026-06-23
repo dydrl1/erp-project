@@ -55,7 +55,7 @@ public class SalesOrderService {
         int safeSize = Math.max(size, 1);
 
         int offset = (safePage - 1) * safeSize;
-        List<SalesOrderListResponseDTO> list = findAllSalesOrders(status, offset, size);
+        List<SalesOrderListResponseDTO> list = findAllSalesOrders(status, offset, safeSize);
         int total = salesOrderMapper.findCountsForSalesOrders(status);
         return new PageResponse<>(list, safePage, safeSize, total);
     }
