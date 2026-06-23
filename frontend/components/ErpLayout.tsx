@@ -7,6 +7,7 @@ import { Avatar, Button, Layout, Menu, Space, Typography } from "antd";
 import {
   LogoutOutlined,
   MedicineBoxOutlined,
+  SafetyCertificateOutlined,
   ShoppingCartOutlined,
   UserOutlined,
 } from "@ant-design/icons";
@@ -15,14 +16,17 @@ import { authApi, tokenStorage, userStorage, type AuthUser } from "@/lib/api";
 const { Header, Sider, Content } = Layout;
 const { Title, Text } = Typography;
 
+// roles를 지정하면 해당 역할에게만 노출된다. 미지정이면 전체 노출.
 const MENUS = [
   { href: "/", label: "홈", icon: <MedicineBoxOutlined /> },
   { href: "/employees", label: "직원 관리", icon: <UserOutlined /> },
   { href: "/attendance", label: "근태 관리", icon: <UserOutlined /> },
   { href: "/customers", label: "거래처 관리", icon: <UserOutlined /> },
+  { href: "/product", label: "상품 관리", icon: <MedicineBoxOutlined /> },
   { href: "/purchase-orders", label: "발주 관리", icon: <ShoppingCartOutlined /> },
   { href: "/purchase-orders/recevings", label: "입고 관리", icon: <ShoppingCartOutlined /> },
   { href: "/recall-drugs", label: "위해의약품", icon: <MedicineBoxOutlined /> },
+  { href: "/admin", label: "관리자", icon: <SafetyCertificateOutlined />, roles: ["MANAGER", "ADMIN"] },
 ];
 
 interface ErpLayoutProps {
@@ -96,7 +100,7 @@ export default function ErpLayout({ title, children }: ErpLayoutProps) {
         <Menu
           mode="inline"
           selectedKeys={[selectedKey]}
-          items={MENUS.map((menu) => ({
+          items={MENUS.filter((menu) => !menu.roles || menu.roles.includes(role)).map((menu) => ({
             key: menu.href,
             icon: menu.icon,
             label: <Link href={menu.href}>{menu.label}</Link>,
