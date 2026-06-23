@@ -3,8 +3,25 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import {
+  Alert,
+  Button,
+  DatePicker,
+  Input,
+  InputNumber,
+  Popconfirm,
+  Space,
+  Table,
+  Typography,
+  message,
+} from "antd";
+import type { ColumnsType } from "antd/es/table";
+import { ArrowLeftOutlined, CheckOutlined } from "@ant-design/icons";
+import dayjs from "dayjs";
 import ErpLayout from "@/components/ErpLayout";
 import { receivingApi, ReceivingDetailInput } from "@/lib/api";
+
+const { Text } = Typography;
 
 export default function ReceivingProcessPage() {
   const { poId } = useParams<{ poId: string }>();
@@ -15,139 +32,195 @@ export default function ReceivingProcessPage() {
   const [error, setError] = useState("");
   const [processing, setProcessing] = useState(false);
 
-  // 발주 품목을 입고 입력 폼으로 변환
   useEffect(() => {
     receivingApi
       .detailsByPoId(Number(poId))
       .then((details) =>
         setRows(
-          details.map((d) => ({
-            productId: d.productId,
-            productName: d.productName,
-            orderQty: d.orderQty,
+          details.map((detail) => ({
+            productId: detail.productId,
+            productName: detail.productName,
+            orderQty: detail.orderQty,
             lotNo: "",
             expiryDate: "",
-            receivedQty: d.orderQty, // 기본값: 발주 수량
-            unitPrice: d.unitPrice,
-          }))
-        )
+            receivedQty: detail.orderQty,
+            unitPrice: detail.unitPrice,
+          })),
+        ),
       )
       .catch((e: Error) => setError(e.message));
   }, [poId]);
 
-  const updateRow = (index: number, field: keyof ReceivingDetailInput, value: string | number) => {
-    setRows((prev) => prev.map((row, i) => (i === index ? { ...row, [field]: value } : row)));
+  const updateRow = (
+    index: number,
+    field: keyof ReceivingDetailInput,
+    value: string | number,
+  ) => {
+    setRows((prev) =>
+      prev.map((row, rowIndex) =>
+        rowIndex === index ? { ...row, [field]: value } : row,
+      ),
+    );
   };
 
-  // 유효기간 만료 검사 (백엔드 INVALID_EXPIRY_DATE와 동일 기준)
-  const isExpired = (date: string) => date !== "" && new Date(date) < new Date();
+  const isExpired = (date: string) =>
+    date !== "" && dayjs(date).isBefore(dayjs(), "day");
 
   const handleSubmit = async () => {
-    // 클라이언트 유효성 검사
     for (const row of rows) {
-      if (!row.lotNo.trim()) return alert(`${row.productName}: 로트번호를 입력해주세요.`);
-      if (!row.expiryDate) return alert(`${row.productName}: 유효기간을 입력해주세요.`);
-      if (isExpired(row.expiryDate)) return alert(`${row.productName}: 유효기간이 만료된 날짜입니다.`);
-      if (!row.receivedQty || row.receivedQty < 1) return alert(`${row.productName}: 입고 수량을 확인해주세요.`);
+      if (!row.lotNo.trim()) {
+        message.warning(`${row.productName}: 로트번호를 입력해주세요.`);
+        return;
+      }
+
+      if (!row.expiryDate) {
+        message.warning(`${row.productName}: 유효기간을 입력해주세요.`);
+        return;
+      }
+
+      if (isExpired(row.expiryDate)) {
+        message.warning(`${row.productName}: 유효기간이 이미 만료된 날짜입니다.`);
+        return;
+      }
+
+      if (!row.receivedQty || row.receivedQty < 1) {
+        message.warning(`${row.productName}: 입고 수량을 확인해주세요.`);
+        return;
+      }
     }
 
-    if (!confirm("입고 처리하시겠습니까? 처리 후 재고가 자동 생성됩니다.")) return;
-
     setProcessing(true);
+
     try {
       await receivingApi.process({
         poId: Number(poId),
         memo: memo || undefined,
-        details: rows.map(({ productName, orderQty, ...rest }) => rest), // 화면용 필드 제거
+        details: rows.map(({ productName, orderQty, ...rest }) => rest),
       });
-      alert("입고 처리가 완료되었습니다.");
+
+      message.success("입고 처리가 완료되었습니다.");
       router.push("/receivings");
     } catch (e) {
-      alert((e as Error).message);
+      message.error((e as Error).message);
     } finally {
       setProcessing(false);
     }
   };
 
-  return (
-    <ErpLayout title={`입고 처리 — PO-${String(poId).padStart(4, "0")}`}>
-      <button className="erp-btn" style={{ alignSelf: "flex-start" }} onClick={() => router.back()}>
-        ← 입고 가능 목록으로
-      </button>
-
-      {error && <p className="erp-warn-text">{error}</p>}
-
-      <div className="erp-table-wrap">
-        <table className="erp-table">
-          <thead>
-            <tr>
-              <th>제품명</th>
-              <th className="num">발주수량</th>
-              <th style={{ width: 160 }}>로트번호 *</th>
-              <th style={{ width: 160 }}>유효기간 *</th>
-              <th style={{ width: 110 }}>입고수량 *</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row, i) => (
-              <tr key={row.productId} style={{ cursor: "default" }}>
-                <td>{row.productName}</td>
-                <td className="num">{row.orderQty}</td>
-                <td>
-                  <input
-                    className="erp-input"
-                    style={{ width: "100%" }}
-                    placeholder="LOT-2606-A01"
-                    value={row.lotNo}
-                    onChange={(e) => updateRow(i, "lotNo", e.target.value)}
-                  />
-                </td>
-                <td>
-                  <input
-                    type="date"
-                    className={`erp-input ${isExpired(row.expiryDate) ? "error" : ""}`}
-                    style={{ width: "100%" }}
-                    value={row.expiryDate}
-                    onChange={(e) => updateRow(i, "expiryDate", e.target.value)}
-                  />
-                </td>
-                <td>
-                  <input
-                    type="number"
-                    className="erp-input"
-                    style={{ width: "100%", textAlign: "right" }}
-                    min={1}
-                    value={row.receivedQty}
-                    onChange={(e) => updateRow(i, "receivedQty", Number(e.target.value))}
-                  />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {rows.some((r) => isExpired(r.expiryDate)) && (
-        <p className="erp-warn-text">⚠ 유효기간이 이미 만료된 품목이 있습니다. 날짜를 확인해주세요.</p>
-      )}
-
-      <div>
-        <p style={{ fontSize: 13, fontWeight: 600, margin: "0 0 6px" }}>메모</p>
-        <input
-          className="erp-input"
-          style={{ width: "100%" }}
-          placeholder="입고 관련 메모를 입력하세요 (선택)"
-          value={memo}
-          onChange={(e) => setMemo(e.target.value)}
+  const columns: ColumnsType<ReceivingDetailInput> = [
+    {
+      title: "상품명",
+      dataIndex: "productName",
+      render: (value) => <Text strong>{value}</Text>,
+    },
+    {
+      title: "발주수량",
+      dataIndex: "orderQty",
+      align: "right",
+      width: 110,
+      render: (value) => value?.toLocaleString(),
+    },
+    {
+      title: "로트번호",
+      dataIndex: "lotNo",
+      width: 180,
+      render: (value, _row, index) => (
+        <Input
+          placeholder="LOT-2606-A01"
+          value={value}
+          onChange={(e) => updateRow(index, "lotNo", e.target.value)}
         />
-      </div>
+      ),
+    },
+    {
+      title: "유효기간",
+      dataIndex: "expiryDate",
+      width: 180,
+      render: (value, _row, index) => (
+        <DatePicker
+          value={value ? dayjs(value) : null}
+          status={isExpired(value) ? "error" : undefined}
+          style={{ width: "100%" }}
+          onChange={(date) =>
+            updateRow(index, "expiryDate", date ? date.format("YYYY-MM-DD") : "")
+          }
+        />
+      ),
+    },
+    {
+      title: "입고수량",
+      dataIndex: "receivedQty",
+      width: 130,
+      render: (value, _row, index) => (
+        <InputNumber
+          min={1}
+          value={value}
+          style={{ width: "100%" }}
+          onChange={(nextValue) =>
+            updateRow(index, "receivedQty", nextValue ?? 0)
+          }
+        />
+      ),
+    },
+  ];
 
-      <div className="erp-page-actions">
-        <button className="erp-btn" onClick={() => router.back()}>취소</button>
-        <button className="erp-btn primary" disabled={processing || rows.length === 0} onClick={handleSubmit}>
-          {processing ? "처리 중..." : "입고 처리 완료"}
-        </button>
-      </div>
+  const hasExpiredItem = rows.some((row) => isExpired(row.expiryDate));
+
+  return (
+    <ErpLayout title={`입고 처리 - PO-${String(poId).padStart(4, "0")}`}>
+      <Space direction="vertical" size={16} style={{ width: "100%" }}>
+        <Button icon={<ArrowLeftOutlined />} onClick={() => router.back()}>
+          입고 가능 목록으로
+        </Button>
+
+        {error && <Alert type="error" message={error} showIcon />}
+
+        <Table
+          rowKey="productId"
+          columns={columns}
+          dataSource={rows}
+          pagination={false}
+          locale={{ emptyText: "입고 처리할 품목이 없습니다." }}
+        />
+
+        {hasExpiredItem && (
+          <Alert
+            type="warning"
+            message="유효기간이 이미 만료된 품목이 있습니다. 날짜를 확인해주세요."
+            showIcon
+          />
+        )}
+
+        <Space direction="vertical" size={6} style={{ width: "100%" }}>
+          <Text strong>메모</Text>
+          <Input
+            placeholder="입고 관련 메모를 입력하세요 (선택)"
+            value={memo}
+            onChange={(e) => setMemo(e.target.value)}
+          />
+        </Space>
+
+        <Space style={{ width: "100%", justifyContent: "flex-end" }}>
+          <Button onClick={() => router.back()}>취소</Button>
+
+          <Popconfirm
+            title="입고 처리"
+            description="입고 처리하시겠습니까? 처리 후 재고가 자동 생성됩니다."
+            okText="처리"
+            cancelText="취소"
+            onConfirm={handleSubmit}
+          >
+            <Button
+              type="primary"
+              icon={<CheckOutlined />}
+              loading={processing}
+              disabled={rows.length === 0}
+            >
+              입고 처리 완료
+            </Button>
+          </Popconfirm>
+        </Space>
+      </Space>
     </ErpLayout>
   );
 }

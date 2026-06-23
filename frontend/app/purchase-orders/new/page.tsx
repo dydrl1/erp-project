@@ -1,10 +1,31 @@
-// app/purchase-orders/new/page.tsx — 발주 등록 (중복 방지 + 빠른 추가)
 "use client";
-
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import {
+  Button,
+  Card,
+  Empty,
+  Input,
+  InputNumber,
+  Modal,
+  Select,
+  Space,
+  Statistic,
+  Table,
+  Typography,
+  message,
+} from "antd";
+import type { ColumnsType } from "antd/es/table";
+import {
+  ArrowLeftOutlined,
+  DeleteOutlined,
+  PlusOutlined,
+  SearchOutlined,
+} from "@ant-design/icons";
 import ErpLayout from "@/components/ErpLayout";
 import { purchaseOrderApi } from "@/lib/api";
+
+const { Text } = Typography;
 
 interface Supplier {
   supplierId: number;
@@ -27,301 +48,317 @@ interface OrderRow {
 
 export default function PurchaseOrderCreatePage() {
   const router = useRouter();
+
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
-  const [supplierId, setSupplierId] = useState<number>(0);
+  const [supplierId, setSupplierId] = useState<number>();
   const [memo, setMemo] = useState("");
   const [rows, setRows] = useState<OrderRow[]>([]);
   const [processing, setProcessing] = useState(false);
 
-  // 빠른 추가 모달
   const [showPicker, setShowPicker] = useState(false);
   const [keyword, setKeyword] = useState("");
-  const [checked, setChecked] = useState<Set<number>>(new Set());
+  const [checked, setChecked] = useState<React.Key[]>([]);
 
-  // 공급처·의약품 목록 조회
   useEffect(() => {
-    purchaseOrderApi.suppliers().then(setSuppliers).catch((e) => alert(e.message));
-    purchaseOrderApi.products()
+    purchaseOrderApi.suppliers().then(setSuppliers).catch((e) => message.error(e.message));
+    purchaseOrderApi
+      .products()
       .then((data) => setProducts(data as unknown as Product[]))
-      .catch((e) => alert(e.message));
+      .catch((e) => message.error(e.message));
   }, []);
 
-  // 이미 발주 목록에 담긴 의약품 ID (중복 방지용)
   const selectedIds = useMemo(() => new Set(rows.map((r) => r.productId)), [rows]);
 
-  // 품목 행 삭제
-  const removeRow = (productId: number) => {
-    setRows(rows.filter((r) => r.productId !== productId));
-  };
+  const getProduct = (productId: number) =>
+    products.find((p) => p.productId === productId);
 
-  // 행 수정 (수량·단가)
-  const updateRow = (productId: number, field: "orderQty" | "unitPrice", value: number) => {
-    setRows((prev) =>
-      prev.map((row) => (row.productId === productId ? { ...row, [field]: value } : row))
-    );
-  };
-
-  // ===== 빠른 추가 모달 =====
-
-  // 모달 열기 (체크 초기화)
-  const openPicker = () => {
-    setChecked(new Set());
-    setKeyword("");
-    setShowPicker(true);
-  };
-
-  // 검색 필터 (이미 담긴 건 제외)
   const filteredProducts = products.filter((p) => {
-    if (selectedIds.has(p.productId)) return false; // 중복 방지: 이미 담긴 건 안 보임
+    if (selectedIds.has(p.productId)) return false;
     if (!keyword) return true;
+
     return (
       p.productName.toLowerCase().includes(keyword.toLowerCase()) ||
       p.productCode.toLowerCase().includes(keyword.toLowerCase())
     );
   });
 
-  // 체크박스 토글
-  const toggleCheck = (productId: number) => {
-    setChecked((prev) => {
-      const next = new Set(prev);
-      if (next.has(productId)) next.delete(productId);
-      else next.add(productId);
-      return next;
-    });
+  const totalAmount = rows.reduce(
+    (sum, row) => sum + row.orderQty * row.unitPrice,
+    0,
+  );
+
+  const openPicker = () => {
+    setChecked([]);
+    setKeyword("");
+    setShowPicker(true);
   };
 
-  // 선택한 품목들 일괄 추가
+  const removeRow = (productId: number) => {
+    setRows((prev) => prev.filter((row) => row.productId !== productId));
+  };
+
+  const updateRow = (
+    productId: number,
+    field: "orderQty" | "unitPrice",
+    value: number | null,
+  ) => {
+    setRows((prev) =>
+      prev.map((row) =>
+        row.productId === productId
+          ? { ...row, [field]: value ?? 0 }
+          : row,
+      ),
+    );
+  };
+
   const addChecked = () => {
-    if (checked.size === 0) return alert("추가할 의약품을 선택해주세요.");
+    if (checked.length === 0) {
+      message.warning("추가할 의약품을 선택해주세요.");
+      return;
+    }
+
     const newRows: OrderRow[] = products
-      .filter((p) => checked.has(p.productId))
+      .filter((p) => checked.includes(p.productId))
       .map((p) => ({
         productId: p.productId,
         orderQty: 1,
-        unitPrice: p.standardPurchasePrice, // 표준 매입가 자동 입력
+        unitPrice: p.standardPurchasePrice,
       }));
-    setRows([...rows, ...newRows]);
+
+    setRows((prev) => [...prev, ...newRows]);
     setShowPicker(false);
   };
 
-  // 품목 정보 헬퍼
-  const getProduct = (productId: number) => products.find((p) => p.productId === productId);
-
-  // 총금액 계산
-  const totalAmount = rows.reduce((sum, r) => sum + r.orderQty * r.unitPrice, 0);
-
-  // 발주 등록
   const handleSubmit = async () => {
-    if (!supplierId) return alert("공급처를 선택해주세요.");
-    if (rows.length === 0) return alert("발주할 의약품을 1개 이상 추가해주세요.");
+    if (!supplierId) {
+      message.warning("공급처를 선택해주세요.");
+      return;
+    }
+
+    if (rows.length === 0) {
+      message.warning("발주할 의약품을 1개 이상 추가해주세요.");
+      return;
+    }
+
     for (const row of rows) {
-      if (row.orderQty < 1) return alert("수량은 1 이상이어야 합니다.");
+      if (row.orderQty < 1) {
+        message.warning("수량은 1 이상이어야 합니다.");
+        return;
+      }
     }
 
     setProcessing(true);
+
     try {
       await purchaseOrderApi.create({
         supplierId,
         memo: memo || undefined,
         details: rows,
       });
-      alert("발주가 등록되었습니다.");
+
+      message.success("발주가 등록되었습니다.");
       router.push("/purchase-orders");
     } catch (e) {
-      alert((e as Error).message);
+      message.error((e as Error).message);
     } finally {
       setProcessing(false);
     }
   };
 
+  const orderColumns: ColumnsType<OrderRow> = [
+    {
+      title: "의약품",
+      dataIndex: "productId",
+      render: (productId) => {
+        const product = getProduct(productId);
+
+        return (
+          <Space direction="vertical" size={0}>
+            <Text strong>{product?.productName}</Text>
+            <Text type="secondary">
+              {product?.productCode} / {product?.unit}
+            </Text>
+          </Space>
+        );
+      },
+    },
+    {
+      title: "수량",
+      dataIndex: "orderQty",
+      width: 130,
+      render: (value, row) => (
+        <InputNumber
+          min={1}
+          value={value}
+          style={{ width: "100%" }}
+          onChange={(nextValue) =>
+            updateRow(row.productId, "orderQty", nextValue)
+          }
+        />
+      ),
+    },
+    {
+      title: "단가",
+      dataIndex: "unitPrice",
+      width: 150,
+      render: (value, row) => (
+        <InputNumber
+          min={0}
+          value={value}
+          style={{ width: "100%" }}
+          formatter={(nextValue) =>
+            `${nextValue}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+          }
+          parser={(nextValue) =>
+            Number(nextValue?.replace(/\$\s?|(,*)/g, "") ?? 0)
+          }
+          onChange={(nextValue) =>
+            updateRow(row.productId, "unitPrice", nextValue)
+          }
+        />
+      ),
+    },
+    {
+      title: "금액",
+      align: "right",
+      width: 150,
+      render: (_, row) => `${(row.orderQty * row.unitPrice).toLocaleString()}원`,
+    },
+    {
+      title: "",
+      width: 70,
+      align: "center",
+      render: (_, row) => (
+        <Button
+          danger
+          icon={<DeleteOutlined />}
+          onClick={() => removeRow(row.productId)}
+        />
+      ),
+    },
+  ];
+
+  const pickerColumns: ColumnsType<Product> = [
+    {
+      title: "의약품",
+      dataIndex: "productName",
+      render: (_, product) => (
+        <Space direction="vertical" size={0}>
+          <Text strong>{product.productName}</Text>
+          <Text type="secondary">
+            {product.productCode} / {product.standardPurchasePrice?.toLocaleString()}원
+          </Text>
+        </Space>
+      ),
+    },
+  ];
+
   return (
     <ErpLayout title="발주 등록">
-      <button className="erp-btn" style={{ alignSelf: "flex-start" }} onClick={() => router.back()}>
-        ← 목록으로
-      </button>
+      <Space direction="vertical" size={16} style={{ width: "100%" }}>
+        <Button icon={<ArrowLeftOutlined />} onClick={() => router.back()}>
+          목록으로
+        </Button>
 
-      <div className="erp-cards" style={{ gridTemplateColumns: "1fr 2fr" }}>
-        <div className="erp-card">
-          <p>공급처 *</p>
-          <select
-            className="erp-select"
-            style={{ width: "100%" }}
-            value={supplierId}
-            onChange={(e) => setSupplierId(Number(e.target.value))}
-          >
-            <option value={0}>공급처 선택</option>
-            {suppliers.map((s) => (
-              <option key={s.supplierId} value={s.supplierId}>{s.supplierName}</option>
-            ))}
-          </select>
-        </div>
-        <div className="erp-card">
-          <p>메모</p>
-          <input
-            className="erp-input"
-            style={{ width: "100%" }}
-            placeholder="발주 관련 메모 (선택)"
-            value={memo}
-            onChange={(e) => setMemo(e.target.value)}
+        <Card>
+          <Space orientation="vertical" size={16} style={{ width: "100%" }}>
+            <Space size={16} style={{ width: "100%" }} align="start">
+              <Select
+                placeholder="공급처 선택"
+                value={supplierId}
+                style={{ width: 260 }}
+                options={suppliers.map((supplier) => ({
+                  value: supplier.supplierId,
+                  label: supplier.supplierName,
+                }))}
+                onChange={setSupplierId}
+              />
+
+              <Input
+                placeholder="발주 관련 메모 (선택)"
+                value={memo}
+                onChange={(e) => setMemo(e.target.value)}
+              />
+            </Space>
+          </Space>
+        </Card>
+
+        <Space style={{ width: "100%", justifyContent: "space-between" }}>
+          <Text type="secondary">발주 품목 {rows.length}개</Text>
+
+          <Button type="primary" icon={<PlusOutlined />} onClick={openPicker}>
+            의약품 추가
+          </Button>
+        </Space>
+
+        <Table
+          rowKey="productId"
+          columns={orderColumns}
+          dataSource={rows}
+          pagination={false}
+          locale={{
+            emptyText: (
+              <Empty description="의약품 추가 버튼으로 품목을 추가하세요." />
+            ),
+          }}
+        />
+
+        <Space style={{ width: "100%", justifyContent: "flex-end" }}>
+          <Statistic
+            title="총금액"
+            value={totalAmount}
+            suffix="원"
+            styles={{ content: { color: "#1d9e75" } }}
           />
-        </div>
-      </div>
+        </Space>
 
-      {/* 품목 추가 버튼 */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <span style={{ fontSize: 13, color: "var(--erp-text-muted)" }}>
-          발주 품목 {rows.length}개
-        </span>
-        <button className="erp-btn primary" onClick={openPicker}>+ 의약품 추가</button>
-      </div>
+        <Space style={{ width: "100%", justifyContent: "flex-end" }}>
+          <Button onClick={() => router.back()}>취소</Button>
+          <Button type="primary" loading={processing} onClick={handleSubmit}>
+            발주 등록
+          </Button>
+        </Space>
 
-      <div className="erp-table-wrap">
-        <table className="erp-table">
-          <thead>
-            <tr>
-              <th>의약품</th>
-              <th style={{ width: 110 }}>수량 *</th>
-              <th style={{ width: 130 }}>단가 *</th>
-              <th className="num" style={{ width: 120 }}>금액</th>
-              <th style={{ width: 60 }}></th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.length === 0 ? (
-              <tr>
-                <td colSpan={5} style={{ textAlign: "center", padding: 40, color: "var(--erp-text-muted)" }}>
-                  "+ 의약품 추가" 버튼으로 품목을 추가하세요.
-                </td>
-              </tr>
-            ) : (
-              rows.map((row) => {
-                const product = getProduct(row.productId);
-                return (
-                  <tr key={row.productId} style={{ cursor: "default" }}>
-                    <td>
-                      <span style={{ fontWeight: 500 }}>{product?.productName}</span>
-                      <br />
-                      <span style={{ fontSize: 12, color: "var(--erp-text-muted)" }}>
-                        {product?.productCode} · {product?.unit}
-                      </span>
-                    </td>
-                    <td>
-                      <input
-                        type="number"
-                        className="erp-input"
-                        style={{ width: "100%", textAlign: "right" }}
-                        min={1}
-                        value={row.orderQty}
-                        onChange={(e) => updateRow(row.productId, "orderQty", Number(e.target.value))}
-                      />
-                    </td>
-                    <td>
-                      <input
-                        type="number"
-                        className="erp-input"
-                        style={{ width: "100%", textAlign: "right" }}
-                        min={0}
-                        value={row.unitPrice}
-                        onChange={(e) => updateRow(row.productId, "unitPrice", Number(e.target.value))}
-                      />
-                    </td>
-                    <td className="num">{(row.orderQty * row.unitPrice).toLocaleString()}</td>
-                    <td>
-                      <button
-                        className="erp-btn danger-outline"
-                        style={{ height: 30, padding: "0 10px" }}
-                        onClick={() => removeRow(row.productId)}
-                      >
-                        삭제
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center" }}>
-        <p style={{ margin: 0, fontSize: 15 }}>
-          총금액 <strong style={{ fontSize: 18 }}>{totalAmount.toLocaleString()}원</strong>
-        </p>
-      </div>
-
-      <div className="erp-page-actions">
-        <button className="erp-btn" onClick={() => router.back()}>취소</button>
-        <button className="erp-btn primary" disabled={processing} onClick={handleSubmit}>
-          {processing ? "등록 중..." : "발주 등록"}
-        </button>
-      </div>
-
-      {/* 빠른 추가 모달 */}
-      {showPicker && (
-        <div className="erp-modal-overlay" onClick={() => setShowPicker(false)}>
-          <div
-            className="erp-modal"
-            style={{ width: 520 }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3>의약품 추가</h3>
-            <p className="desc">추가할 의약품을 검색하고 체크하세요. 여러 개 선택할 수 있습니다.</p>
-
-            <input
-              className="erp-input"
-              style={{ width: "100%", marginBottom: 10 }}
+        <Modal
+          title="의약품 추가"
+          open={showPicker}
+          width={620}
+          okText="선택 추가"
+          cancelText="취소"
+          onOk={addChecked}
+          onCancel={() => setShowPicker(false)}
+        >
+          <Space direction="vertical" size={12} style={{ width: "100%" }}>
+            <Input
+              prefix={<SearchOutlined />}
               placeholder="의약품명 또는 코드 검색"
               value={keyword}
               onChange={(e) => setKeyword(e.target.value)}
               autoFocus
             />
 
-            <div style={{ maxHeight: 320, overflowY: "auto", border: "1px solid var(--erp-line)", borderRadius: 8 }}>
-              {filteredProducts.length === 0 ? (
-                <p style={{ textAlign: "center", padding: 30, color: "var(--erp-text-muted)", fontSize: 13 }}>
-                  {keyword ? "검색 결과가 없습니다." : "추가할 수 있는 의약품이 없습니다."}
-                </p>
-              ) : (
-                filteredProducts.map((p) => (
-                  <label
-                    key={p.productId}
-                    style={{
-                      display: "flex", alignItems: "center", gap: 10,
-                      padding: "10px 14px", borderBottom: "1px solid var(--erp-line)",
-                      cursor: "pointer",
-                      background: checked.has(p.productId) ? "var(--erp-primary-bg)" : "#fff",
-                    }}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={checked.has(p.productId)}
-                      onChange={() => toggleCheck(p.productId)}
-                    />
-                    <div style={{ flex: 1 }}>
-                      <span style={{ fontSize: 13, fontWeight: 500 }}>{p.productName}</span>
-                      <br />
-                      <span style={{ fontSize: 12, color: "var(--erp-text-muted)" }}>
-                        {p.productCode} · {p.standardPurchasePrice?.toLocaleString()}원
-                      </span>
-                    </div>
-                  </label>
-                ))
-              )}
-            </div>
+            <Table
+              rowKey="productId"
+              columns={pickerColumns}
+              dataSource={filteredProducts}
+              pagination={{ pageSize: 6 }}
+              rowSelection={{
+                selectedRowKeys: checked,
+                onChange: setChecked,
+              }}
+              size="small"
+              locale={{
+                emptyText: keyword
+                  ? "검색 결과가 없습니다."
+                  : "추가 가능한 의약품이 없습니다.",
+              }}
+            />
 
-            <div className="actions">
-              <span style={{ flex: 1, fontSize: 13, color: "var(--erp-text-muted)", alignSelf: "center" }}>
-                {checked.size}개 선택됨
-              </span>
-              <button className="erp-btn" onClick={() => setShowPicker(false)}>취소</button>
-              <button className="erp-btn primary" onClick={addChecked}>
-                선택 추가
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+            <Text type="secondary">{checked.length}개 선택됨</Text>
+          </Space>
+        </Modal>
+      </Space>
     </ErpLayout>
   );
 }

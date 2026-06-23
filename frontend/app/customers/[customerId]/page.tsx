@@ -2,6 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
+import {
+  Card, Form, Input, Select, InputNumber, Button, Alert, Space, Spin, message,
+} from "antd";
 import ErpLayout from "@/components/ErpLayout";
 import { customerApi, BusinessStatus } from "@/lib/api";
 
@@ -14,7 +17,7 @@ export default function CustomerDetailPage() {
     customerName: "",
     customerType: "PHARMACY" as "PHARMACY" | "HOSPITAL",
     businessNo: "",
-    creditLimit: "",
+    creditLimit: 0 as number | null,
     phone: "",
     address: "",
   });
@@ -26,7 +29,6 @@ export default function CustomerDetailPage() {
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
 
   useEffect(() => {
     (async () => {
@@ -36,13 +38,13 @@ export default function CustomerDetailPage() {
           customerName: c.customerName,
           customerType: c.customerType,
           businessNo: c.businessNo ?? "",
-          creditLimit: String(c.creditLimit ?? 0),
+          creditLimit: c.creditLimit ?? 0,
           phone: c.phone ?? "",
           address: c.address ?? "",
         });
         setReceivable(c.receivableBalance ?? 0);
       } catch (e) {
-        setError(e instanceof Error ? e.message : "거래처 정보를 불러오지 못했습니다.");
+        message.error(e instanceof Error ? e.message : "거래처 정보를 불러오지 못했습니다.");
       } finally {
         setLoading(false);
       }
@@ -75,23 +77,23 @@ export default function CustomerDetailPage() {
 
   const handleSave = async () => {
     if (!form.customerName.trim()) {
-      setError("거래처명을 입력해주세요.");
+      message.warning("거래처명을 입력해주세요.");
       return;
     }
     setSaving(true);
-    setError("");
     try {
       await customerApi.update(customerId, {
         customerName: form.customerName,
         customerType: form.customerType,
         businessNo: form.businessNo || undefined,
-        creditLimit: form.creditLimit ? Number(form.creditLimit) : undefined,
+        creditLimit: form.creditLimit ?? undefined,
         phone: form.phone || undefined,
         address: form.address || undefined,
       });
+      message.success("거래처가 수정되었습니다.");
       router.push("/customers");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "거래처 수정에 실패했습니다.");
+      message.error(e instanceof Error ? e.message : "거래처 수정에 실패했습니다.");
     } finally {
       setSaving(false);
     }
@@ -100,91 +102,108 @@ export default function CustomerDetailPage() {
   if (loading) {
     return (
       <ErpLayout title="거래처 상세">
-        <div className="erp-empty">불러오는 중...</div>
+        <div style={{ textAlign: "center", padding: 48 }}>
+          <Spin />
+        </div>
       </ErpLayout>
     );
   }
 
   return (
     <ErpLayout title="거래처 상세 / 수정">
-      {error && <div className="erp-error">{error}</div>}
-
-      <section className="erp-card erp-card-narrow">
-        <div className="erp-detail-meta">
+      <Card style={{ maxWidth: 560 }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            color: "#8a9690",
+            fontSize: 13,
+            paddingBottom: 14,
+            marginBottom: 8,
+            borderBottom: "1px solid #eef2f0",
+          }}
+        >
           <span>거래처 번호 #{customerId}</span>
           <span>미수금 잔액: {receivable.toLocaleString()}원</span>
         </div>
 
-        <label className="erp-label">거래처명 *</label>
-        <input
-          className="erp-input"
-          value={form.customerName}
-          onChange={(e) => setForm({ ...form, customerName: e.target.value })}
-        />
+        <Form layout="vertical">
+          <Form.Item label="거래처명" required>
+            <Input
+              value={form.customerName}
+              onChange={(e) => setForm({ ...form, customerName: e.target.value })}
+            />
+          </Form.Item>
 
-        <label className="erp-label">유형 *</label>
-        <select
-          className="erp-input"
-          value={form.customerType}
-          onChange={(e) =>
-            setForm({ ...form, customerType: e.target.value as "PHARMACY" | "HOSPITAL" })
-          }
-        >
-          <option value="PHARMACY">약국</option>
-          <option value="HOSPITAL">병의원</option>
-        </select>
+          <Form.Item label="유형" required>
+            <Select
+              value={form.customerType}
+              onChange={(v) => setForm({ ...form, customerType: v })}
+              options={[
+                { label: "약국", value: "PHARMACY" },
+                { label: "병의원", value: "HOSPITAL" },
+              ]}
+            />
+          </Form.Item>
 
-        <label className="erp-label">사업자번호</label>
-        <div className="erp-field-row">
-          <input
-            className="erp-input"
-            value={form.businessNo}
-            onChange={(e) => {
-              setForm({ ...form, businessNo: e.target.value });
-              setBizStatus(null);
-              setBizMessage("");
-            }}
-            placeholder="- 없이 10자리"
-          />
-          <button className="erp-btn" onClick={handleCheckBusiness} disabled={checking}>
-            {checking ? "조회 중..." : "상태조회"}
-          </button>
-        </div>
-        {bizMessage && (
-          <div className={`erp-biz-status ${bizStatus?.valid ? "ok" : "warn"}`}>{bizMessage}</div>
-        )}
+          <Form.Item label="사업자번호">
+            <Space.Compact style={{ width: "100%" }}>
+              <Input
+                value={form.businessNo}
+                onChange={(e) => {
+                  setForm({ ...form, businessNo: e.target.value });
+                  setBizStatus(null);
+                  setBizMessage("");
+                }}
+                placeholder="- 없이 10자리"
+              />
+              <Button loading={checking} onClick={handleCheckBusiness}>
+                상태조회
+              </Button>
+            </Space.Compact>
+            {bizMessage && (
+              <Alert
+                style={{ marginTop: 8 }}
+                type={bizStatus?.valid ? "success" : "warning"}
+                title={bizMessage}
+                showIcon
+              />
+            )}
+          </Form.Item>
 
-        <label className="erp-label">연락처</label>
-        <input
-          className="erp-input"
-          value={form.phone}
-          onChange={(e) => setForm({ ...form, phone: e.target.value })}
-        />
+          <Form.Item label="연락처">
+            <Input
+              value={form.phone}
+              onChange={(e) => setForm({ ...form, phone: e.target.value })}
+            />
+          </Form.Item>
 
-        <label className="erp-label">주소</label>
-        <input
-          className="erp-input"
-          value={form.address}
-          onChange={(e) => setForm({ ...form, address: e.target.value })}
-        />
+          <Form.Item label="주소">
+            <Input
+              value={form.address}
+              onChange={(e) => setForm({ ...form, address: e.target.value })}
+            />
+          </Form.Item>
 
-        <label className="erp-label">여신한도 (원)</label>
-        <input
-          className="erp-input"
-          type="number"
-          value={form.creditLimit}
-          onChange={(e) => setForm({ ...form, creditLimit: e.target.value })}
-        />
+          <Form.Item label="여신한도 (원)">
+            <InputNumber
+              style={{ width: "100%" }}
+              value={form.creditLimit}
+              onChange={(v) => setForm({ ...form, creditLimit: v })}
+              formatter={(v) => `${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
+              parser={(v) => Number((v ?? "").replace(/,/g, ""))}
+              min={0}
+            />
+          </Form.Item>
 
-        <div className="erp-form-actions">
-          <button className="erp-btn" onClick={() => router.push("/customers")}>
-            목록으로
-          </button>
-          <button className="erp-btn-primary" onClick={handleSave} disabled={saving}>
-            {saving ? "저장 중..." : "수정 저장"}
-          </button>
-        </div>
-      </section>
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+            <Button onClick={() => router.push("/customers")}>목록으로</Button>
+            <Button type="primary" loading={saving} onClick={handleSave}>
+              수정 저장
+            </Button>
+          </div>
+        </Form>
+      </Card>
     </ErpLayout>
   );
 }
