@@ -25,7 +25,8 @@ export default function PaymentNewPage() {
   const [paymentDate, setPaymentDate] = useState("");
   const [paymentAmount, setPaymentAmount] = useState("");
   const [paymentType, setPaymentType] = useState("계좌이체");
-  const createdBy = 1;
+  const createdBy = 1; // TODO: 로그인 연동 시 사용자 ID로 변경
+  //const userId = localStorage.getItem("userId");
   const [loading, setLoading] = useState(true);
 
   const formatMoney = (value?: number) => {
@@ -81,6 +82,7 @@ export default function PaymentNewPage() {
         paymentAmount: amount,
         paymentType,
         createdBy: 1,
+        //createdBy: Number(userId),
     };
 
     fetch("http://localhost:8080/api/settlement/payments", {
@@ -99,7 +101,7 @@ export default function PaymentNewPage() {
         })
         .then(() => {
             alert("수금 처리가 완료되었습니다.");
-            router.push("/settlement/payments");
+            router.push("/settlement/payments/history");
         })
         .catch((err) => {
             console.error(err);
@@ -129,7 +131,7 @@ export default function PaymentNewPage() {
                 </div>
 
                 <div className="erp-card">
-                  <p>기수금액</p>
+                  <p>누적 수금액</p>
                   <strong>{formatMoney(receivable.paidAmount)}</strong>
                 </div>
 
