@@ -65,6 +65,9 @@ public interface SettlementMapper {
     // 미수금 입금액/잔액 수정
     int updateAccountReceivablePayment(PaymentVO paymentVO);
 
+    // 미지급금 지급액/잔액 수정
+    int updateAccountPayablePayment(AccountPayableVO accountPayableVO);
+
     // 여신한도 체크용 현재 미수금 조회
     BigDecimal findCurrentReceivableAmount(Integer customerId);
 

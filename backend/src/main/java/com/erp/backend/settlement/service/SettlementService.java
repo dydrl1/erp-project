@@ -20,9 +20,10 @@ public class SettlementService {
 
     // 매출청구 조회
     public List<SalesInvoiceVO> getSalesInvoiceList(
-            String status, String startDate, String endDate) {
+            String status, String customerName, String startDate, String endDate) {
         Map<String, Object> params = new HashMap<>();
         params.put("status", status);
+        params.put("customerName", customerName);
         params.put("startDate", startDate);
         params.put("endDate", endDate);
         return settlementMapper.findAllSalesInvoices(params);
@@ -30,9 +31,10 @@ public class SettlementService {
 
     // 매입청구 조회
     public List<PurchaseInvoiceVO> getPurchaseInvoiceList(
-            String status, String startDate, String endDate) {
+            String status, String supplierName, String startDate, String endDate) {
         Map<String, Object> params = new HashMap<>();
         params.put("status", status);
+        params.put("supplierName", supplierName);
         params.put("startDate", startDate);
         params.put("endDate", endDate);
         return settlementMapper.findAllPurchaseInvoices(params);
@@ -55,9 +57,10 @@ public class SettlementService {
 
     // 미지급금/매입채무 조회
     public List<AccountPayableVO> getAccountPayableList(
-            String status, String startDate, String endDate) {
+            String status, String supplierName, String startDate, String endDate) {
         Map<String, Object> params = new HashMap<>();
         params.put("status", status);
+        params.put("supplierName", supplierName);
         params.put("startDate", startDate);
         params.put("endDate", endDate);
         return settlementMapper.findAllAccountPayables(params);
@@ -72,8 +75,9 @@ public class SettlementService {
 
     // 수금내역 조회
     public List<PaymentVO> getPaymentList(
-            String startDate, String endDate) {
+            String customerName, String startDate, String endDate) {
         Map<String, Object> params = new HashMap<>();
+        params.put("customerName", customerName);
         params.put("startDate", startDate);
         params.put("endDate", endDate);
         return settlementMapper.findAllPayments(params);
@@ -117,7 +121,6 @@ public class SettlementService {
     public SettlementVO getSettlement(Long settlementId) {
         return settlementMapper.findSettlementById(settlementId);
     }
-
 
     public void createSalesInvoice(SalesInvoiceVO salesInvoiceVO, AccountReceivableVO accountReceivableVO) {
         // 매출청구 금액 유효성 검사
@@ -164,6 +167,23 @@ public class SettlementService {
         }
         settlementMapper.insertPayment(paymentVO);
         settlementMapper.updateAccountReceivablePayment(paymentVO);
+    }
+
+    // 미지급금 지급 처리
+    public void createPayablePayment(AccountPayableVO accountPayableVO) {
+        if (accountPayableVO.getPaidAmount() == null || accountPayableVO.getPaidAmount().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new RuntimeException("지급 금액은 0보다 커야 합니다.");
+        }
+
+        AccountPayableVO payable = settlementMapper.findAccountPayableById(Long.valueOf(accountPayableVO.getApId()));
+        if (payable == null) {
+            throw new RuntimeException("해당 미지급금 정보를 찾을 수 없습니다.");
+        }
+
+        if (accountPayableVO.getPaidAmount().compareTo(payable.getRemainAmount()) > 0) {
+            throw new RuntimeException("지급 금액은 미지급잔액보다 클 수 없습니다.");
+        }
+        settlementMapper.updateAccountPayablePayment(accountPayableVO);
     }
 
     // 손익정산 등록

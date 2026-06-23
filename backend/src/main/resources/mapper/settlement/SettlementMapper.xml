@@ -25,6 +25,9 @@
         <if test="status != null and status != ''">
             AND SI.STATUS = #{status}
         </if>
+        <if test="customerName != null and customerName != ''">
+            AND C.CUSTOMER_NAME LIKE '%' || #{customerName} || '%'
+        </if>
         <if test="startDate != null and startDate != ''">
             AND SI.ISSUE_DATE &gt;= TO_DATE(#{startDate}, 'YYYY-MM-DD')
         </if>
@@ -54,6 +57,9 @@
         WHERE 1 = 1
         <if test="status != null and status != ''">
             AND PI.STATUS = #{status}
+        </if>
+        <if test="supplierName != null and supplierName != ''">
+            AND S.SUPPLIER_NAME LIKE '%' || #{supplierName} || '%'
         </if>
         <if test="startDate != null and startDate != ''">
             AND PI.ISSUE_DATE &gt;= TO_DATE(#{startDate}, 'YYYY-MM-DD')
@@ -155,6 +161,9 @@
         <if test="status != null and status != ''">
             AND AP.STATUS = #{status}
         </if>
+        <if test="supplierName != null and supplierName != ''">
+            AND S.SUPPLIER_NAME LIKE '%' || #{supplierName} || '%'
+        </if>
         <if test="startDate != null and startDate != ''">
             AND AP.DUE_DATE &gt;= TO_DATE(#{startDate}, 'YYYY-MM-DD')
         </if>
@@ -205,6 +214,9 @@
         JOIN CUSTOMER C
             ON C.CUSTOMER_ID = P.CUSTOMER_ID
         WHERE 1 = 1
+        <if test="customerName != null and customerName != ''">
+            AND C.CUSTOMER_NAME LIKE '%' || #{customerName} || '%'
+        </if>
         <if test="startDate != null and startDate != ''">
             AND P.PAYMENT_DATE &gt;= TO_DATE(#{startDate}, 'YYYY-MM-DD')
         </if>
@@ -421,6 +433,21 @@
         FROM ACCOUNT_RECEIVABLE
         WHERE CUSTOMER_ID = #{customerId}
     </select>
+
+    <!-- 미지급금 차감 -->
+    <update id="updateAccountPayablePayment"
+            parameterType="com.erp.backend.settlement.vo.AccountPayableVO">
+        UPDATE ACCOUNT_PAYABLE
+        SET
+            PAID_AMOUNT = PAID_AMOUNT + #{paidAmount},
+            REMAIN_AMOUNT = REMAIN_AMOUNT - #{paidAmount},
+            STATUS = CASE
+                WHEN REMAIN_AMOUNT - #{paidAmount} = 0 THEN 'PAID'
+                ELSE 'PARTIAL'
+            END,
+            UPDATED_AT = SYSDATE
+        WHERE AP_ID = #{apId}
+    </update>
 
     <!-- 기간별 총매출 조회 -->
     <select id="findTotalSalesAmount"

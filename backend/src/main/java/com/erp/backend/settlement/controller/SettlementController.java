@@ -25,10 +25,11 @@ public class SettlementController {
     @GetMapping("/invoices")
     public ResponseEntity<ApiResponse<List<SalesInvoiceVO>>> getSalesInvoiceList(
             @RequestParam(required = false) String status,
+            @RequestParam(required = false) String customerName,
             @RequestParam(required = false) String startDate,
             @RequestParam(required = false) String endDate) {
         return ResponseEntity.ok(
-                ApiResponse.success(settlementService.getSalesInvoiceList(status, startDate, endDate))
+                ApiResponse.success(settlementService.getSalesInvoiceList(status, customerName, startDate, endDate))
         );
     }
 
@@ -36,10 +37,11 @@ public class SettlementController {
     @GetMapping("/purchase-invoices")
     public ResponseEntity<ApiResponse<List<PurchaseInvoiceVO>>> getPurchaseInvoiceList(
             @RequestParam(required = false) String status,
+            @RequestParam(required = false) String supplierName,
             @RequestParam(required = false) String startDate,
             @RequestParam(required = false) String endDate) {
         return ResponseEntity.ok(
-                ApiResponse.success(settlementService.getPurchaseInvoiceList(status, startDate, endDate))
+                ApiResponse.success(settlementService.getPurchaseInvoiceList(status, supplierName, startDate, endDate))
         );
     }
 
@@ -70,10 +72,11 @@ public class SettlementController {
     @GetMapping("/payables")
     public ResponseEntity<ApiResponse<List<AccountPayableVO>>> getAccountPayableList(
             @RequestParam(required = false) String status,
+            @RequestParam(required = false) String supplierName,
             @RequestParam(required = false) String startDate,
             @RequestParam(required = false) String endDate) {
         return ResponseEntity.ok(
-                ApiResponse.success(settlementService.getAccountPayableList(status, startDate, endDate))
+                ApiResponse.success(settlementService.getAccountPayableList(status, supplierName, startDate, endDate))
         );
     }
 
@@ -89,10 +92,11 @@ public class SettlementController {
     @Operation(summary = "수금내역 조회")
     @GetMapping("/payments")
     public ResponseEntity<ApiResponse<List<PaymentVO>>> getPaymentList(
+            @RequestParam(required = false) String customerName,
             @RequestParam(required = false) String startDate,
             @RequestParam(required = false) String endDate) {
         return ResponseEntity.ok(
-                ApiResponse.success(settlementService.getPaymentList(startDate, endDate))
+                ApiResponse.success(settlementService.getPaymentList(customerName, startDate, endDate))
         );
     }
 
@@ -179,6 +183,13 @@ public class SettlementController {
     public ResponseEntity<String> createPayment(@RequestBody PaymentVO paymentVO) {
         settlementService.createPayment(paymentVO);
         return ResponseEntity.ok("수금 처리 완료");
+    }
+
+    @Operation(summary = "미지급금 지급 처리")
+    @PostMapping("/payables/payment")
+    public ResponseEntity<String> createPayablePayment(@RequestBody AccountPayableVO accountPayableVO) {
+        settlementService.createPayablePayment(accountPayableVO);
+        return ResponseEntity.ok("지급 처리 완료");
     }
 
     @Operation(summary = "손익정산 등록")
