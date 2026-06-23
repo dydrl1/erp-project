@@ -79,9 +79,29 @@
         )
     </insert>
 
-    <!-- 재고 INSERT -->
-    <insert id="insertInventoryLot" parameterType="map">
-        INSERT INTO INVENTORY_LOT (
+    <!-- 재고 INSERT LOT이 있으면 수량 누적, 없으면 새로 생성 -->
+    <insert id="upsertInventoryLot" parameterType="map">
+        MERGE INTO INVENTORY_LOT target
+        USING (
+        SELECT
+        #{productId} AS PRODUCT_ID,
+        #{lotNo} AS LOT_NO,
+        #{expiryDate} AS EXPIRY_DATE,
+        'A' AS LOCATION
+        FROM DUAL
+        ) source
+        ON (
+        target.PRODUCT_ID = source.PRODUCT_ID
+        AND target.LOT_NO = source.LOT_NO
+        AND target.EXPIRY_DATE = source.EXPIRY_DATE
+        AND target.LOCATION = source.LOCATION
+        )
+        WHEN MATCHED THEN
+        UPDATE SET
+        target.CURRENT_QTY = target.CURRENT_QTY + #{receivedQty},
+        target.STATUS = 'NORMAL'
+        WHEN NOT MATCHED THEN
+        INSERT (
         INVENTORY_LOT_ID,
         PRODUCT_ID,
         LOT_NO,
@@ -103,6 +123,16 @@
         SYSDATE
         )
     </insert>
+
+    <!-- LOT으로 조회 -->
+    <select id="findInventoryLotId" parameterType="map" resultType="long">
+        SELECT INVENTORY_LOT_ID
+        FROM INVENTORY_LOT
+        WHERE PRODUCT_ID = #{productId}
+        AND LOT_NO = #{lotNo}
+        AND EXPIRY_DATE = #{expiryDate}
+        AND LOCATION = 'A'
+    </select>
 
     <!-- 입출고 이력 INSERT -->
     <insert id="insertStockMovement" parameterType="map">

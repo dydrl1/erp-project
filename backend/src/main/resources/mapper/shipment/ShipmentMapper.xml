@@ -432,7 +432,7 @@
             <if test="productName != null and productName != ''">
                 AND pro.product_name=#{productName}
             </if>
-            <if test="lotNo != null and lotNo != ' '">
+            <if test="lotNo != null and lotNo != ''">
                 AND il.lot_no=#{lotNo}
             </if>
             <if test="sourceType != null and sourceType != ''">

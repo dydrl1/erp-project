@@ -26,7 +26,10 @@ public interface ReceivingMapper {
     int insertReceivingDetail(Map<String, Object> params);
 
     // 재고 INSERT
-    int insertInventoryLot(Map<String, Object> params);
+    int upsertInventoryLot(Map<String, Object> params);
+
+    // LOT 상세조회
+    Long findInventoryLotId(Map<String, Object> params);
 
     // 입출고 이력 INSERT
     int insertStockMovement(Map<String, Object> params);

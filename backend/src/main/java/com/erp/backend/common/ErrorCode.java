@@ -63,6 +63,10 @@ public enum ErrorCode {
     SALES_ALREADY_APPROVED(HttpStatus.BAD_REQUEST,"승인이 이미 되었습니다"),
     SALES_LOT_ALLOCATE_FAILED(HttpStatus.CONFLICT,"로트번호 배정 작업이 실패했습니다"),
 
+    // 거래처 관련
+    DUPLICATE_BUSINESS_NO(HttpStatus.CONFLICT, "이미 등록된 사업자번호입니다."),
+    CUSTOMER_NOT_FOUND(HttpStatus.NOT_FOUND, "거래처를 찾을 수 없습니다."),
+
     // 배송
     SHIPMENT_ALREADY_EXISTS(HttpStatus.CONFLICT,"이미 배정된 배송이 있습니다."),
     SHIPMENT_NOT_FOUND(HttpStatus.NOT_FOUND,"배송중인 주문이 없습니다."),
