@@ -1,10 +1,20 @@
 package com.erp.backend.product.mapper;
 
 import com.erp.backend.product.api.dto.ProductSyncDto;
+import com.erp.backend.product.dto.ProductSearchRequestDto;
+import com.erp.backend.product.dto.ProductSearchResponseDto;
 import org.apache.ibatis.annotations.Mapper;
+
+import java.util.List;
 
 @Mapper
 public interface ProductMapper {
+
+    /**
+     * 검색 조건에 맞는 상품 목록을 조회한다.
+     * 동기화로 적재된 데이터가 많을 수 있어 매퍼에서 최대 행 수를 제한한다.
+     */
+    List<ProductSearchResponseDto> findProducts(ProductSearchRequestDto condition);
 
     /**
      * 기본 API 한 건을 PRODUCT에 병합한다.

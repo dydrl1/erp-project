@@ -397,6 +397,56 @@ export const recallApi = {
   },
 };
 
+// ===== 상품(Product) 도메인 =====
+
+// 백엔드 ProductSearchResponseDto와 매핑
+export interface Product {
+  productId: number;
+  productCode: string;
+  productName: string;
+  makerName: string | null;
+  unit: string;
+  standardPurchasePrice: number;
+  standardSalesPrice: number;
+  isPrescription: string; // "Y" | "N"
+  storageType: string;    // "ROOM" | "COLD" | "FROZEN"
+  status: string;
+  updatedAt: string | null;
+}
+
+export interface ProductSearchCondition {
+  keyword?: string;
+  status?: string;
+  isPrescription?: string;
+  storageType?: string;
+}
+
+// 동기화 결과 (백엔드 ProductSyncResponseDto와 매핑)
+export interface ProductSyncResult {
+  syncType: string;
+  startedAt: string;
+  finishedAt: string | null;
+  basicTotalCount: number;
+  detailTotalCount: number;
+  ingredientTotalCount: number;
+  basicProcessedCount: number;
+  detailProcessedCount: number;
+  ingredientProcessedCount: number;
+}
+
+export const productApi = {
+  list: (cond: ProductSearchCondition = {}) => {
+    const params = new URLSearchParams();
+    if (cond.keyword) params.set("keyword", cond.keyword);
+    if (cond.status) params.set("status", cond.status);
+    if (cond.isPrescription) params.set("isPrescription", cond.isPrescription);
+    if (cond.storageType) params.set("storageType", cond.storageType);
+    const qs = params.toString();
+    return api.get<Product[]>(`/api/product${qs ? `?${qs}` : ""}`);
+  },
+  // 공공 API 전체 동기화 (수동 실행 — 시간이 걸릴 수 있음)
+  syncAll: () => api.post<ProductSyncResult>("/api/product/sync/all"),
+};
 
 // ===== 인사(HR) 도메인 =====
 

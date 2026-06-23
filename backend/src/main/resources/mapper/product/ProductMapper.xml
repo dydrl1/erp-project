@@ -5,6 +5,50 @@
 <mapper namespace="com.erp.backend.product.mapper.ProductMapper">
 
     <!--
+        상품 목록 조회.
+        keyword는 상품명/상품코드 부분검색이며, 나머지 조건은 정확히 일치할 때만 필터링한다.
+        동기화 데이터가 대량일 수 있어 최신 수정순으로 최대 300건만 반환한다.
+    -->
+    <select id="findProducts"
+            parameterType="com.erp.backend.product.dto.ProductSearchRequestDto"
+            resultType="com.erp.backend.product.dto.ProductSearchResponseDto">
+        SELECT * FROM (
+            SELECT
+                PRODUCT_ID               AS "productId",
+                PRODUCT_CODE             AS "productCode",
+                PRODUCT_NAME             AS "productName",
+                MAKER_NAME               AS "makerName",
+                UNIT                     AS "unit",
+                STANDARD_PURCHASE_PRICE  AS "standardPurchasePrice",
+                STANDARD_SALES_PRICE     AS "standardSalesPrice",
+                IS_PRESCRIPTION          AS "isPrescription",
+                STORAGE_TYPE             AS "storageType",
+                STATUS                   AS "status",
+                UPDATED_AT               AS "updatedAt"
+            FROM PRODUCT
+            <where>
+                <if test="keyword != null and keyword != ''">
+                    AND (
+                        UPPER(PRODUCT_NAME) LIKE '%' || UPPER(#{keyword}) || '%'
+                        OR UPPER(PRODUCT_CODE) LIKE '%' || UPPER(#{keyword}) || '%'
+                    )
+                </if>
+                <if test="status != null and status != ''">
+                    AND STATUS = #{status}
+                </if>
+                <if test="isPrescription != null and isPrescription != ''">
+                    AND IS_PRESCRIPTION = #{isPrescription}
+                </if>
+                <if test="storageType != null and storageType != ''">
+                    AND STORAGE_TYPE = #{storageType}
+                </if>
+            </where>
+            ORDER BY UPDATED_AT DESC NULLS LAST, PRODUCT_ID DESC
+        )
+        WHERE ROWNUM &lt;= 300
+    </select>
+
+    <!--
         기본 API -> PRODUCT 반영.
         PRODUCT_CODE를 자연키로 사용하며, 저장된 값이 달라진 경우에만 UPDATE가 실행된다.
         따라서 월간 동기화 시 변경되지 않은 행은 다시 쓰지 않는다.
