@@ -231,6 +231,23 @@ export interface PageResult<T> {
   totalPages: number;
 }
 
+export interface ProductOption {
+  productId: number;
+  productCode: string;
+  productName: string;
+  unit: string;
+  standardPurchasePrice: number;
+}
+
+export interface ReceivableOrder {
+  poId: number;
+  supplierName: string;
+  requestEmpName: string;
+  approveEmpName: string;
+  approveDate: string;
+  totalAmount: number;
+}
+
 // ===== API 함수 =====
 
 export const purchaseOrderApi = {
@@ -244,7 +261,7 @@ export const purchaseOrderApi = {
   detail: (poId: number) => api.get<PurchaseOrder>(`/api/purchase-orders/${poId}`),
   suppliers: () =>
     api.get<{ supplierId: number; supplierName: string }[]>("/api/purchase-orders/suppliers"),
-  products: () => api.get<Record<string, unknown>[]>("/api/purchase-orders/products"),
+  products: () => api.get<ProductOption[]>("/api/purchase-orders/products"),
   create: (data: {
     supplierId: number;
     memo?: string;
@@ -265,7 +282,7 @@ export const purchaseOrderApi = {
 };
 
 export const receivingApi = {
-  receivableList: () => api.get<Record<string, unknown>[]>("/api/receivings"),
+  receivableList: () => api.get<ReceivableOrder[]>("/api/receivings"),
   detailsByPoId: (poId: number) =>
     api.get<PurchaseOrderDetail[]>(`/api/receivings/${poId}/details`),
   process: (data: { poId: number; memo?: string; details: ReceivingDetailInput[] }) =>
@@ -355,6 +372,31 @@ export const customerApi = {
   checkBusiness: (businessNo: string) =>
     api.post<BusinessStatus>("/api/customers/check-business", { businessNo }),
 };
+
+export interface RecallDrug {
+  productName: string;   // 품목명
+  entrpsName: string;    // 업체명
+  recallReason: string;  // 회수사유
+  enforceYn: string;     // 강제여부 Y/N
+  commandDate: string;   // 회수명령일자 (yyyyMMdd)
+  itemSeq: string;       // 품목기준코드
+  bizrno: string;        // 사업자등록번호
+  stdCd: string;         // 표준코드(바코드)
+  inStock: boolean;      // 우리가 취급하는 품목인지
+  productId: number | null; // 매칭된 우리 PRODUCT ID
+}
+
+export const recallApi = {
+  // 위해의약품 목록 조회 (+ 우리 재고 매칭)
+  list: (pageNo = 1, numOfRows = 50, onlyInStock = false) => {
+    const params = new URLSearchParams();
+    params.set("pageNo", String(pageNo));
+    params.set("numOfRows", String(numOfRows));
+    params.set("onlyInStock", String(onlyInStock));
+    return api.get<RecallDrug[]>(`/api/recall-drugs?${params.toString()}`);
+  },
+};
+
 
 // ===== 인사(HR) 도메인 =====
 

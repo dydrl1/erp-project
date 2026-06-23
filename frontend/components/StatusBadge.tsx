@@ -1,11 +1,27 @@
 // components/StatusBadge.tsx
-const LABELS: Record<string, string> = {
-  REQUESTED: "승인 대기",
-  APPROVED: "승인 완료",
-  REJECTED: "반려",
-  COMPLETED: "입고 완료",
+import { Tag } from "antd";
+
+const STATUS_META: Record<string, { label: string; color: string }> = {
+  REQUESTED: {
+    label: "승인 대기",
+    color: "gold",
+  },
+  APPROVED: {
+    label: "승인 완료",
+    color: "green",
+  },
+  REJECTED: {
+    label: "반려",
+    color: "red",
+  },
+  COMPLETED: {
+    label: "입고 완료",
+    color: "blue",
+  },
 };
 
 export default function StatusBadge({ status }: { status: string }) {
-  return <span className={`erp-badge ${status}`}>{LABELS[status] ?? status}</span>;
+  const meta = STATUS_META[status];
+
+  return <Tag color={meta?.color}>{meta?.label ?? status}</Tag>;
 }

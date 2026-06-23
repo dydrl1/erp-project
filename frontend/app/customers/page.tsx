@@ -2,14 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Table, Tabs, Input, Button, Alert, Space, Tag } from "antd";
+import { PlusOutlined } from "@ant-design/icons";
+import type { ColumnsType } from "antd/es/table";
 import ErpLayout from "@/components/ErpLayout";
 import { customerApi, Customer } from "@/lib/api";
-
-const TYPE_TABS = [
-  { key: "", label: "전체" },
-  { key: "PHARMACY", label: "약국" },
-  { key: "HOSPITAL", label: "병의원" },
-];
 
 const TYPE_LABEL: Record<string, string> = {
   PHARMACY: "약국",
@@ -44,76 +41,103 @@ export default function CustomersPage() {
 
   const handleSearch = () => loadCustomers(typeTab, keyword);
 
+  const columns: ColumnsType<Customer> = [
+    { title: "거래처명", dataIndex: "customerName", key: "customerName" },
+    {
+      title: "유형",
+      dataIndex: "customerType",
+      key: "customerType",
+      width: 90,
+      render: (type: string) => (
+        <Tag color={type === "PHARMACY" ? "green" : "blue"}>
+          {TYPE_LABEL[type] ?? type}
+        </Tag>
+      ),
+    },
+    {
+      title: "사업자번호",
+      dataIndex: "businessNo",
+      key: "businessNo",
+      render: (v: string | null) => v ?? "-",
+    },
+    {
+      title: "연락처",
+      dataIndex: "phone",
+      key: "phone",
+      render: (v: string | null) => v ?? "-",
+    },
+    {
+      title: "주소",
+      dataIndex: "address",
+      key: "address",
+      ellipsis: true,
+      render: (v: string | null) => v ?? "-",
+    },
+    {
+      title: "여신한도",
+      dataIndex: "creditLimit",
+      key: "creditLimit",
+      align: "right",
+      render: (v: number) => `${v.toLocaleString()}원`,
+    },
+    {
+      title: "미수금",
+      dataIndex: "receivableBalance",
+      key: "receivableBalance",
+      align: "right",
+      render: (v: number) => `${v.toLocaleString()}원`,
+    },
+  ];
+
   return (
     <ErpLayout title="거래처 관리">
-      <div className="erp-toolbar">
-        <div className="erp-tabs">
-          {TYPE_TABS.map((tab) => (
-            <button
-              key={tab.key}
-              className={`erp-tab ${typeTab === tab.key ? "active" : ""}`}
-              onClick={() => setTypeTab(tab.key)}
-            >
-              {tab.label}
-            </button>
-          ))}
+      <Space direction="vertical" size={16} style={{ width: "100%" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <Tabs
+            activeKey={typeTab}
+            onChange={setTypeTab}
+            items={[
+              { key: "", label: "전체" },
+              { key: "PHARMACY", label: "약국" },
+              { key: "HOSPITAL", label: "병의원" },
+            ]}
+          />
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={() => router.push("/customers/new")}
+          >
+            거래처 등록
+          </Button>
         </div>
-        <button className="erp-btn-primary" onClick={() => router.push("/customers/new")}>
-          + 거래처 등록
-        </button>
-      </div>
 
-      <div className="erp-search-bar">
-        <input
-          className="erp-input"
-          placeholder="거래처명 검색"
-          value={keyword}
-          onChange={(e) => setKeyword(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+        <Space>
+          <Input
+            placeholder="거래처명 검색"
+            value={keyword}
+            onChange={(e) => setKeyword(e.target.value)}
+            onPressEnter={handleSearch}
+            style={{ width: 240 }}
+            allowClear
+          />
+          <Button onClick={handleSearch}>검색</Button>
+        </Space>
+
+        {error && <Alert type="error" title={error} showIcon />}
+
+        <Table
+          rowKey="customerId"
+          columns={columns}
+          dataSource={customers}
+          loading={loading}
+          pagination={{ pageSize: 20 }}
+          onRow={(record) => ({
+            onClick: () => router.push(`/customers/${record.customerId}`),
+            style: { cursor: "pointer" },
+          })}
+          locale={{ emptyText: "등록된 거래처가 없습니다." }}
         />
-        <button className="erp-btn" onClick={handleSearch}>
-          검색
-        </button>
-      </div>
-
-      {error && <div className="erp-error">{error}</div>}
-
-      {loading ? (
-        <div className="erp-empty">불러오는 중...</div>
-      ) : customers.length === 0 ? (
-        <div className="erp-empty">등록된 거래처가 없습니다.</div>
-      ) : (
-        <table className="erp-table">
-          <thead>
-            <tr>
-              <th>거래처명</th>
-              <th>유형</th>
-              <th>사업자번호</th>
-              <th>연락처</th>
-              <th>주소</th>
-              <th>여신한도</th>
-              <th>미수금</th>
-            </tr>
-          </thead>
-          <tbody>
-            {customers.map((c) => (
-              <tr
-                key={c.customerId}
-                className="erp-row-link"
-                onClick={() => router.push(`/customers/${c.customerId}`)}
-              >
-                <td>{c.customerName}</td>
-                <td>{TYPE_LABEL[c.customerType] ?? c.customerType}</td>
-                <td>{c.businessNo ?? "-"}</td>
-                <td>{c.phone ?? "-"}</td>
-                <td className="erp-cell-ellipsis">{c.address ?? "-"}</td>
-                <td className="erp-cell-num">{c.creditLimit.toLocaleString()}원</td>
-                <td className="erp-cell-num">{c.receivableBalance.toLocaleString()}원</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
+      </Space>
     </ErpLayout>
   );
 }

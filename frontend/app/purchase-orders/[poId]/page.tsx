@@ -1,11 +1,34 @@
-// app/purchase-orders/[poId]/page.tsx — 발주 상세 + 승인/반려
 "use client";
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import {
+  Alert,
+  Button,
+  Card,
+  Descriptions,
+  Input,
+  Modal,
+  Popconfirm,
+  Space,
+  Spin,
+  Table,
+  Typography,
+} from "antd";
+import type { ColumnsType } from "antd/es/table";
+import {
+  ArrowLeftOutlined,
+  CheckOutlined,
+  CloseOutlined,
+} from "@ant-design/icons";
 import ErpLayout from "@/components/ErpLayout";
 import StatusBadge from "@/components/StatusBadge";
-import { purchaseOrderApi, PurchaseOrder, userStorage } from "@/lib/api";
+import { purchaseOrderApi, PurchaseOrder } from "@/lib/api";
+
+const { Text } = Typography;
+const { TextArea } = Input;
+
+type PurchaseOrderDetail = NonNullable<PurchaseOrder["details"]>[number];
 
 export default function PurchaseOrderDetailPage() {
   const { poId } = useParams<{ poId: string }>();
@@ -13,7 +36,7 @@ export default function PurchaseOrderDetailPage() {
 
   const [order, setOrder] = useState<PurchaseOrder | null>(null);
   const [error, setError] = useState("");
-  const [role] = useState(() => userStorage.get()?.role ?? "");
+  const [role, setRole] = useState("");
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
   const [processing, setProcessing] = useState(false);
@@ -27,14 +50,16 @@ export default function PurchaseOrderDetailPage() {
 
   useEffect(load, [poId]);
 
-  // 발주 승인
+  useEffect(() => {
+    setRole(localStorage.getItem("role") ?? "");
+  }, []);
+
   const handleApprove = async () => {
-    if (!confirm("이 발주를 승인하시겠습니까?")) return;
     setProcessing(true);
+
     try {
       await purchaseOrderApi.approve(Number(poId));
-      alert("발주가 승인되었습니다.");
-      router.push(`/purchase-orders`); // 목록이동
+      router.push("/purchase-orders");
     } catch (e) {
       alert((e as Error).message);
     } finally {
@@ -42,18 +67,18 @@ export default function PurchaseOrderDetailPage() {
     }
   };
 
-  // 발주 반려
   const handleReject = async () => {
     if (!rejectReason.trim()) {
       alert("반려 사유를 입력해주세요.");
       return;
     }
+
     setProcessing(true);
+
     try {
       await purchaseOrderApi.reject(Number(poId), rejectReason);
-      alert("발주가 반려되었습니다.");
       setShowRejectModal(false);
-      router.push(`/purchase-orders`); // 목록 이동
+      router.push("/purchase-orders");
     } catch (e) {
       alert((e as Error).message);
     } finally {
@@ -61,97 +86,162 @@ export default function PurchaseOrderDetailPage() {
     }
   };
 
-  if (error) return <ErpLayout title="발주 상세" back><p className="erp-warn-text">{error}</p></ErpLayout>;
-  if (!order) return <ErpLayout title="발주 상세" back><p>불러오는 중...</p></ErpLayout>;
+  const columns: ColumnsType<PurchaseOrderDetail> = [
+    {
+      title: "상품코드",
+      dataIndex: "productCode",
+    },
+    {
+      title: "상품명",
+      dataIndex: "productName",
+    },
+    {
+      title: "수량",
+      dataIndex: "orderQty",
+      align: "right",
+      render: (value) => value?.toLocaleString(),
+    },
+    {
+      title: "단가",
+      dataIndex: "unitPrice",
+      align: "right",
+      render: (value) => `${value?.toLocaleString() ?? 0}원`,
+    },
+    {
+      title: "금액",
+      dataIndex: "amount",
+      align: "right",
+      render: (value) => `${value?.toLocaleString() ?? 0}원`,
+    },
+  ];
+
+  if (error) {
+    return (
+      <ErpLayout title="발주 상세">
+        <Alert type="error" message={error} showIcon />
+      </ErpLayout>
+    );
+  }
+
+  if (!order) {
+    return (
+      <ErpLayout title="발주 상세">
+        <Spin />
+      </ErpLayout>
+    );
+  }
+
+  const canApprove =
+    order.status === "REQUESTED" && (role === "MANAGER" || role === "ADMIN");
 
   return (
-    <ErpLayout title={`발주 상세 — PO-${String(order.poId).padStart(4, "0")}`} back>
-      <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center" }}>
-        <StatusBadge status={order.status} />
-      </div>
+    <ErpLayout title={`발주 상세 - PO-${String(order.poId).padStart(4, "0")}`}>
+      <Space direction="vertical" size={16} style={{ width: "100%" }}>
+        <Space style={{ width: "100%", justifyContent: "space-between" }}>
+          <Button icon={<ArrowLeftOutlined />} onClick={() => router.back()}>
+            목록으로
+          </Button>
 
-      <div className="erp-cards">
-        <div className="erp-card">
-          <p>공급처</p>
-          <strong>{order.supplierName}</strong>
-          {order.supplierPhone && <p style={{ marginTop: 4 }}>{order.supplierPhone}</p>}
-        </div>
-        <div className="erp-card">
-          <p>기안자</p>
-          <strong>{order.requestEmpName}</strong>
-          <p style={{ marginTop: 4 }}>발주일 {order.poDate?.slice(0, 10)}</p>
-        </div>
-        <div className="erp-card">
-          <p>총금액</p>
-          <strong>{order.totalAmount?.toLocaleString()}원</strong>
-          {order.approveEmpName && <p style={{ marginTop: 4 }}>승인자 {order.approveEmpName}</p>}
-        </div>
-      </div>
+          <StatusBadge status={order.status} />
+        </Space>
 
-      <div className="erp-table-wrap">
-        <table className="erp-table">
-          <thead>
-            <tr>
-              <th>제품코드</th>
-              <th>제품명</th>
-              <th className="num">수량</th>
-              <th className="num">단가</th>
-              <th className="num">금액</th>
-            </tr>
-          </thead>
-          <tbody>
-            {order.details?.map((d) => (
-              <tr key={d.poDetailId} style={{ cursor: "default" }}>
-                <td>{d.productCode}</td>
-                <td>{d.productName}</td>
-                <td className="num">{d.orderQty?.toLocaleString()}</td>
-                <td className="num">{d.unitPrice?.toLocaleString()}</td>
-                <td className="num">{d.amount?.toLocaleString()}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+        <Card>
+          <Descriptions column={3} bordered size="middle">
+            <Descriptions.Item label="공급처">
+              <Space direction="vertical" size={2}>
+                <Text strong>{order.supplierName}</Text>
+                {order.supplierPhone && (
+                  <Text type="secondary">{order.supplierPhone}</Text>
+                )}
+              </Space>
+            </Descriptions.Item>
 
-      {order.memo && (
-        <p style={{ fontSize: 13, color: "var(--erp-text-muted)", margin: 0 }}>메모: {order.memo}</p>
-      )}
+            <Descriptions.Item label="기안자">
+              <Space direction="vertical" size={2}>
+                <Text strong>{order.requestEmpName}</Text>
+                <Text type="secondary">
+                  발주일 {order.poDate?.slice(0, 10)}
+                </Text>
+              </Space>
+            </Descriptions.Item>
 
-      {/* 승인 대기 + MANAGER/ADMIN일 때만 버튼 노출 */}
-      {order.status === "REQUESTED" && (role === "MANAGER" || role === "ADMIN") && (
-        <div className="erp-page-actions">
-          <button className="erp-btn danger-outline" disabled={processing} onClick={() => setShowRejectModal(true)}>
-            반려
-          </button>
-          <button className="erp-btn primary" disabled={processing} onClick={handleApprove}>
-            승인
-          </button>
-        </div>
-      )}
+            <Descriptions.Item label="총금액">
+              <Space direction="vertical" size={2}>
+                <Text strong>
+                  {order.totalAmount?.toLocaleString() ?? 0}원
+                </Text>
+                {order.approveEmpName && (
+                  <Text type="secondary">승인자 {order.approveEmpName}</Text>
+                )}
+              </Space>
+            </Descriptions.Item>
+          </Descriptions>
+        </Card>
 
-      {/* 반려 사유 입력 모달 */}
-      {showRejectModal && (
-        <div className="erp-modal-overlay" onClick={() => setShowRejectModal(false)}>
-          <div className="erp-modal" onClick={(e) => e.stopPropagation()}>
-            <h3>발주 반려</h3>
-            <p className="desc">
-              PO-{String(order.poId).padStart(4, "0")} 발주를 반려합니다. 반려 사유는 기안자에게 전달됩니다.
-            </p>
-            <textarea
-              className="erp-textarea"
+        <Table
+          rowKey="poDetailId"
+          columns={columns}
+          dataSource={order.details ?? []}
+          pagination={false}
+        />
+
+        {order.memo && (
+          <Alert type="info" message={`메모: ${order.memo}`} showIcon />
+        )}
+
+        {canApprove && (
+          <Space style={{ width: "100%", justifyContent: "flex-end" }}>
+            <Button
+              danger
+              icon={<CloseOutlined />}
+              disabled={processing}
+              onClick={() => setShowRejectModal(true)}
+            >
+              반려
+            </Button>
+
+            <Popconfirm
+              title="발주 승인"
+              description="이 발주를 승인하시겠습니까?"
+              okText="승인"
+              cancelText="취소"
+              onConfirm={handleApprove}
+            >
+              <Button
+                type="primary"
+                icon={<CheckOutlined />}
+                loading={processing}
+              >
+                승인
+              </Button>
+            </Popconfirm>
+          </Space>
+        )}
+
+        <Modal
+          title="발주 반려"
+          open={showRejectModal}
+          okText="반려 확정"
+          cancelText="취소"
+          okButtonProps={{ danger: true, loading: processing }}
+          onOk={handleReject}
+          onCancel={() => setShowRejectModal(false)}
+        >
+          <Space direction="vertical" size={12} style={{ width: "100%" }}>
+            <Text type="secondary">
+              PO-{String(order.poId).padStart(4, "0")} 발주를 반려합니다.
+              반려 사유는 기안자에게 전달됩니다.
+            </Text>
+
+            <TextArea
+              rows={4}
               placeholder="반려 사유를 입력해주세요"
               value={rejectReason}
               onChange={(e) => setRejectReason(e.target.value)}
             />
-            <div className="actions">
-              <button className="erp-btn" onClick={() => setShowRejectModal(false)}>취소</button>
-              <button className="erp-btn danger" disabled={processing} onClick={handleReject}>
-                반려 확정
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+          </Space>
+        </Modal>
+      </Space>
     </ErpLayout>
   );
 }

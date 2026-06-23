@@ -2,6 +2,10 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import {
+  Row, Col, Card, Segmented, Select, Input, Button,
+  Form, InputNumber, Alert, Space, message,
+} from "antd";
 import ErpLayout from "@/components/ErpLayout";
 import { customerApi, MedicalInst, BusinessStatus } from "@/lib/api";
 
@@ -27,7 +31,7 @@ export default function CustomerNewPage() {
     customerName: "",
     customerType: "PHARMACY" as "PHARMACY" | "HOSPITAL",
     businessNo: "",
-    creditLimit: "",
+    creditLimit: 0 as number | null,
     phone: "",
     address: "",
   });
@@ -38,12 +42,10 @@ export default function CustomerNewPage() {
   const [checking, setChecking] = useState(false);
 
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState("");
 
   // ----- 약국·병원 검색 -----
   const handleSearch = async () => {
     setSearching(true);
-    setError("");
     try {
       const data =
         searchType === "PHARMACY"
@@ -51,7 +53,7 @@ export default function CustomerNewPage() {
           : await customerApi.searchHospital(sido, undefined, searchName || undefined);
       setSearchResults(data);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "검색에 실패했습니다.");
+      message.error(e instanceof Error ? e.message : "검색에 실패했습니다.");
     } finally {
       setSearching(false);
     }
@@ -66,7 +68,6 @@ export default function CustomerNewPage() {
       phone: inst.phone ?? "",
       address: inst.address ?? "",
     }));
-    // 거래처가 바뀌면 이전 사업자 확인 결과 초기화
     setBizStatus(null);
     setBizMessage("");
   };
@@ -101,23 +102,33 @@ export default function CustomerNewPage() {
   // ----- 거래처 등록 -----
   const handleSubmit = async () => {
     if (!form.customerName.trim()) {
-      setError("거래처명을 입력해주세요.");
+      message.warning("거래처명을 입력해주세요.");
+      return;
+    }
+    // 사업자번호 필수
+    if (!form.businessNo.trim()) {
+      message.warning("사업자번호를 입력해주세요.");
+      return;
+    }
+    // 상태조회 통과 필수 (선택적으로)
+    if (!bizStatus || !bizStatus.valid) {
+      message.warning("사업자번호 상태조회를 통과해야 등록할 수 있습니다.");
       return;
     }
     setSubmitting(true);
-    setError("");
     try {
       await customerApi.create({
         customerName: form.customerName,
         customerType: form.customerType,
         businessNo: form.businessNo || undefined,
-        creditLimit: form.creditLimit ? Number(form.creditLimit) : undefined,
+        creditLimit: form.creditLimit ?? undefined,
         phone: form.phone || undefined,
         address: form.address || undefined,
       });
+      message.success("거래처가 등록되었습니다.");
       router.push("/customers");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "거래처 등록에 실패했습니다.");
+      message.error(e instanceof Error ? e.message : "거래처 등록에 실패했습니다.");
     } finally {
       setSubmitting(false);
     }
@@ -125,149 +136,162 @@ export default function CustomerNewPage() {
 
   return (
     <ErpLayout title="거래처 등록">
-      {error && <div className="erp-error">{error}</div>}
-
-      <div className="erp-form-grid">
+      <Row gutter={20}>
         {/* 왼쪽: 약국·병원 검색 */}
-        <section className="erp-card">
-          <h2 className="erp-card-title">약국 · 병의원 검색</h2>
-          <p className="erp-card-desc">
-            공공데이터에서 기관을 검색해 선택하면 정보가 자동으로 채워집니다.
-          </p>
+        <Col xs={24} lg={12}>
+          <Card title="약국 · 병의원 검색">
+            <p style={{ color: "#8a9690", marginTop: 0 }}>
+              공공데이터에서 기관을 검색해 선택하면 정보가 자동으로 채워집니다.
+            </p>
 
-          <div className="erp-segment">
-            <button
-              className={`erp-segment-btn ${searchType === "PHARMACY" ? "active" : ""}`}
-              onClick={() => setSearchType("PHARMACY")}
-            >
-              약국
-            </button>
-            <button
-              className={`erp-segment-btn ${searchType === "HOSPITAL" ? "active" : ""}`}
-              onClick={() => setSearchType("HOSPITAL")}
-            >
-              병의원
-            </button>
-          </div>
+            <Space direction="vertical" size={12} style={{ width: "100%" }}>
+              <Segmented
+                block
+                value={searchType}
+                onChange={(v) => setSearchType(v as "PHARMACY" | "HOSPITAL")}
+                options={[
+                  { label: "약국", value: "PHARMACY" },
+                  { label: "병의원", value: "HOSPITAL" },
+                ]}
+              />
 
-          <div className="erp-field-row">
-            <select className="erp-input" value={sido} onChange={(e) => setSido(e.target.value)}>
-              {SIDO_LIST.map((s) => (
-                <option key={s} value={s}>
-                  {s}
-                </option>
-              ))}
-            </select>
-            <input
-              className="erp-input"
-              placeholder="기관명 (선택)"
-              value={searchName}
-              onChange={(e) => setSearchName(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-            />
-            <button className="erp-btn-primary" onClick={handleSearch} disabled={searching}>
-              {searching ? "검색 중..." : "검색"}
-            </button>
-          </div>
+              <Space.Compact style={{ width: "100%" }}>
+                <Select
+                  value={sido}
+                  onChange={setSido}
+                  options={SIDO_LIST.map((s) => ({ label: s, value: s }))}
+                  style={{ width: 160 }}
+                />
+                <Input
+                  placeholder="기관명 (선택)"
+                  value={searchName}
+                  onChange={(e) => setSearchName(e.target.value)}
+                  onPressEnter={handleSearch}
+                />
+                <Button type="primary" loading={searching} onClick={handleSearch}>
+                  검색
+                </Button>
+              </Space.Compact>
 
-          <div className="erp-search-results">
-            {searchResults.length === 0 ? (
-              <div className="erp-empty-sm">검색 결과가 여기에 표시됩니다.</div>
-            ) : (
-              searchResults.map((inst, idx) => (
-                <button
-                  key={`${inst.name}-${idx}`}
-                  className="erp-result-item"
-                  onClick={() => handleSelect(inst)}
-                >
-                  <div className="erp-result-name">{inst.name}</div>
-                  <div className="erp-result-sub">{inst.address}</div>
-                  <div className="erp-result-sub">{inst.phone}</div>
-                </button>
-              ))
-            )}
-          </div>
-        </section>
+              <div
+                style={{
+                  maxHeight: 420,
+                  overflowY: "auto",
+                  border: "1px solid #f0f0f0",
+                  borderRadius: 8,
+                }}
+              >
+                {searchResults.length === 0 ? (
+                  <div style={{ textAlign: "center", color: "#aab4af", padding: 28, fontSize: 13 }}>
+                    검색 결과가 여기에 표시됩니다.
+                  </div>
+                ) : (
+                  searchResults.map((inst, idx) => (
+                    <div
+                      key={`${inst.name}-${idx}`}
+                      onClick={() => handleSelect(inst)}
+                      style={{
+                        cursor: "pointer",
+                        padding: "12px 14px",
+                        borderBottom: idx === searchResults.length - 1 ? "none" : "1px solid #f0f4f2",
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = "#f6faf8")}
+                      onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                    >
+                      <div style={{ fontWeight: 600 }}>{inst.name}</div>
+                      <div style={{ fontSize: 12, color: "#8a9690" }}>{inst.address}</div>
+                      <div style={{ fontSize: 12, color: "#8a9690" }}>{inst.phone}</div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </Space>
+          </Card>
+        </Col>
 
         {/* 오른쪽: 거래처 등록 폼 */}
-        <section className="erp-card">
-          <h2 className="erp-card-title">거래처 정보</h2>
+        <Col xs={24} lg={12}>
+          <Card title="거래처 정보">
+            <Form layout="vertical">
+              <Form.Item label="거래처명" required>
+                <Input
+                  value={form.customerName}
+                  onChange={(e) => setForm({ ...form, customerName: e.target.value })}
+                  placeholder="검색에서 선택하거나 직접 입력"
+                />
+              </Form.Item>
 
-          <label className="erp-label">거래처명 *</label>
-          <input
-            className="erp-input"
-            value={form.customerName}
-            onChange={(e) => setForm({ ...form, customerName: e.target.value })}
-            placeholder="검색에서 선택하거나 직접 입력"
-          />
+              <Form.Item label="유형" required>
+                <Select
+                  value={form.customerType}
+                  onChange={(v) => setForm({ ...form, customerType: v })}
+                  options={[
+                    { label: "약국", value: "PHARMACY" },
+                    { label: "병의원", value: "HOSPITAL" },
+                  ]}
+                />
+              </Form.Item>
 
-          <label className="erp-label">유형 *</label>
-          <select
-            className="erp-input"
-            value={form.customerType}
-            onChange={(e) =>
-              setForm({ ...form, customerType: e.target.value as "PHARMACY" | "HOSPITAL" })
-            }
-          >
-            <option value="PHARMACY">약국</option>
-            <option value="HOSPITAL">병의원</option>
-          </select>
+              <Form.Item label="사업자번호">
+                <Space.Compact style={{ width: "100%" }}>
+                  <Input
+                    value={form.businessNo}
+                    onChange={(e) => {
+                      setForm({ ...form, businessNo: e.target.value });
+                      setBizStatus(null);
+                      setBizMessage("");
+                    }}
+                    placeholder="- 없이 10자리"
+                  />
+                  <Button loading={checking} onClick={handleCheckBusiness}>
+                    상태조회
+                  </Button>
+                </Space.Compact>
+                {bizMessage && (
+                  <Alert
+                    style={{ marginTop: 8 }}
+                    type={bizStatus?.valid ? "success" : "warning"}
+                    title={bizMessage}
+                    showIcon
+                  />
+                )}
+              </Form.Item>
 
-          <label className="erp-label">사업자번호</label>
-          <div className="erp-field-row">
-            <input
-              className="erp-input"
-              value={form.businessNo}
-              onChange={(e) => {
-                setForm({ ...form, businessNo: e.target.value });
-                setBizStatus(null);
-                setBizMessage("");
-              }}
-              placeholder="- 없이 10자리"
-            />
-            <button className="erp-btn" onClick={handleCheckBusiness} disabled={checking}>
-              {checking ? "조회 중..." : "상태조회"}
-            </button>
-          </div>
-          {bizMessage && (
-            <div className={`erp-biz-status ${bizStatus?.valid ? "ok" : "warn"}`}>
-              {bizMessage}
-            </div>
-          )}
+              <Form.Item label="연락처">
+                <Input
+                  value={form.phone}
+                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                />
+              </Form.Item>
 
-          <label className="erp-label">연락처</label>
-          <input
-            className="erp-input"
-            value={form.phone}
-            onChange={(e) => setForm({ ...form, phone: e.target.value })}
-          />
+              <Form.Item label="주소">
+                <Input
+                  value={form.address}
+                  onChange={(e) => setForm({ ...form, address: e.target.value })}
+                />
+              </Form.Item>
 
-          <label className="erp-label">주소</label>
-          <input
-            className="erp-input"
-            value={form.address}
-            onChange={(e) => setForm({ ...form, address: e.target.value })}
-          />
+              <Form.Item label="여신한도 (원)">
+                <InputNumber
+                  style={{ width: "100%" }}
+                  value={form.creditLimit}
+                  onChange={(v) => setForm({ ...form, creditLimit: v })}
+                  formatter={(v) => `${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
+                  parser={(v) => Number((v ?? "").replace(/,/g, ""))}
+                  min={0}
+                />
+              </Form.Item>
 
-          <label className="erp-label">여신한도 (원)</label>
-          <input
-            className="erp-input"
-            type="number"
-            value={form.creditLimit}
-            onChange={(e) => setForm({ ...form, creditLimit: e.target.value })}
-            placeholder="0"
-          />
-
-          <div className="erp-form-actions">
-            <button className="erp-btn" onClick={() => router.push("/customers")}>
-              취소
-            </button>
-            <button className="erp-btn-primary" onClick={handleSubmit} disabled={submitting}>
-              {submitting ? "등록 중..." : "거래처 등록"}
-            </button>
-          </div>
-        </section>
-      </div>
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+                <Button onClick={() => router.push("/customers")}>취소</Button>
+                <Button type="primary" loading={submitting} onClick={handleSubmit}>
+                  거래처 등록
+                </Button>
+              </div>
+            </Form>
+          </Card>
+        </Col>
+      </Row>
     </ErpLayout>
   );
 }

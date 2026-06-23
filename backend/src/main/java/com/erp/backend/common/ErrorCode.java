@@ -68,6 +68,7 @@ public enum ErrorCode {
     CUSTOMER_NOT_FOUND(HttpStatus.NOT_FOUND, "거래처를 찾을 수 없습니다."),
     BUSINESS_NOT_REGISTERED(HttpStatus.BAD_REQUEST, "국세청에 등록되지 않은 사업자번호입니다."),
     BUSINESS_NOT_ACTIVE(HttpStatus.BAD_REQUEST, "휴업 또는 폐업 상태인 사업자는 등록할 수 없습니다."),
+    BUSINESS_NO_REQUIRED(HttpStatus.BAD_REQUEST, "사업자번호는 필수입니다."),
 
     // 배송
     SHIPMENT_ALREADY_EXISTS(HttpStatus.CONFLICT,"이미 배정된 배송이 있습니다."),
