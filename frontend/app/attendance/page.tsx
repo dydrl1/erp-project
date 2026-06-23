@@ -1,20 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import ErpLayout from "@/components/ErpLayout";
-import { userStorage } from "@/lib/api";
+import { useRole } from "@/lib/hooks";
 import MyAttendance from "./MyAttendance";
 import AdminAttendance from "./AdminAttendance";
 
 export default function AttendancePage() {
+  const role = useRole();
+  const isManager = role === "MANAGER" || role === "ADMIN";
   const [tab, setTab] = useState<"my" | "admin">("my");
-  const [isManager, setIsManager] = useState(false);
   const [absenceOpen, setAbsenceOpen] = useState(false);
-
-  useEffect(() => {
-    const role = userStorage.get()?.role;
-    setIsManager(role === "MANAGER" || role === "ADMIN");
-  }, []);
 
   const tabs = [
     { key: "my" as const, label: "내 근태", show: true },

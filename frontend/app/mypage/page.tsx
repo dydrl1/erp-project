@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useState } from "react";
 import ErpLayout from "@/components/ErpLayout";
 import { roleLabel } from "@/components/EmployeeStatusBadge";
-import { authApi, employeeApi, userStorage, type Employee } from "@/lib/api";
+import { authApi, employeeApi, type Employee } from "@/lib/api";
+import { useAuthUser } from "@/lib/hooks";
 
 // 위→아래 라벨-값 리스트 한 줄
 function Row({ label, children, last }: { label: string; children: React.ReactNode; last?: boolean }) {
@@ -75,7 +76,7 @@ export default function MyPage() {
     }
   };
 
-  const cached = typeof window !== "undefined" ? userStorage.get() : null;
+  const cached = useAuthUser();
 
   return (
     <ErpLayout title="마이페이지">

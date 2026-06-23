@@ -9,11 +9,11 @@ import {
   adminEmployeeApi,
   departmentApi,
   employeeApi,
-  userStorage,
   type Department,
   type Employee,
   type RoleCode,
 } from "@/lib/api";
+import { useRole } from "@/lib/hooks";
 
 // 위→아래 라벨-값(또는 입력) 리스트 한 줄
 function Row({ label, children, last }: { label: string; children: React.ReactNode; last?: boolean }) {
@@ -35,7 +35,7 @@ export default function EmployeeDetailPage() {
   const [error, setError] = useState("");
   const [processing, setProcessing] = useState(false);
 
-  const [isAdmin, setIsAdmin] = useState(false);
+  const isAdmin = useRole() === "ADMIN";
   const [depts, setDepts] = useState<Department[]>([]);
 
   // 관리자 작업 입력 상태
@@ -63,7 +63,6 @@ export default function EmployeeDetailPage() {
   useEffect(load, [load]);
 
   useEffect(() => {
-    setIsAdmin(userStorage.get()?.role === "ADMIN");
     departmentApi.list().then(setDepts).catch(() => {});
   }, []);
 

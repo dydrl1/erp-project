@@ -1,12 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   adminAttendanceApi,
   departmentApi,
   type Attendance,
   type Department,
 } from "@/lib/api";
+import { useAsyncData } from "@/lib/hooks";
 
 const fmt = (d: Date) => d.toLocaleDateString("sv-SE");
 const timeOnly = (iso: string | null) =>
@@ -31,25 +32,21 @@ export default function AdminAttendance({
   absenceOpen: boolean;
   onAbsenceClose: () => void;
 }) {
-  const today = new Date();
-  const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
-
   const [depts, setDepts] = useState<Department[]>([]);
 
   const [deptId, setDeptId] = useState("");
   const [empId, setEmpId] = useState("");
-  const [from, setFrom] = useState(fmt(monthStart));
-  const [to, setTo] = useState(fmt(today));
+  const [from, setFrom] = useState(() => {
+    const d = new Date();
+    return fmt(new Date(d.getFullYear(), d.getMonth(), 1));
+  });
+  const [to, setTo] = useState(() => fmt(new Date()));
   const [status, setStatus] = useState("");
-
-  const [list, setList] = useState<Attendance[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
 
   const [editing, setEditing] = useState<Attendance | null>(null);
   const [editForm, setEditForm] = useState({ checkIn: "", checkOut: "", status: "", memo: "" });
 
-  const [absence, setAbsence] = useState({ empId: "", workDate: fmt(today), status: "ABSENT", memo: "" });
+  const [absence, setAbsence] = useState(() => ({ empId: "", workDate: fmt(new Date()), status: "ABSENT", memo: "" }));
 
   const [busy, setBusy] = useState(false);
 
@@ -57,23 +54,20 @@ export default function AdminAttendance({
     departmentApi.list().then(setDepts).catch(() => {});
   }, []);
 
-  const loadList = useCallback(() => {
-    setLoading(true);
-    setError("");
-    adminAttendanceApi
-      .search({
-        deptId: deptId ? Number(deptId) : undefined,
-        empId: empId ? Number(empId) : undefined,
-        from,
-        to,
-        status: status || undefined,
-      })
-      .then(setList)
-      .catch((e: Error) => setError(e.message))
-      .finally(() => setLoading(false));
-  }, [deptId, empId, from, to, status]);
-
-  useEffect(() => { loadList(); }, [loadList]);
+  // 검색 조건이 바뀔 때마다 경쟁상태-안전하게 재조회
+  const listData = useAsyncData(
+    () => adminAttendanceApi.search({
+      deptId: deptId ? Number(deptId) : undefined,
+      empId: empId ? Number(empId) : undefined,
+      from,
+      to,
+      status: status || undefined,
+    }),
+    [deptId, empId, from, to, status],
+  );
+  const list = listData.data ?? [];
+  const loading = listData.loading;
+  const error = listData.error;
 
   const openEdit = (a: Attendance) => {
     setEditing(a);
@@ -96,7 +90,7 @@ export default function AdminAttendance({
         memo: editForm.memo,
       });
       setEditing(null);
-      loadList();
+      listData.reload();
     } catch (e) {
       alert((e as Error).message);
     } finally {
@@ -115,8 +109,8 @@ export default function AdminAttendance({
         memo: absence.memo || undefined,
       });
       onAbsenceClose();
-      setAbsence({ empId: "", workDate: fmt(today), status: "ABSENT", memo: "" });
-      loadList();
+      setAbsence({ empId: "", workDate: fmt(new Date()), status: "ABSENT", memo: "" });
+      listData.reload();
     } catch (e) {
       alert((e as Error).message);
     } finally {
@@ -141,7 +135,7 @@ export default function AdminAttendance({
           <option value="">전체 상태</option>
           {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
         </select>
-        <button className="erp-btn" onClick={loadList}>조회</button>
+        <button className="erp-btn" onClick={listData.reload}>조회</button>
       </div>
 
       {error && <p className="erp-warn-text">{error}</p>}

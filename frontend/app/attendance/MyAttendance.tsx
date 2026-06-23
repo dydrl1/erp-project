@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { attendanceApi, type Attendance } from "@/lib/api";
+import { useState } from "react";
+import { attendanceApi } from "@/lib/api";
+import { useAsyncData } from "@/lib/hooks";
 
 const fmt = (d: Date) => d.toLocaleDateString("sv-SE");
 const timeOnly = (iso: string | null) =>
@@ -17,44 +18,34 @@ const hoursToHM = (h?: number | null) => {
 };
 
 export default function MyAttendance() {
-  const today = new Date();
-  const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
-
-  const [todayRec, setTodayRec] = useState<Attendance | null>(null);
-  const [from, setFrom] = useState(fmt(monthStart));
-  const [to, setTo] = useState(fmt(today));
-  const [list, setList] = useState<Attendance[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [from, setFrom] = useState(() => {
+    const d = new Date();
+    return fmt(new Date(d.getFullYear(), d.getMonth(), 1));
+  });
+  const [to, setTo] = useState(() => fmt(new Date()));
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
 
-  const loadToday = useCallback(() => {
-    attendanceApi.today().then(setTodayRec).catch(() => setTodayRec(null));
-  }, []);
+  // 오늘 출퇴근(today)과 기간 목록(myList)을 각각 경쟁상태-안전하게 로드
+  const todayData = useAsyncData(() => attendanceApi.today(), []);
+  const listData = useAsyncData(() => attendanceApi.myList(from, to), [from, to]);
 
-  const loadList = useCallback(() => {
-    setLoading(true);
-    setError("");
-    attendanceApi
-      .myList(from, to)
-      .then(setList)
-      .catch((e: Error) => setError(e.message))
-      .finally(() => setLoading(false));
-  }, [from, to]);
+  const todayRec = todayData.data;
+  const list = listData.data ?? [];
+  const loading = listData.loading;
+  const error = listData.error;
 
-  useEffect(() => { loadToday(); }, [loadToday]);
-  useEffect(() => { loadList(); }, [loadList]);
+  const refresh = () => { todayData.reload(); listData.reload(); };
 
   const handleCheckIn = async () => {
     setBusy(true);
-    try { await attendanceApi.checkIn(); loadToday(); loadList(); }
+    try { await attendanceApi.checkIn(); refresh(); }
     catch (e) { alert((e as Error).message); }
     finally { setBusy(false); }
   };
 
   const handleCheckOut = async () => {
     setBusy(true);
-    try { await attendanceApi.checkOut(); loadToday(); loadList(); }
+    try { await attendanceApi.checkOut(); refresh(); }
     catch (e) { alert((e as Error).message); }
     finally { setBusy(false); }
   };
@@ -87,7 +78,7 @@ export default function MyAttendance() {
         <input type="date" className="erp-input" value={from} max={to} onChange={(e) => setFrom(e.target.value)} />
         <span style={{ color: "var(--erp-text-muted)" }}>~</span>
         <input type="date" className="erp-input" value={to} min={from} onChange={(e) => setTo(e.target.value)} />
-        <button className="erp-btn" onClick={loadList}>조회</button>
+        <button className="erp-btn" onClick={listData.reload}>조회</button>
       </div>
 
       {error && <p className="erp-warn-text">{error}</p>}

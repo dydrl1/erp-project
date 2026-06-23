@@ -1,15 +1,15 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import ErpLayout from "@/components/ErpLayout";
 import EmployeeStatusBadge, { roleLabel } from "@/components/EmployeeStatusBadge";
+import { useAsyncData, useRole } from "@/lib/hooks";
 import {
   adminEmployeeApi,
   departmentApi,
   employeeApi,
   type Department,
-  type Employee,
   type EmployeeSearchCondition,
 } from "@/lib/api";
 
@@ -22,49 +22,33 @@ const ROLES = [
 
 export default function EmployeeListPage() {
   const router = useRouter();
-  const [tab, setTab] = useState<"active" | "pending">("active");
+  const isAdmin = useRole() === "ADMIN";
 
+  const [tab, setTab] = useState<"active" | "pending">("active");
   const [depts, setDepts] = useState<Department[]>([]);
+
+  // cond: 입력 중 값 / committed: 실제 조회에 반영된 값(검색 버튼·Enter로 확정)
   const [cond, setCond] = useState<EmployeeSearchCondition>({});
-  const [list, setList] = useState<Employee[]>([]);
-  const [pending, setPending] = useState<Employee[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [committed, setCommitted] = useState<EmployeeSearchCondition>({});
+
+  const active = useAsyncData(() => employeeApi.list(committed), [committed]);
+  const pending = useAsyncData(() => adminEmployeeApi.pending(), []);
 
   useEffect(() => {
     departmentApi.list().then(setDepts).catch(() => {});
   }, []);
 
-  const loadList = useCallback(() => {
-    setLoading(true);
-    setError("");
-    employeeApi
-      .list(cond)
-      .then(setList)
-      .catch((e: Error) => setError(e.message))
-      .finally(() => setLoading(false));
-  }, [cond]);
+  const list = active.data ?? [];
+  const pendingList = pending.data ?? [];
+  const error = active.error || pending.error;
 
-  const loadPending = useCallback(() => {
-    setLoading(true);
-    setError("");
-    adminEmployeeApi
-      .pending()
-      .then(setPending)
-      .catch((e: Error) => setError(e.message))
-      .finally(() => setLoading(false));
-  }, []);
-
-  useEffect(() => {
-    if (tab === "active") loadList();
-    else loadPending();
-  }, [tab, loadList, loadPending]);
+  const search = () => setCommitted({ ...cond });
 
   const handleApprove = async (empId: number) => {
     if (!confirm("이 직원의 가입을 승인하시겠습니까?")) return;
     try {
       await adminEmployeeApi.approve(empId);
-      loadPending();
+      pending.reload();
     } catch (e) {
       alert((e as Error).message);
     }
@@ -74,7 +58,7 @@ export default function EmployeeListPage() {
     if (!confirm("이 직원의 가입을 거절하시겠습니까?")) return;
     try {
       await adminEmployeeApi.reject(empId);
-      loadPending();
+      pending.reload();
     } catch (e) {
       alert((e as Error).message);
     }
@@ -83,28 +67,36 @@ export default function EmployeeListPage() {
   return (
     <ErpLayout title="직원 관리">
       {/* 탭 */}
-      <div style={{ display: "flex", gap: 4, borderBottom: "1px solid var(--erp-line)" }}>
-        {([
-          { key: "active", label: "재직 직원" },
-          { key: "pending", label: "승인 대기", count: pending.length },
-        ] as const).map((t) => {
-          const active = tab === t.key;
-          return (
-            <button
-              key={t.key}
-              onClick={() => setTab(t.key)}
-              style={{
-                padding: "10px 16px", border: "none", background: "none", cursor: "pointer",
-                fontSize: 14, fontWeight: active ? 600 : 400,
-                color: active ? "var(--erp-primary)" : "var(--erp-text-muted)",
-                borderBottom: active ? "2px solid var(--erp-primary)" : "2px solid transparent",
-                marginBottom: -1,
-              }}
-            >
-              {t.label}
-            </button>
-          );
-        })}
+      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", borderBottom: "1px solid var(--erp-line)" }}>
+        <div style={{ display: "flex", gap: 4 }}>
+          {([
+            { key: "active", label: "재직 직원" },
+            { key: "pending", label: "승인 대기", count: pendingList.length },
+          ] as const).map((t) => {
+            const tabActive = tab === t.key;
+            return (
+              <button
+                key={t.key}
+                onClick={() => setTab(t.key)}
+                style={{
+                  padding: "10px 16px", border: "none", background: "none", cursor: "pointer",
+                  fontSize: 14, fontWeight: tabActive ? 600 : 400,
+                  color: tabActive ? "var(--erp-primary)" : "var(--erp-text-muted)",
+                  borderBottom: tabActive ? "2px solid var(--erp-primary)" : "2px solid transparent",
+                  marginBottom: -1,
+                }}
+              >
+                {t.label}
+              </button>
+            );
+          })}
+        </div>
+        {isAdmin && (
+          <button className="erp-btn primary" style={{ height: 32, marginBottom: 6 }}
+            onClick={() => router.push("/employees/new")}>
+            + 직원 등록
+          </button>
+        )}
       </div>
 
       {/* 검색 (재직 탭) */}
@@ -134,10 +126,10 @@ export default function EmployeeListPage() {
             placeholder="이름 검색"
             value={cond.empName ?? ""}
             onChange={(e) => setCond((c) => ({ ...c, empName: e.target.value || undefined }))}
-            onKeyDown={(e) => e.key === "Enter" && loadList()}
+            onKeyDown={(e) => e.key === "Enter" && search()}
             style={{ flex: 1, maxWidth: 220 }}
           />
-          <button className="erp-btn" onClick={loadList}>검색</button>
+          <button className="erp-btn" onClick={search}>검색</button>
         </div>
       )}
 
@@ -153,7 +145,7 @@ export default function EmployeeListPage() {
               </tr>
             </thead>
             <tbody>
-              {loading ? (
+              {active.loading ? (
                 <tr><td colSpan={7} style={{ textAlign: "center", padding: 40 }}>불러오는 중...</td></tr>
               ) : list.length === 0 ? (
                 <tr><td colSpan={7} style={{ textAlign: "center", padding: 40 }}>직원이 없습니다.</td></tr>
@@ -185,12 +177,12 @@ export default function EmployeeListPage() {
               </tr>
             </thead>
             <tbody>
-              {loading ? (
+              {pending.loading ? (
                 <tr><td colSpan={6} style={{ textAlign: "center", padding: 40 }}>불러오는 중...</td></tr>
-              ) : pending.length === 0 ? (
+              ) : pendingList.length === 0 ? (
                 <tr><td colSpan={6} style={{ textAlign: "center", padding: 40 }}>승인 대기 중인 직원이 없습니다.</td></tr>
               ) : (
-                pending.map((e) => (
+                pendingList.map((e) => (
                   <tr key={e.empId} style={{ cursor: "default" }}>
                     <td>{String(e.empId).padStart(4, "0")}</td>
                     <td>{e.loginId}</td>
