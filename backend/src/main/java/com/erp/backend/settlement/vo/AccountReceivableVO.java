@@ -20,5 +20,8 @@ public class AccountReceivableVO {
     private LocalDate dueDate; // 입금 예정일
     private String status; // 미수금 상태
     private LocalDate createdAt; // 생성일자
-
+    private BigDecimal monthSalesAmount; // 당월 매출액
+    private BigDecimal creditLimit; // 여신한도
+    private BigDecimal creditBalance; // 여신잔액
+    
 }

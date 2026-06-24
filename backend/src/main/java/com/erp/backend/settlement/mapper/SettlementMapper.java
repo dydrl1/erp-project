@@ -41,11 +41,17 @@ public interface SettlementMapper {
     // 미지급금 상세조회
     AccountPayableVO findAccountPayableById(Long apId);
 
+    // 수금 대상 목록 조회
+    List<AccountReceivableVO> findPaymentTargets(Map<String, Object> params);
+
     // 수금내역 상세조회
     PaymentVO findPaymentById(Long paymentId);
 
     // 손익정산 상세조회
     SettlementVO findSettlementById(Long settlementId);
+
+    // 거래처별 미수금 목록
+    List<AccountReceivableVO> findCustomerReceivableSummary(Map<String, Object> params);
 
     // 매출청구 등록
     int insertSalesInvoice(SalesInvoiceVO salesInvoiceVO);
@@ -63,6 +69,15 @@ public interface SettlementMapper {
 
     // 미수금 입금액/잔액 수정
     int updateAccountReceivablePayment(PaymentVO paymentVO);
+
+    // 미지급금 지급액/잔액 수정
+    int updateAccountPayablePayment(AccountPayableVO accountPayableVO);
+
+    // 지급내역 조회
+    List<PayablePaymentVO> findAllPayablePayments(Map<String, Object> params);
+
+    // 지급내역 등록
+    int insertPayablePayment(PayablePaymentVO payablePaymentVO);
 
     // 여신한도 체크용 현재 미수금 조회
     BigDecimal findCurrentReceivableAmount(Integer customerId);
