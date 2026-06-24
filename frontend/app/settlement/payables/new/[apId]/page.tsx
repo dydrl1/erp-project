@@ -11,7 +11,7 @@ type PayableInfo = {
     supplierId: number;
     supplierName: string;
     dueDate: string;
-    payableAmount: number;
+    totalAmount: number;
     paidAmount: number;
     remainAmount: number;
     status: string;
@@ -68,7 +68,7 @@ export default function PayablePaymentPage() {
             apId: payable.apId,
             supplierId: payable.supplierId,
             paymentDate,
-            paidAmount: amount,
+            paymentAmount: amount,
             paymentType,
             createdBy,
         };
@@ -89,7 +89,7 @@ export default function PayablePaymentPage() {
         })
         .then(() => {
             alert("지급 처리가 완료되었습니다.");
-            router.push("/settlement/payables");
+            router.push("/settlement/payables/history");
         })
         .catch((err) => {
             console.error(err);
@@ -114,7 +114,7 @@ export default function PayablePaymentPage() {
 
                                 <div className="erp-card">
                                     <p>지급금액</p>
-                                    <strong>{formatMoney(payable.payableAmount)}</strong>
+                                    <strong>{formatMoney(payable.totalAmount)}</strong>
                                 </div>
 
                                 <div className="erp-card">

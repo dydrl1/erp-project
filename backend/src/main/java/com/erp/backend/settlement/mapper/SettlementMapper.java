@@ -68,6 +68,12 @@ public interface SettlementMapper {
     // 미지급금 지급액/잔액 수정
     int updateAccountPayablePayment(AccountPayableVO accountPayableVO);
 
+    // 지급내역 조회
+    List<PayablePaymentVO> findAllPayablePayments(Map<String, Object> params);
+
+    // 지급내역 등록
+    int insertPayablePayment(PayablePaymentVO payablePaymentVO);
+
     // 여신한도 체크용 현재 미수금 조회
     BigDecimal findCurrentReceivableAmount(Integer customerId);
 

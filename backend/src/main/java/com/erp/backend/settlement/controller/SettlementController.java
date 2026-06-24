@@ -80,6 +80,19 @@ public class SettlementController {
         );
     }
 
+    @Operation(summary = "지급내역 조회")
+    @GetMapping("/payables/payments")
+    public ResponseEntity<ApiResponse<List<PayablePaymentVO>>> getPayablePaymentList(
+            @RequestParam(required = false) String supplierName,
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate) {
+        return ResponseEntity.ok(
+                ApiResponse.success(
+                        settlementService.getPayablePaymentList(supplierName, startDate, endDate)
+                )
+        );
+    }
+
     @Operation(summary = "수금 대상 목록 조회")
     @GetMapping("/payments/receivables")
     public ResponseEntity<ApiResponse<List<AccountReceivableVO>>> getPaymentTargets(
@@ -187,8 +200,8 @@ public class SettlementController {
 
     @Operation(summary = "미지급금 지급 처리")
     @PostMapping("/payables/payment")
-    public ResponseEntity<String> createPayablePayment(@RequestBody AccountPayableVO accountPayableVO) {
-        settlementService.createPayablePayment(accountPayableVO);
+    public ResponseEntity<String> createPayablePayment(@RequestBody PayablePaymentVO payablePaymentVO) {
+        settlementService.createPayablePayment(payablePaymentVO);
         return ResponseEntity.ok("지급 처리 완료");
     }
 

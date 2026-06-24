@@ -318,6 +318,60 @@
         WHERE AP.AP_ID = #{apId}
     </select>
 
+    <!-- 지급내역 조회 -->
+    <select id="findAllPayablePayments"
+            parameterType="map"
+            resultType="com.erp.backend.settlement.vo.PayablePaymentVO">
+        SELECT
+            PP.PAYABLE_PAYMENT_ID,
+            PP.AP_ID,
+            PP.SUPPLIER_ID,
+            S.SUPPLIER_NAME,
+            PP.PAYMENT_DATE,
+            PP.PAYMENT_AMOUNT,
+            PP.PAYMENT_TYPE,
+            PP.CREATED_BY,
+            PP.CREATED_AT
+        FROM PAYABLE_PAYMENT PP
+        JOIN SUPPLIER S
+            ON S.SUPPLIER_ID = PP.SUPPLIER_ID
+        WHERE 1 = 1
+        <if test="supplierName != null and supplierName != ''">
+            AND S.SUPPLIER_NAME LIKE '%' || #{supplierName} || '%'
+        </if>
+        <if test="startDate != null and startDate != ''">
+            AND PP.PAYMENT_DATE &gt;= TO_DATE(#{startDate}, 'YYYY-MM-DD')
+        </if>
+        <if test="endDate != null and endDate != ''">
+            AND PP.PAYMENT_DATE &lt;= TO_DATE(#{endDate}, 'YYYY-MM-DD')
+        </if>
+        ORDER BY PP.PAYABLE_PAYMENT_ID DESC
+    </select>
+
+    <!-- 지급내역 등록 -->
+    <insert id="insertPayablePayment"
+            parameterType="com.erp.backend.settlement.vo.PayablePaymentVO">
+        INSERT INTO PAYABLE_PAYMENT (
+            PAYABLE_PAYMENT_ID,
+            AP_ID,
+            SUPPLIER_ID,
+            PAYMENT_DATE,
+            PAYMENT_AMOUNT,
+            PAYMENT_TYPE,
+            CREATED_BY,
+            CREATED_AT
+        ) VALUES (
+            PAYABLE_PAYMENT_SEQ.NEXTVAL,
+            #{apId},
+            #{supplierId},
+            #{paymentDate},
+            #{paymentAmount},
+            #{paymentType},
+            #{createdBy},
+            SYSDATE
+        )
+    </insert>
+
     <!-- 수금내역 상세 조회 -->
     <select id="findPaymentById"
             resultType="com.erp.backend.settlement.vo.PaymentVO">

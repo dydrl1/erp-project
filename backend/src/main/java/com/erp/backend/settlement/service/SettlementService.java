@@ -169,20 +169,41 @@ public class SettlementService {
         settlementMapper.updateAccountReceivablePayment(paymentVO);
     }
 
+    // 지급내역 조회
+    public List<PayablePaymentVO> getPayablePaymentList(
+            String supplierName, String startDate, String endDate) {
+        Map<String, Object> params = new HashMap<>();
+        params.put("supplierName", supplierName);
+        params.put("startDate", startDate);
+        params.put("endDate", endDate);
+
+        return settlementMapper.findAllPayablePayments(params);
+    }
+
     // 미지급금 지급 처리
-    public void createPayablePayment(AccountPayableVO accountPayableVO) {
-        if (accountPayableVO.getPaidAmount() == null || accountPayableVO.getPaidAmount().compareTo(BigDecimal.ZERO) <= 0) {
+    public void createPayablePayment(PayablePaymentVO payablePaymentVO) {
+        if (payablePaymentVO.getPaymentAmount() == null ||
+                payablePaymentVO.getPaymentAmount().compareTo(BigDecimal.ZERO) <= 0) {
             throw new RuntimeException("지급 금액은 0보다 커야 합니다.");
         }
 
-        AccountPayableVO payable = settlementMapper.findAccountPayableById(Long.valueOf(accountPayableVO.getApId()));
+        AccountPayableVO payable = settlementMapper.findAccountPayableById(
+                Long.valueOf(payablePaymentVO.getApId())
+        );
+
         if (payable == null) {
             throw new RuntimeException("해당 미지급금 정보를 찾을 수 없습니다.");
         }
 
-        if (accountPayableVO.getPaidAmount().compareTo(payable.getRemainAmount()) > 0) {
+        if (payablePaymentVO.getPaymentAmount().compareTo(payable.getRemainAmount()) > 0) {
             throw new RuntimeException("지급 금액은 미지급잔액보다 클 수 없습니다.");
         }
+
+        AccountPayableVO accountPayableVO = new AccountPayableVO();
+        accountPayableVO.setApId(payablePaymentVO.getApId());
+        accountPayableVO.setPaidAmount(payablePaymentVO.getPaymentAmount());
+
+        settlementMapper.insertPayablePayment(payablePaymentVO);
         settlementMapper.updateAccountPayablePayment(accountPayableVO);
     }
 
