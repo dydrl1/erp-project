@@ -67,6 +67,7 @@ export default function ProductStockTab() {
     {
       title: '상품코드',
       dataIndex: 'productCode',
+      sorter: (a, b) => a.productCode.localeCompare(b.productCode),
     },
     {
       title: '상품명',
@@ -162,7 +163,7 @@ export default function ProductStockTab() {
           rowKey={'productId'}
           loading={loading}
           locale={{
-            emptyText: '조회딘 상품별 재고가 없습니다.',
+            emptyText: '조회된 상품 재고가 없습니다.',
           }}
         />
       </Card>

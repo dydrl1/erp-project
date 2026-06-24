@@ -142,7 +142,6 @@ export default function StockMovementTab() {
         return <Tag>{labels[value] ?? value}</Tag>;
       },
     },
-    ,
     // {
     //   title: '업무 참조번호',
     //   dataIndex: 'sourceId',

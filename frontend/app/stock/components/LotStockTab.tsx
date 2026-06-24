@@ -76,11 +76,13 @@ export default function LotStockTab() {
     {
       title: '로트번호',
       dataIndex: 'lotNo',
+      sorter: (a, b) => a.lotNo.localeCompare(b.lotNo),
     },
     {
       title: '유효기간',
       dataIndex: 'expiryDate',
       render: (value?: string) => value?.slice(0, 10) ?? '-',
+      sorter: (a, b) => new Date(a.expiryDate).getTime() - new Date(b.expiryDate).getTime(),
     },
     {
       title: '잔여일',
@@ -127,27 +129,11 @@ export default function LotStockTab() {
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: '1.2fr 1fr 1fr 160px 180px',
+            gridTemplateColumns: 'minmax(180px, 1.2fr) minmax(180px, 1fr) 1fr auto',
             gap: 12,
             alignItems: 'center',
           }}
         >
-          <Input
-            placeholder="상품명"
-            value={productName}
-            onChange={(e) => setProductName(e.target.value)}
-            onPressEnter={handleSearch}
-            allowClear
-          />
-
-          <Input
-            placeholder="상품코드"
-            value={productCode}
-            onChange={(e) => setProductCode(e.target.value)}
-            onPressEnter={handleSearch}
-            allowClear
-          />
-
           <Input
             placeholder="로트번호"
             value={lotNo}
@@ -161,6 +147,7 @@ export default function LotStockTab() {
             value={expiryStatus || undefined}
             onChange={(value) => setExpiryStatus(value ?? '')}
             allowClear
+            style={{ width: '100%' }}
             options={[
               { value: 'NORMAL', label: '정상' },
               { value: 'EXPIRY_90', label: '90일 이내' },
@@ -169,20 +156,16 @@ export default function LotStockTab() {
               { value: 'EXPIRED', label: '만료' },
             ]}
           />
-        </div>
 
-        <Space
-          style={{
-            width: '100%',
-            justifyContent: 'flex-end',
-            marginTop: 16,
-          }}
-        >
-          <Button onClick={handleReset}>초기화</Button>
-          <Button type="primary" onClick={handleSearch}>
-            검색
-          </Button>
-        </Space>
+          <div />
+
+          <Space size={8}>
+            <Button onClick={handleReset}>초기화</Button>
+            <Button type="primary" onClick={handleSearch}>
+              검색
+            </Button>
+          </Space>
+        </div>
       </Card>
       <Card
         title="로트별 재고"
@@ -207,7 +190,6 @@ export default function LotStockTab() {
           }}
         />
       </Card>
-      v
     </>
   );
 }

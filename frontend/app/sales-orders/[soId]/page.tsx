@@ -6,8 +6,7 @@ import { App, Button, Card, Descriptions, Flex, Input, Space, Steps, Table, Typo
 import type { ColumnsType } from 'antd/es/table';
 import ErpLayout from '@/components/ErpLayout';
 import StatusBadge from '@/components/StatusBadge';
-import { purchaseOrderApi, salesOrderApi, SalesOrder, shipmentApi } from '@/lib/api';
-import { CANCELLED } from 'dns';
+import { salesOrderApi, SalesOrder, shipmentApi } from '@/lib/api';
 const { Text } = Typography;
 export default function SalesOrderDetailPage() {
   const { soId } = useParams<{ soId: string }>();
@@ -31,12 +30,12 @@ export default function SalesOrderDetailPage() {
   }, [soId]);
 
   useEffect(() => {
-    load();
-  }, [load]);
-
-  useEffect(() => {
     setRole(localStorage.getItem('role') ?? '');
   }, []);
+
+  useEffect(() => {
+    load();
+  }, [load]);
 
   const canApprove = order?.status === 'REQUESTED' && (role === 'MANAGER' || role === 'ADMIN');
 
@@ -69,7 +68,7 @@ export default function SalesOrderDetailPage() {
     modal.confirm({
       title: '판매 주문 반려',
       width: 520,
-      okText: '판매 주문 확정',
+      okText: '주문 반려 확정',
       cancelText: '취소',
       okButtonProps: { danger: true },
       content: (
@@ -95,7 +94,8 @@ export default function SalesOrderDetailPage() {
         setProcessing(true);
 
         try {
-          await purchaseOrderApi.reject(Number(soId), reason.trim());
+          // await purchaseOrderApi.reject(Number(soId), reason.trim());
+          //주문반려 등록 필요
           message.success('판매 주문이 반려되었습니다.');
           router.push('/sales-orders');
         } catch (e) {
@@ -121,8 +121,8 @@ export default function SalesOrderDetailPage() {
             message.error('출고 가능한 주문이 아닙니다.');
             return;
           }
-          await shipmentApi.process(Number(soId), 10); //담당자 번호로 바꿔야함
-          message.success('출고 처리과 완료되었습니다.');
+          await shipmentApi.process(Number(soId), 10); //출고승인 담당자 번호로 바꿔야함
+          message.success('출고 처리가 완료되었습니다.');
           router.push('/shipments');
         } catch (e) {
           message.error((e as Error).message);
@@ -133,7 +133,7 @@ export default function SalesOrderDetailPage() {
     });
   };
 
-  const currentStep = statusStep[order?.status];
+  const currentStep = statusStep[order?.status ?? 'REQUESTED'];
 
   const columns = useMemo<ColumnsType<any>>(
     () => [
@@ -183,7 +183,6 @@ export default function SalesOrderDetailPage() {
     <ErpLayout title={`주문 상세 — SO-${String(order.soId).padStart(4, '0')}`}>
       <Flex justify="space-between" align="center">
         <Button onClick={() => router.back()}>목록으로</Button>
-        <StatusBadge status={order.status} />
       </Flex>
 
       <Card>
@@ -200,11 +199,12 @@ export default function SalesOrderDetailPage() {
           </Descriptions.Item>
         </Descriptions>
       </Card>
-      <Steps
-        current={currentStep}
-        // percent={progress}
-        items={[{ title: '주문 생성' }, { title: '승인대기' }, { title: '승인 완료' }, { title: '출고 완료' }]}
-      />
+      {order.status !== 'CANCELED' && (
+        <Steps
+          current={currentStep}
+          items={[{ title: '주문 생성' }, { title: '승인대기' }, { title: '승인 완료' }, { title: '출고 완료' }]}
+        />
+      )}
 
       <Card title="주문 품목">
         <Table
