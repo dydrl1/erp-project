@@ -1,4 +1,3 @@
-// app/receivings/[poId]/page.tsx — 입고 처리 (로트번호·유효기간 입력)
 "use client";
 
 import { useEffect, useState } from "react";
@@ -69,22 +68,22 @@ export default function ReceivingProcessPage() {
   const handleSubmit = async () => {
     for (const row of rows) {
       if (!row.lotNo.trim()) {
-        message.warning(`${row.productName}: 로트번호를 입력해주세요.`);
+        message.warning(`${row.productName}: enter lot number.`);
         return;
       }
 
       if (!row.expiryDate) {
-        message.warning(`${row.productName}: 유효기간을 입력해주세요.`);
+        message.warning(`${row.productName}: enter expiry date.`);
         return;
       }
 
       if (isExpired(row.expiryDate)) {
-        message.warning(`${row.productName}: 유효기간이 이미 만료된 날짜입니다.`);
+        message.warning(`${row.productName}: expiry date is already past.`);
         return;
       }
 
       if (!row.receivedQty || row.receivedQty < 1) {
-        message.warning(`${row.productName}: 입고 수량을 확인해주세요.`);
+        message.warning(`${row.productName}: check received quantity.`);
         return;
       }
     }
@@ -98,7 +97,7 @@ export default function ReceivingProcessPage() {
         details: rows.map(({ productName, orderQty, ...rest }) => rest),
       });
 
-      message.success("입고 처리가 완료되었습니다.");
+      message.success("Receiving completed.");
       router.push("/receivings");
     } catch (e) {
       message.error((e as Error).message);
@@ -109,19 +108,19 @@ export default function ReceivingProcessPage() {
 
   const columns: ColumnsType<ReceivingDetailInput> = [
     {
-      title: "상품명",
+      title: "Product",
       dataIndex: "productName",
       render: (value) => <Text strong>{value}</Text>,
     },
     {
-      title: "발주수량",
+      title: "Ordered Qty",
       dataIndex: "orderQty",
       align: "right",
       width: 110,
       render: (value) => value?.toLocaleString(),
     },
     {
-      title: "로트번호",
+      title: "Lot No.",
       dataIndex: "lotNo",
       width: 180,
       render: (value, _row, index) => (
@@ -133,7 +132,7 @@ export default function ReceivingProcessPage() {
       ),
     },
     {
-      title: "유효기간",
+      title: "Expiry Date",
       dataIndex: "expiryDate",
       width: 180,
       render: (value, _row, index) => (
@@ -148,7 +147,7 @@ export default function ReceivingProcessPage() {
       ),
     },
     {
-      title: "입고수량",
+      title: "Received Qty",
       dataIndex: "receivedQty",
       width: 130,
       render: (value, _row, index) => (
@@ -167,10 +166,10 @@ export default function ReceivingProcessPage() {
   const hasExpiredItem = rows.some((row) => isExpired(row.expiryDate));
 
   return (
-    <ErpLayout title={`입고 처리 - PO-${String(poId).padStart(4, "0")}`}>
+    <ErpLayout title={`Receiving - PO-${String(poId).padStart(4, "0")}`}>
       <Space direction="vertical" size={16} style={{ width: "100%" }}>
         <Button icon={<ArrowLeftOutlined />} onClick={() => router.back()}>
-          입고 가능 목록으로
+          Back
         </Button>
 
         {error && <Alert type="error" message={error} showIcon />}
@@ -180,34 +179,34 @@ export default function ReceivingProcessPage() {
           columns={columns}
           dataSource={rows}
           pagination={false}
-          locale={{ emptyText: "입고 처리할 품목이 없습니다." }}
+          locale={{ emptyText: "No items to receive." }}
         />
 
         {hasExpiredItem && (
           <Alert
             type="warning"
-            message="유효기간이 이미 만료된 품목이 있습니다. 날짜를 확인해주세요."
+            message="Some items have expired dates. Check the dates."
             showIcon
           />
         )}
 
         <Space direction="vertical" size={6} style={{ width: "100%" }}>
-          <Text strong>메모</Text>
+          <Text strong>Memo</Text>
           <Input
-            placeholder="입고 관련 메모를 입력하세요 (선택)"
+            placeholder="Optional receiving memo"
             value={memo}
             onChange={(e) => setMemo(e.target.value)}
           />
         </Space>
 
         <Space style={{ width: "100%", justifyContent: "flex-end" }}>
-          <Button onClick={() => router.back()}>취소</Button>
+          <Button onClick={() => router.back()}>Cancel</Button>
 
           <Popconfirm
-            title="입고 처리"
-            description="입고 처리하시겠습니까? 처리 후 재고가 자동 생성됩니다."
-            okText="처리"
-            cancelText="취소"
+            title="Process receiving"
+            description="Process receiving and create inventory lots?"
+            okText="Process"
+            cancelText="Cancel"
             onConfirm={handleSubmit}
           >
             <Button
@@ -216,7 +215,7 @@ export default function ReceivingProcessPage() {
               loading={processing}
               disabled={rows.length === 0}
             >
-              입고 처리 완료
+              Complete Receiving
             </Button>
           </Popconfirm>
         </Space>

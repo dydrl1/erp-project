@@ -20,11 +20,11 @@ import {
 } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import ErpLayout from '@/components/ErpLayout';
-import { purchaseOrderApi } from '@/lib/api';
+import { salesOrderApi } from '@/lib/api';
 
-interface Supplier {
-  supplierId: number;
-  supplierName: string;
+interface Customer {
+  customerId: number;
+  customerName: string;
 }
 
 interface Product {
@@ -32,7 +32,7 @@ interface Product {
   productCode: string;
   productName: string;
   unit: string;
-  standardPurchasePrice: number;
+  standardSalesPrice: number;
 }
 
 interface OrderRow {
@@ -41,37 +41,35 @@ interface OrderRow {
   unitPrice: number;
 }
 
-export default function PurchaseOrderCreatePage() {
+export default function SalesOrderCreatePage() {
   const router = useRouter();
   const { message } = App.useApp();
 
-  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
-  const [supplierId, setSupplierId] = useState<number>();
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [productId, setProductId] = useState<number>();
+  const [customerId, setCustomerId] = useState<number>();
+  const [orderQty, setOrderQty] = useState<number | null>(null);
   const [memo, setMemo] = useState('');
   const [rows, setRows] = useState<OrderRow[]>([]);
   const [processing, setProcessing] = useState(false);
-
   const [pickerOpen, setPickerOpen] = useState(false);
   const [keyword, setKeyword] = useState('');
   const [checked, setChecked] = useState<Set<number>>(new Set());
 
   useEffect(() => {
-    purchaseOrderApi
-      .suppliers()
-      .then(setSuppliers)
+    salesOrderApi
+      .customers()
+      .then(setCustomers)
       .catch((e) => message.error(e.message));
 
-    purchaseOrderApi
+    salesOrderApi
       .products()
       .then((data) => setProducts(data as unknown as Product[]))
       .catch((e) => message.error(e.message));
   }, [message]);
-
   const selectedIds = useMemo(() => new Set(rows.map((row) => row.productId)), [rows]);
-
   const productMap = useMemo(() => new Map(products.map((p) => [p.productId, p])), [products]);
-
   const filteredProducts = useMemo(() => {
     const lower = keyword.toLowerCase();
 
@@ -124,7 +122,7 @@ export default function PurchaseOrderCreatePage() {
       .map((p) => ({
         productId: p.productId,
         orderQty: 1,
-        unitPrice: p.standardPurchasePrice,
+        unitPrice: p.standardSalesPrice,
       }));
 
     setRows((prev) => [...prev, ...newRows]);
@@ -132,13 +130,13 @@ export default function PurchaseOrderCreatePage() {
   };
 
   const handleSubmit = async () => {
-    if (!supplierId) {
-      message.warning('공급처를 선택해주세요.');
+    if (!customerId) {
+      message.warning('거래처를 선택해주세요');
       return;
     }
 
     if (rows.length === 0) {
-      message.warning('발주할 의약품을 1개 이상 추가해주세요.');
+      message.warning('주문할 의약품을 1개 이상 추가해주세요.');
       return;
     }
 
@@ -152,14 +150,15 @@ export default function PurchaseOrderCreatePage() {
     setProcessing(true);
 
     try {
-      await purchaseOrderApi.create({
-        supplierId,
+      await salesOrderApi.create({
+        customerId,
+        employeeId: 1, //employeeId: 자신의 번호로 바꿔야함
         memo: memo || undefined,
         details: rows,
       });
 
-      message.success('발주가 등록되었습니다.');
-      router.push('/purchase-orders');
+      message.success('주문이 접수되었습니다.');
+      router.push('/sales-orders');
     } catch (e) {
       message.error((e as Error).message);
     } finally {
@@ -229,41 +228,39 @@ export default function PurchaseOrderCreatePage() {
   ];
 
   return (
-    <ErpLayout title="발주 등록">
+    <ErpLayout title="판매 주문 등록">
       <Button style={{ alignSelf: 'flex-start' }} onClick={() => router.back()}>
         목록으로
       </Button>
 
-      <Card>
-        <Form layout="vertical">
-          <Flex gap={16}>
-            <Form.Item label="공급처" required style={{ flex: 1 }}>
-              <Select
-                placeholder="공급처 선택"
-                value={supplierId}
-                onChange={setSupplierId}
-                options={suppliers.map((s) => ({
-                  label: s.supplierName,
-                  value: s.supplierId,
-                }))}
-              />
-            </Form.Item>
-
-            <Form.Item label="메모" style={{ flex: 2 }}>
-              <Input placeholder="발주 관련 메모를 입력하세요" value={memo} onChange={(e) => setMemo(e.target.value)} />
-            </Form.Item>
-          </Flex>
-        </Form>
-      </Card>
-
       <Card
-        title={`발주 품목 ${rows.length}개`}
         extra={
           <Button type="primary" onClick={openPicker}>
             의약품 추가
           </Button>
         }
       >
+        <Form layout="vertical">
+          <Flex gap={16}>
+            <Form.Item label="판매처" required style={{ flex: 1 }}>
+              <Select
+                placeholder="판매처 선택"
+                value={customerId}
+                onChange={setCustomerId}
+                options={customers.map((customer) => ({
+                  label: customer.customerName,
+                  value: customer.customerId,
+                }))}
+              />
+            </Form.Item>
+            <Form.Item label="메모" style={{ flex: 2 }}>
+              <Input placeholder="주문 관련 메모를 입력하세요" value={memo} onChange={(e) => setMemo(e.target.value)} />
+            </Form.Item>
+          </Flex>
+        </Form>
+      </Card>
+
+      <Card title={`주문 품목 ${rows.length}개`}>
         <Table
           rowKey="productId"
           columns={columns}
@@ -274,7 +271,6 @@ export default function PurchaseOrderCreatePage() {
           }}
         />
       </Card>
-
       <Flex justify="flex-end">
         <Typography.Text>
           총금액{' '}
@@ -287,7 +283,7 @@ export default function PurchaseOrderCreatePage() {
       <div className="erp-page-actions">
         <Button onClick={() => router.back()}>취소</Button>
         <Button type="primary" loading={processing} onClick={handleSubmit}>
-          발주 등록
+          판매 주문 등록
         </Button>
       </div>
 
@@ -300,7 +296,7 @@ export default function PurchaseOrderCreatePage() {
         cancelText="취소"
         width={620}
       >
-        <Space direction="vertical" style={{ width: '100%' }}>
+        <Space orientation="vertical" style={{ width: '100%' }}>
           <Typography.Text type="secondary">
             추가할 의약품을 검색하고 선택하세요. 이미 담긴 의약품은 제외됩니다.
           </Typography.Text>
@@ -332,7 +328,7 @@ export default function PurchaseOrderCreatePage() {
                   <Typography.Text strong>{p.productName}</Typography.Text>
                   <br />
                   <Typography.Text type="secondary">
-                    {p.productCode} · {p.standardPurchasePrice?.toLocaleString()}원
+                    {p.productCode} · {p.standardSalesPrice?.toLocaleString()}원
                   </Typography.Text>
                 </div>
               </List.Item>

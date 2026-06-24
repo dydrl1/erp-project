@@ -1,23 +1,25 @@
 import type { Metadata } from "next";
 import { AntdRegistry } from "@ant-design/nextjs-registry";
+import AntdProvider from "./providers/AntdProvider";
+import { NotificationProvider } from "./providers/NotificationProvider";
 import "antd/dist/reset.css";
 import "./globals.css";
 import "./erp.css";
 
 export const metadata: Metadata = {
-  title: "약통 ERP",
-  description: "약통 ERP 시스템",
+  title: "PharmaFlow ERP",
+  description: "Pharmaceutical distribution ERP",
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ko" className="h-full antialiased">
-      <body className="min-h-full">
-        <AntdRegistry>{children}</AntdRegistry>
+    <html lang="ko">
+      <body>
+        <AntdRegistry>
+          <AntdProvider>
+            <NotificationProvider>{children}</NotificationProvider>
+          </AntdProvider>
+        </AntdRegistry>
       </body>
     </html>
   );

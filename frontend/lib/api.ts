@@ -6,14 +6,16 @@ export interface ApiResponse<T> {
   data: T;
 }
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
+// const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080';
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://192.168.1.190:8080';
+console.log('[API BASE URL]', BASE_URL);
 
 // Access Token 관리 (학습용으로 localStorage 사용)
 // Refresh Token은 백엔드가 httpOnly 쿠키(path=/api/auth)로 관리하므로 JS에서 다루지 않는다.
 export const tokenStorage = {
-  get: () => (typeof window !== "undefined" ? localStorage.getItem("accessToken") : null),
-  set: (token: string) => localStorage.setItem("accessToken", token),
-  clear: () => localStorage.removeItem("accessToken"),
+  get: () => (typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null),
+  set: (token: string) => localStorage.setItem('accessToken', token),
+  clear: () => localStorage.removeItem('accessToken'),
 };
 
 // 로그인 사용자 정보 (헤더 표시·역할 기반 분기용)
@@ -134,7 +136,7 @@ async function request<T>(
     ...options,
     credentials: "include", // 인증 쿠키(refreshToken 등) 동반
     headers: {
-      "Content-Type": "application/json",
+      'Content-Type': 'application/json',
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...options.headers,
     },
@@ -235,7 +237,7 @@ export interface PurchaseOrder {
   approveEmpName: string | null;
   poDate: string;
   approveDate: string | null;
-  status: "REQUESTED" | "APPROVED" | "REJECTED" | "COMPLETED";
+  status: 'REQUESTED' | 'APPROVED' | 'REJECTED' | 'COMPLETED';
   totalAmount: number;
   memo: string | null;
   details?: PurchaseOrderDetail[];
@@ -255,28 +257,29 @@ export interface PurchaseOrderDetail {
 export interface ReceivingDetailInput {
   productId: number;
   productName?: string; // 화면 표시용
-  orderQty?: number;    // 화면 표시용
+  orderQty?: number; // 화면 표시용
   lotNo: string;
-  expiryDate: string;   // yyyy-MM-dd
+  expiryDate: string; // yyyy-MM-dd
   receivedQty: number;
   unitPrice: number;
 }
 
+// ===== SALES ORDER =======
 export interface SalesOrder {
   soId: number;
   customerId: number;
   customerName: string;
   reqEmployeeId: number;
   reqEmployeeName: string;
-  appEmployeeId?: number | null;
-  appEmployeeName?: string | null;
+  appEmployeeId: number;
+  appEmployeeName: string;
   orderDate: string;
-  approveDate?: string | null;
-  status: "REQUESTED" | "APPROVED" | "SHIPPED" | "CANCELED";
+  approveDate: string;
+  status: 'REQUESTED' | 'APPROVED' | 'SHIPPED' | 'CANCELED';
   totalAmount: number;
-  memo?: string | null;
-  createdAt?: string | null;
-  updatedAt?: string | null;
+  memo: string;
+  createdAt: string;
+  updatedAt: string;
   detailList?: SalesOrderDetail[];
 }
 
@@ -284,16 +287,97 @@ export interface SalesOrderDetail {
   soDetailId: number;
   soId: number;
   productId: number;
-  productCode?: string;
-  productName: string;
   orderQty: number;
   unitPrice: number;
   amount: number;
+  productName: string;
 }
 
+// ======Shipments=====
+export interface Shipment {
+  shipmentId: number;
+  soId: number;
+  shippedEmpId: number;
+  employeeName: string;
+  shipmentDate: string;
+  status: string;
+  memo?: string;
+  createdAt: string;
+}
+
+export interface ShipmentDetail {
+  shipmentDetailId: number;
+  shipmentId: number;
+  salesOrderId: number;
+  salesOrderDetailId: number;
+  customerName: string;
+  orderDate: string;
+  shipmentDate: string;
+  shippedEmpId: string;
+  employeeName: string;
+  status: string;
+  memo: string;
+  productName: string;
+  inventoryLotId: number;
+  lotNo: string;
+  expiryDate: string;
+  shippedQty: number;
+  productId: number;
+}
+
+// ======StockMovement=====
+export interface StockMovement {
+  movementId: number;
+  productId: number;
+  productName: string;
+  inventoryLotId: number;
+  lotNo: string;
+  movementType: string;
+  sourceType: string;
+  sourceId: number;
+  beforeQty: number;
+  qty: number;
+  afterQty: number;
+  createdAt: string;
+}
+
+export interface StockMovementSearchParams {
+  productName?: string;
+  lotNo?: string;
+  movementType?: string;
+  sourceType?: string;
+  sourceId?: number;
+  startDate?: string;
+  endDate?: string;
+}
+
+export interface ProductStock {
+  productId: number;
+  productCode: string;
+  productName: string;
+  availableQty: number;
+  safetyQty: number;
+  shippableQty: number;
+  stockStatus: string;
+}
+
+export interface LotStock {
+  inventoryLotId: number;
+  productId: number;
+  productCode: string;
+  productName: string;
+  lotNo: string;
+  expiryDate: string;
+  daysLeft: number;
+  qty: number;
+  location: string;
+  status: string;
+}
+
+// ======Notifications=====
 export interface NotificationMessage {
   notificationId: number;
-  level: "INFO" | "WARNING" | "CRITICAL";
+  level: 'INFO' | 'WARNING' | 'CRITICAL';
   receiver: string;
   content: string;
   dateTime: string;
@@ -306,7 +390,7 @@ export interface AlertMessage {
   content: string;
   dateTime: string;
   alertType?: string;
-  alertLevel?: "INFO" | "WARNING" | "CRITICAL";
+  alertLevel?: 'INFO' | 'WARNING' | 'CRITICAL';
   isRead: boolean;
   productId?: number;
   inventoryLotId?: number;
@@ -345,82 +429,123 @@ export interface ReceivableOrder {
 export const purchaseOrderApi = {
   list: (status?: string, supplierId?: number) => {
     const params = new URLSearchParams();
-    if (status) params.set("status", status);
-    if (supplierId) params.set("supplierId", String(supplierId));
+    if (status) params.set('status', status);
+    if (supplierId) params.set('supplierId', String(supplierId));
     const qs = params.toString();
-    return api.get<PurchaseOrder[]>(`/api/purchase-orders${qs ? `?${qs}` : ""}`);
+    return api.get<PurchaseOrder[]>(`/api/purchase-orders${qs ? `?${qs}` : ''}`);
   },
   detail: (poId: number) => api.get<PurchaseOrder>(`/api/purchase-orders/${poId}`),
-  suppliers: () =>
-      api.get<{ supplierId: number; supplierName: string }[]>("/api/purchase-orders/suppliers"),
-  products: () => api.get<ProductOption[]>("/api/purchase-orders/products"),
+  suppliers: () => api.get<{ supplierId: number; supplierName: string }[]>('/api/purchase-orders/suppliers'),
+  products: () => api.get<Record<string, unknown>[]>('/api/purchase-orders/products'),
   create: (data: {
     supplierId: number;
     memo?: string;
     details: { productId: number; orderQty: number; unitPrice: number }[];
-  }) => api.post<number>("/api/purchase-orders", data),
+  }) => api.post<number>('/api/purchase-orders', data),
   approve: (poId: number) => api.put<void>(`/api/purchase-orders/${poId}/approve`),
   reject: (poId: number, rejectReason: string) =>
       api.put<void>(`/api/purchase-orders/${poId}/reject`, { rejectReason }),
   listPaging: (status: string, page: number, size = 10) => {
     const params = new URLSearchParams();
-    if (status) params.set("status", status);
-    params.set("page", String(page));
-    params.set("size", String(size));
+    if (status) params.set('status', status);
+    params.set('page', String(page));
+    params.set('size', String(size));
     return api.get<PageResult<PurchaseOrder>>(`/api/purchase-orders/paging?${params}`);
   },
-  statusCounts: () =>
-      api.get<Record<string, number>>("/api/purchase-orders/status-counts"),
+  statusCounts: () => api.get<Record<string, number>>('/api/purchase-orders/status-counts'),
 };
 
 export const receivingApi = {
-  receivableList: () => api.get<ReceivableOrder[]>("/api/receivings"),
-  detailsByPoId: (poId: number) =>
-      api.get<PurchaseOrderDetail[]>(`/api/receivings/${poId}/details`),
+  receivableList: () => api.get<Record<string, unknown>[]>('/api/receivings'),
+  detailsByPoId: (poId: number) => api.get<PurchaseOrderDetail[]>(`/api/receivings/${poId}/details`),
   process: (data: { poId: number; memo?: string; details: ReceivingDetailInput[] }) =>
-      api.post<void>("/api/receivings", data),
+    api.post<void>('/api/receivings', data),
 };
 
 export const salesOrderApi = {
   list: (status?: string) => {
     const params = new URLSearchParams();
-    if (status) params.set("status", status);
+    if (status) params.set('status', status);
     const qs = params.toString();
-    return api.get<SalesOrder[]>(`/api/sales-order${qs ? `?${qs}` : ""}`);
+    return api.get<SalesOrder[]>(`/api/sales-order${qs ? `?${qs}` : ''}`);
   },
   listPaging: (status: string, page: number, size = 10) => {
     const params = new URLSearchParams();
-    if (status) params.set("status", status);
-    params.set("page", String(page));
-    params.set("size", String(size));
+    if (status) params.set('status', status);
+    params.set('page', String(page));
+    params.set('size', String(size));
     return api.get<PageResult<SalesOrder>>(`/api/sales-order/paging?${params}`);
   },
-  statusCount: () => api.get<Record<string, number>>("/api/sales-order/status-count"),
+  statusCount: () => api.get<Record<string, number>>(`/api/sales-order/status-count`),
   detail: (soId: number) => api.get<SalesOrder>(`/api/sales-order/${soId}/details`),
-  customers: () => api.get<{ customerId: number; customerName: string }[]>("/api/sales-order/customers"),
-  products: () => api.get<Product[]>("/api/sales-order/products"),
+  customers: () => api.get<{ customerId: number; customerName: string }[]>(`/api/sales-order/customers`),
+  products: () => api.get<Record<string, unknown>[]>(`/api/sales-order/products`),
+  approve: (soId: number, data: { employeeId: number }) => api.patch<void>(`/api/sales-order/${soId}/approve`, data),
   create: (data: {
     customerId: number;
     employeeId: number;
     memo?: string;
     details: { productId: number; orderQty: number }[];
-  }) => api.post<SalesOrder>("/api/sales-order", data),
-  approve: (soId: number, employeeId: number) =>
-      api.patch<SalesOrder>(`/api/sales-order/${soId}/approve`, { employeeId }),
+  }) => api.post<number>('/api/sales-order', data),
+};
+
+export const shipmentApi = {
+  list: (salesOrderId?: number, status?: string, employeeName?: string) => {
+    const params = new URLSearchParams();
+    if (salesOrderId) params.set('salesOrderId', String(salesOrderId));
+    if (status) params.set('status', status);
+    if (employeeName) params.set('employeeName', employeeName);
+    const qs = params.toString();
+    return api.get<Shipment[]>(`/api/shipment${qs ? `?${qs}` : ''}`);
+  },
+  listPaging: (page: number, size = 10, status?: string, salesOrderId?: number, employeeName?: string) => {
+    const params = new URLSearchParams();
+    params.set('page', String(page));
+    params.set('size', String(size));
+    if (status) params.set('status', status);
+    if (salesOrderId) params.set('salesOrderId', String(salesOrderId));
+    if (employeeName) params.set('employeeName', employeeName);
+    return api.get<PageResult<Shipment>>(`/api/shipment?${params}`);
+  },
+  statusCount: () => api.get<Record<string, number>>(`/api/shipment/status-count`),
+  detail: (shipmentId: number, status?: string) => {
+    const params = new URLSearchParams();
+    if (status) {
+      params.set('status', status);
+    }
+    const query = params.toString();
+    return api.get<ShipmentDetail[]>(`/api/shipment/${shipmentId}${query ? `?${query}` : ''}`);
+  },
+  verify: (salesOrderId: number) => api.get<unknown[]>(`/api/shipment/verify/${salesOrderId}`),
+  process: (salesOrderId: number, employeeId: number) => {
+    const param = new URLSearchParams();
+    param.set('salesOrderId', String(salesOrderId));
+    param.set('employeeId', String(employeeId));
+    return api.post(`/api/shipment/process?${param}`);
+  },
+};
+
+export const stockMovementApi = {
+  search: (data: StockMovementSearchParams) => {
+    return api.post<StockMovement[]>(`/api/shipment/stock-movement`, data);
+  },
+  searchProductList: () => api.get<ProductStock[]>(`/api/shipment/product-stock`),
+  searchLotStockList: () => api.get<LotStock[]>(`/api/shipment/lot-stock`),
 };
 
 export const alertApi = {
   markRead: (alertId: number, loginId: number) => {
-    const params = new URLSearchParams();
-    params.set("loginId", String(loginId));
-    return api.put<void>(`/api/alert/${alertId}?${params}`);
+    const param = new URLSearchParams();
+    param.set('loginId', String(loginId));
+    const qs = param.toString();
+    return api.put<void>(`/api/alert/${alertId}${qs ? `?${qs}` : ''}`);
   },
 };
 
 export interface Customer {
   customerId: number;
   customerName: string;
-  customerType: "PHARMACY" | "HOSPITAL";
+  customerType: 'PHARMACY' | 'HOSPITAL';
   businessNo: string | null;
   creditLimit: number;
   receivableBalance: number;
@@ -429,105 +554,85 @@ export interface Customer {
   status: string;
 }
 
-// 거래처 등록·수정 요청
 export interface CustomerInput {
   customerName: string;
-  customerType: "PHARMACY" | "HOSPITAL";
+  customerType: 'PHARMACY' | 'HOSPITAL';
   businessNo?: string;
   creditLimit?: number;
   phone?: string;
   address?: string;
 }
 
-// 약국·병원 검색 결과 (백엔드 MedicalInstSearchDto 매핑)
 export interface MedicalInst {
   name: string;
-  type: "PHARMACY" | "HOSPITAL";
+  type: 'PHARMACY' | 'HOSPITAL';
   phone: string | null;
   address: string | null;
 }
 
-// 사업자번호 상태조회 결과 (백엔드 checkStatus 매핑)
 export interface BusinessStatus {
-  valid: boolean;        // 거래 가능(계속사업자)
-  registered: boolean;   // 국세청 등록 여부
-  bStt: string | null;   // "계속사업자" 등
-  taxType: string | null;// "부가가치세 일반과세자" 등
+  valid: boolean;
+  registered: boolean;
+  bStt: string | null;
+  taxType: string | null;
 }
 
 export const customerApi = {
-  // 거래처 목록
   list: (customerType?: string, status?: string, keyword?: string) => {
     const params = new URLSearchParams();
-    if (customerType) params.set("customerType", customerType);
-    if (status) params.set("status", status);
-    if (keyword) params.set("keyword", keyword);
+    if (customerType) params.set('customerType', customerType);
+    if (status) params.set('status', status);
+    if (keyword) params.set('keyword', keyword);
     const qs = params.toString();
-    return api.get<Customer[]>(`/api/customers${qs ? `?${qs}` : ""}`);
+    return api.get<Customer[]>(`/api/customers${qs ? `?${qs}` : ''}`);
   },
-
-  // 거래처 상세
   detail: (customerId: number) => api.get<Customer>(`/api/customers/${customerId}`),
-
-  // 거래처 등록
-  create: (data: CustomerInput) => api.post<void>("/api/customers", data),
-
-  // 거래처 수정
+  create: (data: CustomerInput) => api.post<void>('/api/customers', data),
   update: (customerId: number, data: CustomerInput) =>
-      api.put<void>(`/api/customers/${customerId}`, data),
-
-  // 약국 검색
+    api.put<void>(`/api/customers/${customerId}`, data),
   searchPharmacy: (sido?: string, sigungu?: string, name?: string) => {
     const params = new URLSearchParams();
-    if (sido) params.set("sido", sido);
-    if (sigungu) params.set("sigungu", sigungu);
-    if (name) params.set("name", name);
+    if (sido) params.set('sido', sido);
+    if (sigungu) params.set('sigungu', sigungu);
+    if (name) params.set('name', name);
     const qs = params.toString();
-    return api.get<MedicalInst[]>(`/api/customers/search/pharmacy${qs ? `?${qs}` : ""}`);
+    return api.get<MedicalInst[]>(`/api/customers/search/pharmacy${qs ? `?${qs}` : ''}`);
   },
-
-  // 병의원 검색
   searchHospital: (sido?: string, sigungu?: string, name?: string) => {
     const params = new URLSearchParams();
-    if (sido) params.set("sido", sido);
-    if (sigungu) params.set("sigungu", sigungu);
-    if (name) params.set("name", name);
+    if (sido) params.set('sido', sido);
+    if (sigungu) params.set('sigungu', sigungu);
+    if (name) params.set('name', name);
     const qs = params.toString();
-    return api.get<MedicalInst[]>(`/api/customers/search/hospital${qs ? `?${qs}` : ""}`);
+    return api.get<MedicalInst[]>(`/api/customers/search/hospital${qs ? `?${qs}` : ''}`);
   },
-
-  // 사업자번호 상태조회
   checkBusiness: (businessNo: string) =>
-      api.post<BusinessStatus>("/api/customers/check-business", { businessNo }),
+    api.post<BusinessStatus>('/api/customers/check-business', { businessNo }),
 };
 
 export interface RecallDrug {
-  productName: string;   // 품목명
-  entrpsName: string;    // 업체명
-  recallReason: string;  // 회수사유
-  enforceYn: string;     // 강제여부 Y/N
-  commandDate: string;   // 회수명령일자 (yyyyMMdd)
-  itemSeq: string;       // 품목기준코드
-  bizrno: string;        // 사업자등록번호
-  stdCd: string;         // 표준코드(바코드)
-  inStock: boolean;      // 우리가 취급하는 품목인지
-  productId: number | null; // 매칭된 우리 PRODUCT ID
+  productName: string;
+  entrpsName: string;
+  recallReason: string;
+  enforceYn: string;
+  commandDate: string;
+  itemSeq: string;
+  bizrno: string;
+  stdCd: string;
+  inStock: boolean;
+  productId: number | null;
 }
 
 export const recallApi = {
-  // 위해의약품 목록 조회 (+ 우리 재고 매칭)
   list: (pageNo = 1, numOfRows = 50, onlyInStock = false) => {
     const params = new URLSearchParams();
-    params.set("pageNo", String(pageNo));
-    params.set("numOfRows", String(numOfRows));
-    params.set("onlyInStock", String(onlyInStock));
+    params.set('pageNo', String(pageNo));
+    params.set('numOfRows', String(numOfRows));
+    params.set('onlyInStock', String(onlyInStock));
     return api.get<RecallDrug[]>(`/api/recall-drugs?${params.toString()}`);
   },
 };
 
-// ===== 상품(Product) 도메인 =====
-
-// 백엔드 ProductSearchResponseDto와 매핑
 export interface Product {
   productId: number;
   productCode: string;
@@ -536,8 +641,8 @@ export interface Product {
   unit: string;
   standardPurchasePrice: number;
   standardSalesPrice: number;
-  isPrescription: string; // "Y" | "N"
-  storageType: string;    // "ROOM" | "COLD" | "FROZEN"
+  isPrescription: string;
+  storageType: string;
   status: string;
   updatedAt: string | null;
 }
@@ -549,7 +654,6 @@ export interface ProductSearchCondition {
   storageType?: string;
 }
 
-// 동기화 결과 (백엔드 ProductSyncResponseDto와 매핑)
 export interface ProductSyncResult {
   syncType: string;
   startedAt: string;
@@ -565,23 +669,19 @@ export interface ProductSyncResult {
 export const productApi = {
   list: (cond: ProductSearchCondition = {}) => {
     const params = new URLSearchParams();
-    if (cond.keyword) params.set("keyword", cond.keyword);
-    if (cond.status) params.set("status", cond.status);
-    if (cond.isPrescription) params.set("isPrescription", cond.isPrescription);
-    if (cond.storageType) params.set("storageType", cond.storageType);
+    if (cond.keyword) params.set('keyword', cond.keyword);
+    if (cond.status) params.set('status', cond.status);
+    if (cond.isPrescription) params.set('isPrescription', cond.isPrescription);
+    if (cond.storageType) params.set('storageType', cond.storageType);
     const qs = params.toString();
-    return api.get<Product[]>(`/api/product${qs ? `?${qs}` : ""}`);
+    return api.get<Product[]>(`/api/product${qs ? `?${qs}` : ''}`);
   },
-  // 공공 API 전체 동기화 (수동 실행 — 시간이 걸릴 수 있음)
-  syncAll: () => api.post<ProductSyncResult>("/api/product/sync/all"),
+  syncAll: () => api.post<ProductSyncResult>('/api/product/sync/all'),
 };
 
-// ===== 인사(HR) 도메인 =====
+export type EmployeeStatus = 'PENDING' | 'ACTIVE' | 'REJECTED' | 'INACTIVE' | 'TERMINATED';
+export type RoleCode = 'STAFF' | 'MANAGER' | 'ADMIN';
 
-export type EmployeeStatus = "PENDING" | "ACTIVE" | "REJECTED" | "INACTIVE" | "TERMINATED";
-export type RoleCode = "STAFF" | "MANAGER" | "ADMIN";
-
-// 백엔드 EmployeeResponseDto와 매핑
 export interface Employee {
   empId: number;
   loginId: string;
@@ -603,7 +703,6 @@ export interface EmployeeSearchCondition {
   roleCode?: string;
 }
 
-// 관리자 직원 직접 등록 요청 (백엔드 EmployeeCreateRequestDto와 매핑)
 export interface EmployeeCreateInput {
   loginId: string;
   password: string;
@@ -611,63 +710,50 @@ export interface EmployeeCreateInput {
   deptId: number;
   phone?: string;
   email?: string;
-  roleCode?: RoleCode;          // 미지정 시 STAFF
-  status?: "ACTIVE" | "INACTIVE"; // 미지정 시 ACTIVE
-  hireDate?: string;            // yyyy-MM-dd, 미지정 시 오늘
+  roleCode?: RoleCode;
+  status?: 'ACTIVE' | 'INACTIVE';
+  hireDate?: string;
 }
 
 export const employeeApi = {
-  // 직원 목록 (DEPT_HR) — 검색 조건은 쿼리스트링
   list: (condition: EmployeeSearchCondition = {}) => {
     const params = new URLSearchParams();
-    if (condition.deptId) params.set("deptId", String(condition.deptId));
-    if (condition.empName) params.set("empName", condition.empName);
-    if (condition.roleCode) params.set("roleCode", condition.roleCode);
+    if (condition.deptId) params.set('deptId', String(condition.deptId));
+    if (condition.empName) params.set('empName', condition.empName);
+    if (condition.roleCode) params.set('roleCode', condition.roleCode);
     const qs = params.toString();
-    return api.get<Employee[]>(`/api/employees${qs ? `?${qs}` : ""}`);
+    return api.get<Employee[]>(`/api/employees${qs ? `?${qs}` : ''}`);
   },
   detail: (empId: number) => api.get<Employee>(`/api/employees/${empId}`),
-  // 관리자 직원 직접 등록 (ADMIN 전용) — 생성된 empId 반환
-  create: (data: EmployeeCreateInput) => api.post<number>("/api/employees", data),
-  // 마이페이지
-  me: () => api.get<Employee>("/api/employees/me"),
+  create: (data: EmployeeCreateInput) => api.post<number>('/api/employees', data),
+  me: () => api.get<Employee>('/api/employees/me'),
   updateMyInfo: (data: { phone?: string; email?: string }) =>
-      api.put<void>("/api/employees/me", data),
-
-  // ===== ADMIN 전용 계정·권한 관리 =====
-  // 직원 정보 수정 (이름/연락처/이메일/부서/입사일)
+    api.put<void>('/api/employees/me', data),
   update: (
-      empId: number,
-      data: { empName?: string; phone?: string; email?: string; deptId?: number; hireDate?: string },
+    empId: number,
+    data: { empName?: string; phone?: string; email?: string; deptId?: number; hireDate?: string },
   ) => api.put<void>(`/api/employees/${empId}`, data),
-  // 역할 변경
   updateRole: (empId: number, roleCode: RoleCode) =>
-      api.patch<void>(`/api/employees/${empId}/role`, { roleCode }),
-  // 계정 활성/비활성
-  updateStatus: (empId: number, status: "ACTIVE" | "INACTIVE") =>
-      api.patch<void>(`/api/employees/${empId}/status`, { status }),
-  // 비밀번호 초기화
+    api.patch<void>(`/api/employees/${empId}/role`, { roleCode }),
+  updateStatus: (empId: number, status: 'ACTIVE' | 'INACTIVE') =>
+    api.patch<void>(`/api/employees/${empId}/status`, { status }),
   resetPassword: (empId: number, newPassword: string) =>
-      api.patch<void>(`/api/employees/${empId}/reset-password`, { newPassword }),
+    api.patch<void>(`/api/employees/${empId}/reset-password`, { newPassword }),
 };
 
-// 사원 승인/거절/삭제 (HR 매니저 + ADMIN) — /api/admin/employees
 export const adminEmployeeApi = {
-  pending: () => api.get<Employee[]>("/api/admin/employees/pending"),
+  pending: () => api.get<Employee[]>('/api/admin/employees/pending'),
   approve: (empId: number) => api.post<void>(`/api/admin/employees/${empId}/approve`),
   reject: (empId: number) => api.post<void>(`/api/admin/employees/${empId}/reject`),
   remove: (empId: number) =>
-      request<void>(`/api/admin/employees/${empId}`, { method: "DELETE" }),
+    request<void>(`/api/admin/employees/${empId}`, { method: 'DELETE' }),
 };
 
-// ===== 근태(Attendance) 도메인 =====
-
-// 백엔드 AttendanceResponseDto와 매핑
 export interface Attendance {
   attendanceId: number;
   empId: number;
   empName: string;
-  deptName?: string | null; // 관리자 근태 검색에서만 채워짐
+  deptName?: string | null;
   workDate: string;
   checkIn: string | null;
   checkOut: string | null;
@@ -677,40 +763,35 @@ export interface Attendance {
 }
 
 export const attendanceApi = {
-  checkIn: () => api.post<Attendance>("/api/attendance/check-in"),
-  checkOut: () => api.patch<Attendance>("/api/attendance/check-out"),
-  today: () => api.get<Attendance>("/api/attendance/me/today"),
-  // 기간별 본인 근태 (yyyy-MM-dd)
+  checkIn: () => api.post<Attendance>('/api/attendance/check-in'),
+  checkOut: () => api.patch<Attendance>('/api/attendance/check-out'),
+  today: () => api.get<Attendance>('/api/attendance/me/today'),
   myList: (from: string, to: string) =>
-      api.get<Attendance[]>(`/api/attendance/me?from=${from}&to=${to}`),
+    api.get<Attendance[]>(`/api/attendance/me?from=${from}&to=${to}`),
 };
-
-// ===== 관리자 근태 (MANAGER·ADMIN) =====
 
 export interface AdminAttendanceSearch {
   empId?: number;
   deptId?: number;
-  from?: string; // yyyy-MM-dd
+  from?: string;
   to?: string;
   status?: string;
 }
 
 export const adminAttendanceApi = {
-  search: (c: AdminAttendanceSearch = {}) => {
-    const p = new URLSearchParams();
-    if (c.empId) p.set("empId", String(c.empId));
-    if (c.deptId) p.set("deptId", String(c.deptId));
-    if (c.from) p.set("from", c.from);
-    if (c.to) p.set("to", c.to);
-    if (c.status) p.set("status", c.status);
-    const qs = p.toString();
-    return api.get<Attendance[]>(`/api/admin/attendance${qs ? `?${qs}` : ""}`);
+  search: (condition: AdminAttendanceSearch = {}) => {
+    const params = new URLSearchParams();
+    if (condition.empId) params.set('empId', String(condition.empId));
+    if (condition.deptId) params.set('deptId', String(condition.deptId));
+    if (condition.from) params.set('from', condition.from);
+    if (condition.to) params.set('to', condition.to);
+    if (condition.status) params.set('status', condition.status);
+    const qs = params.toString();
+    return api.get<Attendance[]>(`/api/admin/attendance${qs ? `?${qs}` : ''}`);
   },
   detail: (attendanceId: number) => api.get<Attendance>(`/api/admin/attendance/${attendanceId}`),
-  // 근태 보정 (checkIn/checkOut은 yyyy-MM-ddTHH:mm)
   update: (attendanceId: number, data: { checkIn?: string; checkOut?: string; status?: string; memo?: string }) =>
-      api.put<void>(`/api/admin/attendance/${attendanceId}`, data),
-  // 결근/휴가 직접 등록
-  createAbsence: (data: { empId: number; workDate: string; status: "ABSENT" | "LEAVE"; memo?: string }) =>
-      api.post<Attendance>("/api/admin/attendance/absence", data),
+    api.put<void>(`/api/admin/attendance/${attendanceId}`, data),
+  createAbsence: (data: { empId: number; workDate: string; status: 'ABSENT' | 'LEAVE'; memo?: string }) =>
+    api.post<Attendance>('/api/admin/attendance/absence', data),
 };

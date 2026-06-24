@@ -12,11 +12,11 @@ import { purchaseOrderApi, PurchaseOrder } from "@/lib/api";
 const { Text } = Typography;
 
 const TABS = [
-  { key: "", label: "전체" },
-  { key: "REQUESTED", label: "승인 대기" },
-  { key: "APPROVED", label: "승인 완료" },
-  { key: "REJECTED", label: "반려" },
-  { key: "COMPLETED", label: "입고 완료" },
+  { key: "", label: "All" },
+  { key: "REQUESTED", label: "Requested" },
+  { key: "APPROVED", label: "Approved" },
+  { key: "REJECTED", label: "Rejected" },
+  { key: "COMPLETED", label: "Completed" },
 ];
 
 export default function PurchaseOrderListPage() {
@@ -51,33 +51,33 @@ export default function PurchaseOrderListPage() {
 
   const columns: ColumnsType<PurchaseOrder> = [
     {
-      title: "발주번호",
+      title: "PO No.",
       dataIndex: "poId",
       render: (poId) => `PO-${String(poId).padStart(4, "0")}`,
     },
     {
-      title: "공급처",
+      title: "Supplier",
       dataIndex: "supplierName",
     },
     {
-      title: "기안자",
+      title: "Requester",
       dataIndex: "requestEmpName",
     },
     {
-      title: "발주일",
+      title: "Order Date",
       dataIndex: "poDate",
       render: (value) => value?.slice(0, 10),
     },
     {
-      title: "상태",
+      title: "Status",
       dataIndex: "status",
       render: (status) => <StatusBadge status={status} />,
     },
     {
-      title: "총금액",
+      title: "Total",
       dataIndex: "totalAmount",
       align: "right",
-      render: (value) => `${value?.toLocaleString() ?? 0}원`,
+      render: (value) => `${value?.toLocaleString() ?? 0}`,
     },
   ];
 
@@ -95,8 +95,8 @@ export default function PurchaseOrderListPage() {
   );
 
   return (
-    <ErpLayout title="발주 관리">
-      <Space orientation="vertical" size={16} style={{ width: "100%" }}>
+    <ErpLayout title="Purchase Orders">
+      <Space direction="vertical" size={16} style={{ width: "100%" }}>
         <Tabs
           activeKey={tab}
           items={tabItems}
@@ -107,14 +107,14 @@ export default function PurchaseOrderListPage() {
         />
 
         <Space style={{ width: "100%", justifyContent: "space-between" }}>
-          <Text type="secondary">총 {total}건</Text>
+          <Text type="secondary">Total {total}</Text>
 
           <Button
             type="primary"
             icon={<PlusOutlined />}
             onClick={() => router.push("/purchase-orders/new")}
           >
-            발주 등록
+            New Purchase Order
           </Button>
         </Space>
 

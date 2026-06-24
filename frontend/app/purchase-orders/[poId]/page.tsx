@@ -69,7 +69,7 @@ export default function PurchaseOrderDetailPage() {
 
   const handleReject = async () => {
     if (!rejectReason.trim()) {
-      alert("반려 사유를 입력해주세요.");
+      alert("Enter a reject reason.");
       return;
     }
 
@@ -88,36 +88,36 @@ export default function PurchaseOrderDetailPage() {
 
   const columns: ColumnsType<PurchaseOrderDetail> = [
     {
-      title: "상품코드",
+      title: "Product Code",
       dataIndex: "productCode",
     },
     {
-      title: "상품명",
+      title: "Product",
       dataIndex: "productName",
     },
     {
-      title: "수량",
+      title: "Qty",
       dataIndex: "orderQty",
       align: "right",
       render: (value) => value?.toLocaleString(),
     },
     {
-      title: "단가",
+      title: "Unit Price",
       dataIndex: "unitPrice",
       align: "right",
-      render: (value) => `${value?.toLocaleString() ?? 0}원`,
+      render: (value) => `${value?.toLocaleString() ?? 0}`,
     },
     {
-      title: "금액",
+      title: "Amount",
       dataIndex: "amount",
       align: "right",
-      render: (value) => `${value?.toLocaleString() ?? 0}원`,
+      render: (value) => `${value?.toLocaleString() ?? 0}`,
     },
   ];
 
   if (error) {
     return (
-      <ErpLayout title="발주 상세">
+      <ErpLayout title="Purchase Order Detail">
         <Alert type="error" message={error} showIcon />
       </ErpLayout>
     );
@@ -125,7 +125,7 @@ export default function PurchaseOrderDetailPage() {
 
   if (!order) {
     return (
-      <ErpLayout title="발주 상세">
+      <ErpLayout title="Purchase Order Detail">
         <Spin />
       </ErpLayout>
     );
@@ -135,11 +135,11 @@ export default function PurchaseOrderDetailPage() {
     order.status === "REQUESTED" && (role === "MANAGER" || role === "ADMIN");
 
   return (
-    <ErpLayout title={`발주 상세 - PO-${String(order.poId).padStart(4, "0")}`}>
+    <ErpLayout title={`Purchase Order - PO-${String(order.poId).padStart(4, "0")}`}>
       <Space direction="vertical" size={16} style={{ width: "100%" }}>
         <Space style={{ width: "100%", justifyContent: "space-between" }}>
           <Button icon={<ArrowLeftOutlined />} onClick={() => router.back()}>
-            목록으로
+            Back
           </Button>
 
           <StatusBadge status={order.status} />
@@ -147,7 +147,7 @@ export default function PurchaseOrderDetailPage() {
 
         <Card>
           <Descriptions column={3} bordered size="middle">
-            <Descriptions.Item label="공급처">
+            <Descriptions.Item label="Supplier">
               <Space direction="vertical" size={2}>
                 <Text strong>{order.supplierName}</Text>
                 {order.supplierPhone && (
@@ -156,22 +156,22 @@ export default function PurchaseOrderDetailPage() {
               </Space>
             </Descriptions.Item>
 
-            <Descriptions.Item label="기안자">
+            <Descriptions.Item label="Requester">
               <Space direction="vertical" size={2}>
                 <Text strong>{order.requestEmpName}</Text>
                 <Text type="secondary">
-                  발주일 {order.poDate?.slice(0, 10)}
+                  Order date {order.poDate?.slice(0, 10)}
                 </Text>
               </Space>
             </Descriptions.Item>
 
-            <Descriptions.Item label="총금액">
+            <Descriptions.Item label="Total">
               <Space direction="vertical" size={2}>
                 <Text strong>
-                  {order.totalAmount?.toLocaleString() ?? 0}원
+                  {order.totalAmount?.toLocaleString() ?? 0}
                 </Text>
                 {order.approveEmpName && (
-                  <Text type="secondary">승인자 {order.approveEmpName}</Text>
+                  <Text type="secondary">Approver {order.approveEmpName}</Text>
                 )}
               </Space>
             </Descriptions.Item>
@@ -186,7 +186,7 @@ export default function PurchaseOrderDetailPage() {
         />
 
         {order.memo && (
-          <Alert type="info" message={`메모: ${order.memo}`} showIcon />
+          <Alert type="info" message={`Memo: ${order.memo}`} showIcon />
         )}
 
         {canApprove && (
@@ -197,14 +197,14 @@ export default function PurchaseOrderDetailPage() {
               disabled={processing}
               onClick={() => setShowRejectModal(true)}
             >
-              반려
+              Reject
             </Button>
 
             <Popconfirm
-              title="발주 승인"
-              description="이 발주를 승인하시겠습니까?"
-              okText="승인"
-              cancelText="취소"
+              title="Approve purchase order"
+              description="Approve this purchase order?"
+              okText="Approve"
+              cancelText="Cancel"
               onConfirm={handleApprove}
             >
               <Button
@@ -212,30 +212,29 @@ export default function PurchaseOrderDetailPage() {
                 icon={<CheckOutlined />}
                 loading={processing}
               >
-                승인
+                Approve
               </Button>
             </Popconfirm>
           </Space>
         )}
 
         <Modal
-          title="발주 반려"
+          title="Reject purchase order"
           open={showRejectModal}
-          okText="반려 확정"
-          cancelText="취소"
+          okText="Reject"
+          cancelText="Cancel"
           okButtonProps={{ danger: true, loading: processing }}
           onOk={handleReject}
           onCancel={() => setShowRejectModal(false)}
         >
           <Space direction="vertical" size={12} style={{ width: "100%" }}>
             <Text type="secondary">
-              PO-{String(order.poId).padStart(4, "0")} 발주를 반려합니다.
-              반려 사유는 기안자에게 전달됩니다.
+              The reject reason will be sent to the requester.
             </Text>
 
             <TextArea
               rows={4}
-              placeholder="반려 사유를 입력해주세요"
+              placeholder="Enter reject reason"
               value={rejectReason}
               onChange={(e) => setRejectReason(e.target.value)}
             />

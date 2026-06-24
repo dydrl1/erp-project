@@ -1,20 +1,19 @@
-// app/receivings/page.tsx — 입고 가능 목록 (APPROVED 발주)
-"use client";
+'use client';
 
-import { useEffect, useMemo,  useState } from "react";
-import { useRouter } from "next/navigation";
-import { Alert, Button, Space, Card, Table, Typography } from "antd";
-import type { ColumnsType } from "antd/es/table";
-import ErpLayout from "@/components/ErpLayout";
-import { receivingApi } from "@/lib/api";
+import { useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { Alert, Button, Card, Table, Typography } from 'antd';
+import type { ColumnsType } from 'antd/es/table';
+import ErpLayout from '@/components/ErpLayout';
+import { receivingApi } from '@/lib/api';
 
 interface ReceivableOrder {
-    poId: number;
-    supplierName: string;
-    requestEmpName: string;
-    approveEmpName: string;
-    approveDate: string;
-    totalAmount: number;
+  poId: number;
+  supplierName: string;
+  requestEmpName: string;
+  approveEmpName: string;
+  approveDate: string;
+  totalAmount: number;
 }
 
 export default function ReceivableListPage() {

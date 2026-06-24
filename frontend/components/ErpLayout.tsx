@@ -5,28 +5,36 @@ import { usePathname, useRouter } from "next/navigation";
 import { ReactNode, useEffect, useMemo, useSyncExternalStore } from "react";
 import { Avatar, Button, Layout, Menu, Space, Typography } from "antd";
 import {
+  BellOutlined,
   LogoutOutlined,
   MedicineBoxOutlined,
   SafetyCertificateOutlined,
   ShoppingCartOutlined,
+  TruckOutlined,
   UserOutlined,
+  WalletOutlined,
 } from "@ant-design/icons";
 import { authApi, tokenStorage, userStorage, type AuthUser } from "@/lib/api";
+import NotificationBell from "@/components/notification/NotificationBell";
+import NotificationDrawer from "@/components/notification/NotificationDrawer";
 
 const { Header, Sider, Content } = Layout;
 const { Title, Text } = Typography;
 
-// roles를 지정하면 해당 역할에게만 노출된다. 미지정이면 전체 노출.
 const MENUS = [
-  { href: "/", label: "홈", icon: <MedicineBoxOutlined /> },
-  { href: "/employees", label: "직원 관리", icon: <UserOutlined /> },
-  { href: "/attendance", label: "근태 관리", icon: <UserOutlined /> },
-  { href: "/customers", label: "거래처 관리", icon: <UserOutlined /> },
-  { href: "/product", label: "상품 관리", icon: <MedicineBoxOutlined /> },
-  { href: "/purchase-orders", label: "발주 관리", icon: <ShoppingCartOutlined /> },
-  { href: "/purchase-orders/recevings", label: "입고 관리", icon: <ShoppingCartOutlined /> },
-  { href: "/recall-drugs", label: "위해의약품", icon: <MedicineBoxOutlined /> },
-  { href: "/admin", label: "관리자", icon: <SafetyCertificateOutlined />, roles: ["MANAGER", "ADMIN"] },
+  { href: "/", label: "Home", icon: <MedicineBoxOutlined /> },
+  { href: "/employees", label: "Employees", icon: <UserOutlined /> },
+  { href: "/attendance", label: "Attendance", icon: <UserOutlined /> },
+  { href: "/customers", label: "Customers", icon: <UserOutlined /> },
+  { href: "/product", label: "Products", icon: <MedicineBoxOutlined /> },
+  { href: "/purchase-orders", label: "Purchase Orders", icon: <ShoppingCartOutlined /> },
+  { href: "/purchase-orders/recevings", label: "Receiving", icon: <ShoppingCartOutlined /> },
+  { href: "/sales-orders", label: "Sales Orders", icon: <WalletOutlined /> },
+  { href: "/shipments", label: "Shipments", icon: <TruckOutlined /> },
+  { href: "/stock", label: "Stock", icon: <BellOutlined /> },
+  { href: "/recall-drugs", label: "Recall Drugs", icon: <MedicineBoxOutlined /> },
+  { href: "/settlement/dashboard", label: "Settlement", icon: <WalletOutlined /> },
+  { href: "/admin", label: "Admin", icon: <SafetyCertificateOutlined />, roles: ["MANAGER", "ADMIN"] },
 ];
 
 interface ErpLayoutProps {
@@ -104,7 +112,7 @@ export default function ErpLayout({ title, children }: ErpLayoutProps) {
   }, [pathname]);
 
   const handleLogout = async () => {
-    if (!confirm("로그아웃 하시겠습니까?")) return;
+    if (!confirm("Log out?")) return;
 
     await authApi.logout().catch(() => {});
     tokenStorage.clear();
@@ -115,7 +123,7 @@ export default function ErpLayout({ title, children }: ErpLayoutProps) {
   if (!session.hydrated) return null;
   if (!session.hasToken) return null;
 
-  const empName = session.user?.empName ?? "사용자";
+  const empName = session.user?.empName ?? "User";
   const role = session.user?.role ?? "";
 
   return (
@@ -137,7 +145,7 @@ export default function ErpLayout({ title, children }: ErpLayoutProps) {
             icon={<MedicineBoxOutlined />}
             style={{ backgroundColor: "#1d9e75" }}
           />
-          약통 ERP
+          PharmaFlow ERP
         </div>
 
         <Menu
@@ -168,9 +176,10 @@ export default function ErpLayout({ title, children }: ErpLayoutProps) {
           </Title>
 
           <Space size={12}>
+            <NotificationBell />
             <Avatar icon={<UserOutlined />} />
             <Text>
-              {empName} 님{role ? ` · ${role}` : ""}
+              {empName}{role ? ` · ${role}` : ""}
             </Text>
             <Link href="/mypage">
               <Button size="small" icon={<UserOutlined />}>
@@ -178,13 +187,14 @@ export default function ErpLayout({ title, children }: ErpLayoutProps) {
               </Button>
             </Link>
             <Button size="small" icon={<LogoutOutlined />} onClick={handleLogout}>
-              로그아웃
+              Log out
             </Button>
           </Space>
         </Header>
 
         <Content style={{ padding: 24, background: "#f5f7f9" }}>{children}</Content>
       </Layout>
+      <NotificationDrawer />
     </Layout>
   );
 }
