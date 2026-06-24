@@ -31,8 +31,8 @@ export default function SalesInvoiceNewPage() {
 
   useEffect(() => {
     if (!customerId) {
-      setLoading(false);
-      return;
+      const timer = setTimeout(() => setLoading(false), 0);
+      return () => clearTimeout(timer);
     }
 
     fetch("http://localhost:8080/api/settlement/receivables/customer-summary")

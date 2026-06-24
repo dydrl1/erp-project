@@ -51,7 +51,8 @@ export default function PurchaseOrderDetailPage() {
   useEffect(load, [poId]);
 
   useEffect(() => {
-    setRole(localStorage.getItem("role") ?? "");
+    const timer = setTimeout(() => setRole(localStorage.getItem("role") ?? ""), 0);
+    return () => clearTimeout(timer);
   }, []);
 
   const handleApprove = async () => {

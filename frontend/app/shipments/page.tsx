@@ -33,17 +33,20 @@ export default function ShipmentListPage() {
   }, []);
 
   useEffect(() => {
-    setLoading(true);
-    shipmentApi
-      .listPaging(page, 20, tab)
-      .then((res) => {
-        setShipments(res.list);
-        setTotal(res.total);
-      })
-      .catch(() => {})
-      .finally(() => {
-        setLoading(false);
-      });
+    const timer = setTimeout(() => {
+      setLoading(true);
+      shipmentApi
+        .listPaging(page, 20, tab)
+        .then((res) => {
+          setShipments(res.list);
+          setTotal(res.total);
+        })
+        .catch(() => {})
+        .finally(() => {
+          setLoading(false);
+        });
+    }, 0);
+    return () => clearTimeout(timer);
   }, [page, tab]);
 
   useEffect(() => {

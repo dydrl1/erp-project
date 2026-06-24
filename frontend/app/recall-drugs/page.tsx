@@ -49,7 +49,8 @@ export default function RecallDrugsPage() {
   };
 
   useEffect(() => {
-    load(onlyInStock);
+    const timer = setTimeout(() => load(onlyInStock), 0);
+    return () => clearTimeout(timer);
   }, [onlyInStock]);
 
   const inStockCount = drugs.filter((drug) => drug.inStock).length;

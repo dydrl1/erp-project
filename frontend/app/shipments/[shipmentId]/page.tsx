@@ -37,7 +37,8 @@ export default function ShipmentDetailPage() {
   }, [load]);
 
   useEffect(() => {
-    setRole(localStorage.getItem('role') ?? '');
+    const timer = setTimeout(() => setRole(localStorage.getItem('role') ?? ''), 0);
+    return () => clearTimeout(timer);
   }, []);
 
   const handleReject = () => {

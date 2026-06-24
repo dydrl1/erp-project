@@ -34,17 +34,20 @@ export default function PurchaseOrderListPage() {
   }, [orders]);
 
   useEffect(() => {
-    setLoading(true);
+    const timer = setTimeout(() => {
+      setLoading(true);
 
-    purchaseOrderApi
-      .listPaging(tab, page, 10)
-      .then((res) => {
-        setOrders(res.list);
-        setTotalPages(res.totalPages);
-        setTotal(res.total);
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
+      purchaseOrderApi
+        .listPaging(tab, page, 10)
+        .then((res) => {
+          setOrders(res.list);
+          setTotalPages(res.totalPages);
+          setTotal(res.total);
+        })
+        .catch(() => {})
+        .finally(() => setLoading(false));
+    }, 0);
+    return () => clearTimeout(timer);
   }, [tab, page]);
 
   const totalCount = Object.values(counts).reduce((a, b) => a + b, 0);

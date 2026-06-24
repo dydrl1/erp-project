@@ -36,14 +36,17 @@ export default function SalesOrderListPage() {
   }, []);
 
   useEffect(() => {
-    setLoading(true);
-    salesOrderApi
-      .listPaging(tab, page, 20)
-      .then((res) => {
-        setOrders(res.list);
-        setTotal(res.total);
-      })
-      .finally(() => setLoading(false));
+    const timer = setTimeout(() => {
+      setLoading(true);
+      salesOrderApi
+        .listPaging(tab, page, 20)
+        .then((res) => {
+          setOrders(res.list);
+          setTotal(res.total);
+        })
+        .finally(() => setLoading(false));
+    }, 0);
+    return () => clearTimeout(timer);
   }, [tab, page]);
 
   const columns = useMemo<ColumnsType<SalesOrder>>(

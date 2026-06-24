@@ -35,7 +35,8 @@ export default function CustomersPage() {
   };
 
   useEffect(() => {
-    loadCustomers(typeTab, "");
+    const timer = setTimeout(() => loadCustomers(typeTab, ""), 0);
+    return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [typeTab]);
 

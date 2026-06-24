@@ -6,7 +6,7 @@ import { App, Button, Card, Descriptions, Flex, Input, Space, Table, Typography 
 import type { ColumnsType } from 'antd/es/table';
 import ErpLayout from '@/components/ErpLayout';
 import StatusBadge from '@/components/StatusBadge';
-import { purchaseOrderApi, salesOrderApi, SalesOrder, shipmentApi } from '@/lib/api';
+import { purchaseOrderApi, salesOrderApi, SalesOrder, SalesOrderDetail, shipmentApi } from '@/lib/api';
 
 const { Text } = Typography;
 
@@ -32,7 +32,8 @@ export default function SalesOrderDetailPage() {
   }, [load]);
 
   useEffect(() => {
-    setRole(localStorage.getItem('role') ?? '');
+    const timer = setTimeout(() => setRole(localStorage.getItem('role') ?? ''), 0);
+    return () => clearTimeout(timer);
   }, []);
 
   const canApprove = order?.status === 'REQUESTED' && (role === 'MANAGER' || role === 'ADMIN');
@@ -130,7 +131,7 @@ export default function SalesOrderDetailPage() {
     });
   };
 
-  const columns = useMemo<ColumnsType<any>>(
+  const columns = useMemo<ColumnsType<SalesOrderDetail>>(
     () => [
       { title: '제품코드', dataIndex: 'productCode' },
       { title: '제품명', dataIndex: 'productName' },

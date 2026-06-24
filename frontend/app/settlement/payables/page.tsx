@@ -68,7 +68,8 @@ export default function PayablesPage() {
     };
     
     useEffect(() => {
-        fetchList();
+        const timer = setTimeout(fetchList, 0);
+        return () => clearTimeout(timer);
     }, []);
     
     return (

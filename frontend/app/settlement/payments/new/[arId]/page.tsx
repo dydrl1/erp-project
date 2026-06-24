@@ -35,8 +35,8 @@ export default function PaymentNewPage() {
 
   useEffect(() => {
     if (!arId) {
-      setLoading(false);
-      return;
+      const timer = setTimeout(() => setLoading(false), 0);
+      return () => clearTimeout(timer);
     }
 
     fetch(`http://localhost:8080/api/settlement/receivables/${arId}`)
