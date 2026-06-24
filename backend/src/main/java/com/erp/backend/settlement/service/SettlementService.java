@@ -185,6 +185,7 @@ public class SettlementService {
     }
 
     // 미지급금 지급 처리
+    @Transactional
     public void createPayablePayment(PayablePaymentVO payablePaymentVO) {
         if (payablePaymentVO.getPaymentAmount() == null ||
                 payablePaymentVO.getPaymentAmount().compareTo(BigDecimal.ZERO) <= 0) {
