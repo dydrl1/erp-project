@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useState } from "react";
 import ErpLayout from "@/components/ErpLayout";
 import { roleLabel } from "@/components/EmployeeStatusBadge";
-import { authApi, employeeApi, type Employee } from "@/lib/api";
+import { employeeApi, type Employee } from "@/lib/api";
+import { authApi } from "@/lib/auth-api";
 import { useAuthUser } from "@/lib/hooks";
 
 // 위→아래 라벨-값 리스트 한 줄

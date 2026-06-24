@@ -4,7 +4,8 @@ import { useEffect, useState, type ChangeEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import AuthShell from "@/components/AuthShell";
-import { authApi, departmentApi, type Department } from "@/lib/api";
+import { departmentApi, type Department } from "@/lib/api";
+import { authApi } from "@/lib/auth-api";
 
 export default function SignupPage() {
   const router = useRouter();

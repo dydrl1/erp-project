@@ -13,9 +13,9 @@ import {
   adminEmployeeApi,
   departmentApi,
   employeeApi,
-  userStorage,
   type Employee,
 } from "@/lib/api";
+import { userStorage } from "@/lib/api-client";
 
 // 통계 카드
 function StatCard({

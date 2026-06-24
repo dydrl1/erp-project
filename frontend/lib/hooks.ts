@@ -1,6 +1,6 @@
 // 공통 클라이언트 훅 모음 (React 19 권장 패턴 기준)
 import { DependencyList, useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { type AuthUser } from "@/lib/api";
+import { type AuthUser } from "@/lib/api-client";
 
 /**
  * 비동기 데이터 로딩 훅.

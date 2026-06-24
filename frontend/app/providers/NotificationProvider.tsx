@@ -3,7 +3,8 @@
 import { createContext, useCallback, useEffect, useMemo, useState } from "react";
 import { notification } from "antd";
 import { Client, IMessage } from "@stomp/stompjs";
-import { alertApi, userStorage, type NotificationMessage } from "@/lib/api";
+import { alertApi, type NotificationMessage } from "@/lib/api";
+import { userStorage } from "@/lib/api-client";
 
 interface NotificationContextValue {
   notifications: NotificationMessage[];

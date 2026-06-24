@@ -4,7 +4,8 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import AuthShell from "@/components/AuthShell";
-import { authApi, tokenStorage, userStorage } from "@/lib/api";
+import { authApi } from "@/lib/auth-api";
+import { tokenStorage, userStorage } from "@/lib/api-client";
 
 export default function LoginPage() {
   const router = useRouter();
