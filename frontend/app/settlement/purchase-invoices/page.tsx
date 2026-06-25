@@ -135,10 +135,10 @@ export default function PurchaseInvoiceListPage() {
                             pagedList.map((item) => (
                                 <tr key={item.purchaseInvoiceId}>
                                     <td className="link">
-                                        PI-{String(item.purchaseInvoiceId).padStart(4, "0")}
+                                        {String(item.purchaseInvoiceId).padStart(4, "0")}
                                     </td>
                                     <td>
-                                        PO-{String(item.poId).padStart(4, "0")}
+                                        {String(item.poId).padStart(4, "0")}
                                     </td>
                                     <td>{item.supplierName ?? `공급처 ${item.supplierId}`}</td>
                                     <td>{item.issueDate?.slice(0, 10)}</td>

@@ -43,8 +43,9 @@ public class SettlementService {
 
     // 미수금/매출채권 조회
     public List<AccountReceivableVO> getAccountReceivableList(
-            String status, String startDate, String endDate) {
+            String customerName, String status, String startDate, String endDate) {
         Map<String, Object> params = new HashMap<>();
+        params.put("customerName", customerName);
         params.put("status", status);
         params.put("startDate", startDate);
         params.put("endDate", endDate);

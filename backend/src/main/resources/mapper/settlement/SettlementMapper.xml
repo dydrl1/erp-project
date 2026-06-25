@@ -90,6 +90,9 @@
         JOIN CUSTOMER C
             ON C.CUSTOMER_ID = AR.CUSTOMER_ID
         WHERE 1 = 1
+        <if test="customerName != null and customerName != ''">
+            AND C.CUSTOMER_NAME LIKE '%' || #{customerName} || '%'
+        </if>
         <if test="status != null and status != ''">
             AND AR.STATUS = #{status}
         </if>

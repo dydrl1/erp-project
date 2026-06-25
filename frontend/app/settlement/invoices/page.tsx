@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import ErpLayout from "@/components/ErpLayout";
 import "../settlement.css";
 
@@ -16,6 +17,7 @@ type SalesInvoice = {
 };
 
 export default function SalesInvoiceListPage() {
+    const router = useRouter();
     const [list, setList] = useState<SalesInvoice[]>([]);
     const [status, setStatus] = useState("");
     const [customerName, setCustomerName] = useState("");
@@ -135,11 +137,14 @@ export default function SalesInvoiceListPage() {
                         ) : (
                             pagedList.map((item) => (
                                 <tr key={item.salesInvoiceId}>
-                                    <td className="link">
-                                        SI-{String(item.salesInvoiceId).padStart(4, "0")}
+                                    <td>{item.salesInvoiceId}</td>
+                                    <td>{item.soId}</td>
+                                    <td
+                                        className="link"
+                                        onClick={() => router.push(`/settlement/invoices/${item.customerId}`)}
+                                    >
+                                        {item.customerName ?? `거래처 ${item.customerId}`}
                                     </td>
-                                    <td>SO-{String(item.soId).padStart(4, "0")}</td>
-                                    <td>{item.customerName ?? `거래처 ${item.customerId}`}</td>
                                     <td>{item.issueDate?.slice(0, 10)}</td>
                                     <td className="num">{formatMoney(item.totalAmount)}</td>
                                     <td>{item.status}</td>

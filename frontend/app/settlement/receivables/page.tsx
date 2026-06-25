@@ -5,18 +5,22 @@ import { useRouter } from "next/navigation";
 import ErpLayout from "@/components/ErpLayout";
 import "../settlement.css";
 
-type CustomerReceivable = {
+type AccountReceivable = {
+    arId: number;
+    salesInvoiceId: number;
     customerId: number;
     customerName: string;
-    monthSalesAmount: number;
+    totalAmount: number;
+    paidAmount: number;
     remainAmount: number;
-    creditLimit: number;
-    creditBalance: number;
+    dueDate: string;
+    status: string;
 };
 
 export default function ReceivablesPage() {
     const router = useRouter();
-    const [list, setList] = useState<CustomerReceivable[]>([]);
+    const [status, setStatus] = useState("");
+    const [list, setList] = useState<AccountReceivable[]>([]);
     const [customerName, setCustomerName] = useState("");
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(1);
@@ -35,11 +39,12 @@ export default function ReceivablesPage() {
     
     const fetchList = () => {
         setLoading(true);
-        const query = customerName
-        ? `?customerName=${encodeURIComponent(customerName)}`
-        : "";
+        const params = new URLSearchParams();
+        if (customerName) params.append("customerName", customerName);
+        if (status) params.append("status", status);
+        const query = params.toString() ? `?${params.toString()}` : "";
         
-        fetch(`http://localhost:8080/api/settlement/receivables/customer-summary${query}`)
+        fetch(`http://localhost:8080/api/settlement/receivables${query}`)
         .then((res) => res.json())
         .then((res) => {
             setList(res.data ?? []);
@@ -63,7 +68,7 @@ export default function ReceivablesPage() {
     };
 
     return (
-        <ErpLayout title="거래처별 미수금 현황">
+        <ErpLayout title="미수금 관리">
             <div className="erp-filter">
                 <input className="erp-input"
                     placeholder="거래처명 검색"
@@ -74,6 +79,17 @@ export default function ReceivablesPage() {
                     }}
                 />
 
+                <select
+                    className="erp-select"
+                    value={status}
+                    onChange={(e) => setStatus(e.target.value)}
+                >
+                    <option value="">전체 상태</option>
+                    <option value="UNPAID">미수</option>
+                    <option value="PARTIAL">부분수금</option>
+                    <option value="PAID">완납</option>
+                </select>
+
                 <button className="erp-btn primary" onClick={handleSearch}>
                     검색
                     </button>
@@ -81,10 +97,18 @@ export default function ReceivablesPage() {
                 <button className="erp-btn"
                     onClick={() => {
                         setCustomerName("");
+                        setStatus("");
                         setTimeout(fetchList, 0);
                     }}
                 >
                     초기화
+                </button>
+
+                <button
+                    className="erp-btn"
+                    onClick={() => router.push("/settlement/payments/history")}
+                >
+                    수금내역
                 </button>
             </div>
 
@@ -93,36 +117,46 @@ export default function ReceivablesPage() {
                 <thead>
                     <tr>
                         <th>거래처명</th>
-                        <th className="num">당월 매출액</th>
-                        <th className="num">현재 미수금</th>
-                        <th className="num">여신한도</th>
-                        <th className="num">여신잔액</th>
+                        <th className="num">청구금액</th>
+                        <th className="num">수금금액</th>
+                        <th className="num">남은 미수금</th>
+                        <th>만기일</th>
+                        <th>상태</th>
+                        <th>수금등록</th>
                     </tr>
                 </thead>
 
                 <tbody>
                     {loading ? (
                         <tr>
-                            <td colSpan={5} style={{ textAlign: "center", padding: 40 }}>
+                            <td colSpan={7} style={{ textAlign: "center", padding: 40 }}>
                             불러오는 중...
                             </td>
                         </tr>
                         ) : list.length === 0 ? (
                         <tr>
-                            <td colSpan={5} style={{ textAlign: "center", padding: 40 }}>
+                            <td colSpan={7} style={{ textAlign: "center", padding: 40 }}>
                             조회된 거래처가 없습니다.
                             </td>
                         </tr>
                         ) : (
                             pagedList.map((item) => (
-                                <tr key={item.customerId}
-                                    onClick={() => router.push(`/settlement/invoices/${item.customerId}`)}
-                                >
-                                    <td className="link">{item.customerName}</td>
-                                    <td className="num">{formatMoney(item.monthSalesAmount)}</td>
+                                <tr key={item.arId}>
+                                    <td>{item.customerName}</td>
+                                    <td className="num">{formatMoney(item.totalAmount)}</td>
+                                    <td className="num">{formatMoney(item.paidAmount)}</td>
                                     <td className="num">{formatMoney(item.remainAmount)}</td>
-                                    <td className="num">{formatMoney(item.creditLimit)}</td>
-                                    <td className="num">{formatMoney(item.creditBalance)}</td>
+                                    <td>{item.dueDate?.slice(0, 10)}</td>
+                                    <td>{item.status}</td>
+                                    <td>
+                                        <button
+                                            className="erp-btn primary"
+                                            disabled={item.remainAmount <= 0}
+                                            onClick={() => router.push(`/settlement/payments/new/${item.arId}`)}
+                                        >
+                                            등록
+                                        </button>
+                                    </td>
                                 </tr>
                             ))
                         )}

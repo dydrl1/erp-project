@@ -68,9 +68,12 @@ const MENU_GROUPS: MenuGroup[] = [
   {
     title: "정산 / 분석",
     items: [
-      { href: "/settlement/dashboard", label: "정산 / 매출", icon: <WalletOutlined /> },
+      { href: "/settlement/dashboard", label: "대시보드", icon: <WalletOutlined /> },
+      { href: "/settlement/invoices", label: "매출청구", icon: <WalletOutlined /> },
+      { href: "/settlement/purchase-invoices", label: "매입청구", icon: <WalletOutlined /> },
       { href: "/settlement/receivables", label: "미수금 관리", icon: <WalletOutlined /> },
       { href: "/settlement/payables", label: "미지급금 관리", icon: <WalletOutlined /> },
+      { href: "/settlement/settlements", label: "손익정산", icon: <WalletOutlined /> },
     ],
   },
   {

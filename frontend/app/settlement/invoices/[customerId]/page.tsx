@@ -78,21 +78,22 @@ export default function SalesInvoiceNewPage() {
       },
       body: JSON.stringify(body),
     })
-      .then((res) => {
-        if (!res.ok) {
-          throw new Error("매출청구 등록 실패");
-        }
-        return res.json().catch(() => null);
-      })
-      .then(() => {
-        alert("매출청구가 등록되었습니다.");
+    .then(async (res) => {
+      if (!res.ok) {
+        const error = await res.json().catch(() => null);
+        throw new Error(error?.message || "매출청구 등록 실패");
+      }
+      return res.json().catch(() => null);
+    })
+    .then(() => {
+      alert("매출청구가 등록되었습니다.");
         router.push("/settlement/invoices");
       })
       .catch((err) => {
         console.error(err);
-        alert("매출청구 등록 중 오류가 발생했습니다.");
+        alert(err.message || "매출청구 등록 중 오류가 발생했습니다.");
       });
-  };
+    };
 
   return (
     <ErpLayout title="매출청구 등록">
@@ -180,7 +181,6 @@ export default function SalesInvoiceNewPage() {
                 >
                   <option value="PENDING">대기</option>
                   <option value="APPROVED">승인</option>
-                  <option value="PAID">완납</option>
                 </select>
               </div>
             </div>
