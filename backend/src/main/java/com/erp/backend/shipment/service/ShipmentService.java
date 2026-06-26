@@ -10,6 +10,11 @@ import com.erp.backend.sales.dto.SalesOrderStatusCountDTO;
 import com.erp.backend.sales.mapper.SalesOrderMapper;
 import com.erp.backend.sales.util.OrderStatus;
 import com.erp.backend.sales.vo.*;
+import com.erp.backend.settlement.mapper.SettlementMapper;
+import com.erp.backend.settlement.service.SettlementService;
+import com.erp.backend.settlement.vo.AccountPayableVO;
+import com.erp.backend.settlement.vo.AccountReceivableVO;
+import com.erp.backend.settlement.vo.SalesInvoiceVO;
 import com.erp.backend.shipment.dto.ShipmentStatusCountDTO;
 import com.erp.backend.shipment.util.MovementType;
 import com.erp.backend.shipment.util.ShipmentStatus;
@@ -20,6 +25,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -30,6 +36,7 @@ public class ShipmentService {
     private final ShipmentMapper shipmentMapper;
     private final SalesOrderMapper salesOrderMapper;
     private final AlertService alertService;
+    private final SettlementService settlementService;
 
     //주문 출고 승인여부 확인
     private SalesOrderVO verifySalesOrderStatus(int salesOrderId) {
@@ -156,6 +163,10 @@ public class ShipmentService {
         }
         for (Integer productId : shippedProductIds) {
             alertService.checkAfterShipment(productId);
+        }
+        boolean invoiceCreated = createSalesInvoiceAfterShipment(salesOrderId);
+        if (!invoiceCreated) {
+            throw new CustomException(ErrorCode.NOT_FOUND);//매출청구 미수금 생성
         }
         return shipmentId;
     }
@@ -296,4 +307,20 @@ public class ShipmentService {
         return shipmentMapper.findProductStockList();
     }
 
+    //청구 생성
+    public boolean createSalesInvoiceAfterShipment(int salesOrderId) {
+        SalesOrderVO salesOrder = salesOrderMapper.findOrderHeaderById(salesOrderId);
+        if (salesOrder == null) {
+            throw new CustomException(ErrorCode.SALES_ORDER_FAILED);
+        }
+        SalesInvoiceVO salesInvoiceVO = new SalesInvoiceVO();
+        salesInvoiceVO.setSoId(salesOrderId);
+        salesInvoiceVO.setCustomerId(salesOrder.getCustomerId());
+        salesInvoiceVO.setTotalAmount(salesOrder.getTotalAmount());
+        salesInvoiceVO.setIssueDate(LocalDate.now());
+        salesInvoiceVO.setStatus("ISSUED");
+        AccountReceivableVO accountPayable = new AccountReceivableVO();
+        settlementService.createSalesInvoice(salesInvoiceVO, accountPayable);
+        return true;
+    }
 }
