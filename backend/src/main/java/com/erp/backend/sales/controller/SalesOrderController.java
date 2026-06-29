@@ -30,10 +30,9 @@ public class SalesOrderController {
     //주문전체조회
     @GetMapping("/paging")
     public ResponseEntity<ApiResponse<PageResponse<SalesOrderListResponseDTO>>> findAllSalesOrders(@RequestParam(required = false) String status,
-                                                                                                   @RequestParam(defaultValue = "1") Integer offset,
+                                                                                                   @RequestParam(defaultValue = "1") Integer page,
                                                                                                    @RequestParam(defaultValue = "10") Integer size) {
-        size = salesOrderService.findCountsForSalesOrders(status);
-        PageResponse<SalesOrderListResponseDTO> result = salesOrderService.findAllSalesOrdersPaging(status, offset, size);
+        PageResponse<SalesOrderListResponseDTO> result = salesOrderService.findAllSalesOrdersPaging(status, page, size);
         return ResponseEntity.ok(ApiResponse.success(result.getSize()+"의건이 조회되었습니다",result));
     }
 
