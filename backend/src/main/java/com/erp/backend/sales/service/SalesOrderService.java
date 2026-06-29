@@ -113,11 +113,11 @@ public class SalesOrderService {
 
     //주문생성
     @Transactional
-    public SalesOrderVO makeOrder(SalesOrderRequestDTO requestDTO) {
+    public SalesOrderVO makeOrder(SalesOrderRequestDTO requestDTO, long empId) {
         if (requestDTO == null) {
             throw new CustomException(ErrorCode.SALES_ORDER_REQUEST_INVALID);
         }
-        if (requestDTO.getCustomerId() <= 0 || requestDTO.getEmployeeId() <= 0 || requestDTO.getDetails() == null || requestDTO.getDetails().isEmpty()) {
+        if (requestDTO.getCustomerId() <= 0 || requestDTO.getDetails() == null || requestDTO.getDetails().isEmpty()) {
             throw new CustomException(ErrorCode.SALES_ORDER_REQUEST_INVALID);
         }
 
@@ -125,7 +125,7 @@ public class SalesOrderService {
         SalesOrderVO salesOrderVO = new SalesOrderVO();
         salesOrderVO.setSoId(orderId);
         salesOrderVO.setCustomerId(requestDTO.getCustomerId());
-        salesOrderVO.setReqEmployeeId(requestDTO.getEmployeeId());
+        salesOrderVO.setReqEmployeeId(empId);
         salesOrderVO.setMemo(requestDTO.getMemo());
         salesOrderVO.setOrderDate(LocalDateTime.now());
         salesOrderVO.setStatus(OrderStatus.REQUESTED.name());

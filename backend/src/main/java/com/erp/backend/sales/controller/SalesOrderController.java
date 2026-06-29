@@ -9,6 +9,7 @@ import com.erp.backend.sales.service.SalesOrderService;
 import com.erp.backend.sales.vo.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -72,17 +73,19 @@ public class SalesOrderController {
 
     //주문생성
     @PostMapping
-    public ResponseEntity<ApiResponse<SalesOrderVO>> makeOrder(@RequestBody SalesOrderRequestDTO requestDTO){
-        SalesOrderVO responseVO = salesOrderService.makeOrder(requestDTO);
+    public ResponseEntity<ApiResponse<SalesOrderVO>> makeOrder(@RequestBody SalesOrderRequestDTO requestDTO,
+                                                               @AuthenticationPrincipal long empId) {
+        SalesOrderVO responseVO = salesOrderService.makeOrder(requestDTO, empId);
         return ResponseEntity.ok(ApiResponse.success("주문이 생성되었습니다",responseVO));
     }
 
     //주문승인
     @PatchMapping("/{salesOrderId}/approve")
-    public ResponseEntity<ApiResponse<SalesOrderVO>> approveRequest(@PathVariable int salesOrderId,@RequestBody SalesOrderRequestDTO request){
+    public ResponseEntity<ApiResponse<SalesOrderVO>> approveRequest(@PathVariable int salesOrderId,
+                                                                    @AuthenticationPrincipal long empId) {
         SalesOrderVO salesOrderVO = new SalesOrderVO();
         salesOrderVO.setSoId(salesOrderId);
-        salesOrderVO.setAppEmployeeId(request.getEmployeeId());
+        salesOrderVO.setAppEmployeeId(empId);
         SalesOrderVO updateSalesOrder = salesOrderService.approveRequest(salesOrderVO);
         return ResponseEntity.ok(ApiResponse.success("주문이 승인되었습니다",updateSalesOrder));
     }

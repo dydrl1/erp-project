@@ -110,8 +110,8 @@ public class ShipmentService {
      */
 
     @Transactional
-    public int processShipment(Integer salesOrderId, Integer employeeId) {
-        if (salesOrderId == null || employeeId == null) {
+    public int processShipment(Integer salesOrderId, long employeeId) {
+        if (salesOrderId == null || employeeId <= 0) {
             throw new CustomException(ErrorCode.NOT_FOUND);
         }
         SalesOrderVO order = verifySalesOrderStatus(salesOrderId);
@@ -194,7 +194,7 @@ public class ShipmentService {
     }
 
     //배정된 로트 기준으로 출고 상세,재고 이력생성, 재고 차감 처리
-    private void applyShipmentAllocation(Map<Integer, Integer> allocatableLots, SalesOrderDetailVO salesOrderdetailVO, Integer shipmentId, Integer employeeId) {
+    private void applyShipmentAllocation(Map<Integer, Integer> allocatableLots, SalesOrderDetailVO salesOrderdetailVO, Integer shipmentId, long employeeId) {
         int productId = salesOrderdetailVO.getProductId();
         int detailId = salesOrderdetailVO.getSoDetailId();
         for (Map.Entry<Integer, Integer> lot : allocatableLots.entrySet()) {
@@ -224,7 +224,7 @@ public class ShipmentService {
     }
 
     //재고 변동 이력 기록
-    private void insertStockMovement(Integer shipmentDetailId, Integer employeeId, Integer lotId, Integer assignedQty) {
+    private void insertStockMovement(Integer shipmentDetailId, long employeeId, Integer lotId, Integer assignedQty) {
         int movementId = shipmentMapper.currentStockMovementSeq();
         StockMovementVO stockMovementVO = new StockMovementVO();
         stockMovementVO.setMovementId(movementId);
