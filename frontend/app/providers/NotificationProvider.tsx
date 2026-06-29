@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import { createContext, useCallback, useEffect, useMemo, useState } from "react";
-import { notification } from "antd";
-import { Client, IMessage } from "@stomp/stompjs";
-import { alertApi, type NotificationMessage } from "@/lib/api";
-import { userStorage } from "@/lib/api-client";
+import { createContext, useCallback, useEffect, useMemo, useState, useRef } from 'react';
+import { notification } from 'antd';
+import { Client, IMessage } from '@stomp/stompjs';
+import { alertApi, type NotificationMessage } from '@/lib/api';
+import { userStorage } from '@/lib/api-client';
 
 interface NotificationContextValue {
   notifications: NotificationMessage[];
@@ -23,10 +23,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   const receivedIdsRef = useRef<Set<number>>(new Set());
   const [drawerOpen, setDrawerOpen] = useState(false);
 
-  const unreadCount = useMemo(
-    () => notifications.filter((item) => !item.isRead).length,
-    [notifications],
-  );
+  const unreadCount = useMemo(() => notifications.filter((item) => !item.isRead).length, [notifications]);
 
   const openDrawer = useCallback(() => {
     setDrawerOpen(true);
@@ -45,7 +42,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
         prev.map((item) => (item.notificationId === notificationId ? { ...item, isRead: true } : item)),
       );
     } catch (error) {
-      console.error("Failed to mark notification as read:", error);
+      console.error('Failed to mark notification as read:', error);
     }
   }, []);
 
@@ -74,11 +71,11 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
         notificationApi.warning({
           message: getNotificationTitle(received.level),
           description: received.content,
-          placement: "topRight",
+          placement: 'topRight',
           duration: 15,
         });
       } catch (error) {
-        console.error("Failed to parse notification message:", error);
+        console.error('Failed to parse notification message:', error);
       }
     },
     [notificationApi],
@@ -107,14 +104,14 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
 
   useEffect(() => {
     const user = userStorage.get();
-    const role = user?.role ?? "";
-    const department = user?.deptCode ?? "";
+    const role = user?.role ?? '';
+    const department = user?.deptCode ?? '';
 
     const client = new Client({
-      brokerURL: "ws://localhost:8080/ws-connect",
+      brokerURL: 'ws://localhost:8080/ws-connect',
       reconnectDelay: 5000,
       onConnect: () => {
-        client.subscribe("/topic/notifications", handleMessage);
+        client.subscribe('/topic/notifications', handleMessage);
         if (department) {
           client.subscribe(`/topic/departments/${department}/notifications`, handleMessage);
         }
@@ -123,10 +120,10 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
         }
       },
       onStompError: (frame) => {
-        console.error("STOMP error:", frame);
+        console.error('STOMP error:', frame);
       },
       onWebSocketError: (error) => {
-        console.error("WebSocket error:", error);
+        console.error('WebSocket error:', error);
       },
       onWebSocketClose: (event) => {
         console.error('소켓종료', {
@@ -173,6 +170,6 @@ function getNotificationTitle(level: string) {
     case 'INFO':
       return '안내';
     default:
-      return "New notification";
+      return 'New notification';
   }
 }

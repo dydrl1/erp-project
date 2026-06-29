@@ -6,7 +6,7 @@ import { App, Button, Card, Descriptions, Flex, Input, Space, Steps, Table, Typo
 import type { ColumnsType } from 'antd/es/table';
 import ErpLayout from '@/components/ErpLayout';
 import StatusBadge from '@/components/StatusBadge';
-import { salesOrderApi, SalesOrder, shipmentApi } from '@/lib/api';
+import { salesOrderApi, SalesOrderDetail, SalesOrder, shipmentApi } from '@/lib/api';
 const { Text } = Typography;
 export default function SalesOrderDetailPage() {
   const { soId } = useParams<{ soId: string }>();
@@ -139,7 +139,6 @@ export default function SalesOrderDetailPage() {
 
   const currentStep = statusStep[order?.status ?? 'REQUESTED'];
 
-  const columns = useMemo<ColumnsType<any>>(
   const columns = useMemo<ColumnsType<SalesOrderDetail>>(
     () => [
       { title: '제품코드', dataIndex: 'productCode' },
