@@ -119,7 +119,7 @@ export default function StockMovementTab() {
           OUT: '재고 감소',
           RETURN: '반품 입고',
           DISPOSAL: '폐기 출고',
-          ADJUSTMENT: '재고 조정',
+          ADJUST: '재고 조정',
         };
         return <Tag>{labels[value] ?? value}</Tag>;
       },
@@ -137,17 +137,11 @@ export default function StockMovementTab() {
           RETURN: '반품 처리',
           RETURN_REQUEST: '반품 처리',
           DISPOSAL: '폐기 처리',
-          ADJUSTMENT: '재고 조정',
+          ADJUST: '재고 조정',
         };
         return <Tag>{labels[value] ?? value}</Tag>;
       },
     },
-    // {
-    //   title: '업무 참조번호',
-    //   dataIndex: 'sourceId',
-    //   width: 130,
-    //   align: 'right',
-    // },
     {
       title: '변경 전',
       dataIndex: 'beforeQty',
@@ -219,7 +213,7 @@ export default function StockMovementTab() {
               { value: 'OUT', label: '출고' },
               { value: 'RETURN', label: '반품' },
               { value: 'DISPOSAL', label: '폐기' },
-              { value: 'ADJUSTMENT', label: '재고조정' },
+              { value: 'ADJUST', label: '재고조정' },
             ]}
           />
           <Select
@@ -235,7 +229,7 @@ export default function StockMovementTab() {
               { value: 'SHIPMENT_DETAIL', label: '출고' },
               { value: 'RETURN', label: '반품' },
               { value: 'DISPOSAL', label: '폐기' },
-              { value: 'ADJUSTMENT', label: '재고조정' },
+              { value: 'ADJUST', label: '재고조정' },
             ]}
           />
           <InputNumber
