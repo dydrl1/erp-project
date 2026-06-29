@@ -68,7 +68,7 @@ const MENU_GROUPS: MenuGroup[] = [
   {
     title: "정산 / 분석",
     items: [
-      { href: "/settlement/dashboard", label: "대시보드", icon: <WalletOutlined /> },
+      { href: "/settlement/dashboard", label: "매출 대시보드", icon: <WalletOutlined /> },
       { href: "/settlement/invoices", label: "매출청구", icon: <WalletOutlined /> },
       { href: "/settlement/purchase-invoices", label: "매입청구", icon: <WalletOutlined /> },
       { href: "/settlement/receivables", label: "미수금 관리", icon: <WalletOutlined /> },
@@ -77,7 +77,7 @@ const MENU_GROUPS: MenuGroup[] = [
     ],
   },
   {
-    title: "알림",
+    title: "관리",
     items: [
       { href: "/admin", label: "관리자", icon: <SafetyCertificateOutlined />, roles: ["MANAGER", "ADMIN"] },
     ],
@@ -138,11 +138,7 @@ export default function ErpLayout({ title, children, back = false }: ErpLayoutPr
   const pathname = usePathname();
   const router = useRouter();
   const [checkingSession, setCheckingSession] = useState(true);
-  const session = useSyncExternalStore(
-    subscribeSession,
-    getSessionSnapshot,
-    getServerSessionSnapshot,
-  );
+  const session = useSyncExternalStore(subscribeSession, getSessionSnapshot, getServerSessionSnapshot);
 
   useEffect(() => {
     if (!session.hydrated) return;
@@ -154,7 +150,8 @@ export default function ErpLayout({ title, children, back = false }: ErpLayoutPr
 
     let active = true;
 
-    employeeApi.me()
+    employeeApi
+      .me()
       .then(() => {
         if (active) setCheckingSession(false);
       })
@@ -199,9 +196,9 @@ export default function ErpLayout({ title, children, back = false }: ErpLayoutPr
     <NotificationProvider>
       <Layout className="erp-shell">
         <Sider width={252} theme="light" className="erp-sidebar">
-          <Link href="/dashboard" className="erp-brand" aria-label="약통 ERP 홈">
+          <Link href="/dashboard" className="erp-brand" aria-label="약동 ERP 홈">
             <span className="erp-logo-mark">약</span>
-            <span>약통 ERP</span>
+            <span>약동 ERP</span>
           </Link>
 
           <nav className="erp-nav" aria-label="주요 메뉴">

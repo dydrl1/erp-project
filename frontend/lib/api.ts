@@ -9,7 +9,6 @@ export interface ApiResponse<T> {
 // 기본값은 localhost. LAN/다른 환경은 frontend/.env.local 의 NEXT_PUBLIC_API_URL 로 덮어쓴다.
 // 예) NEXT_PUBLIC_API_URL=http://192.168.1.190:8080
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080';
-console.log('[API BASE URL]', BASE_URL);
 
 // Access Token 관리 (학습용으로 localStorage 사용)
 // Refresh Token은 백엔드가 httpOnly 쿠키(path=/api/auth)로 관리하므로 JS에서 다루지 않는다.
@@ -126,7 +125,7 @@ function refreshAccessToken(): Promise<string | null> {
 }
 
 // 공통 fetch 래퍼: JWT 자동 첨부 + 401 시 토큰 재발급 후 1회 재시도
-async function request<T>(path: string, options: RequestInit = {}, allowRetry = true): Promise<T> {
+export async function request<T>(path: string, options: RequestInit = {}, allowRetry = true): Promise<T> {
   const token = tokenStorage.get();
 
   const res = await fetch(`${BASE_URL}${path}`, {

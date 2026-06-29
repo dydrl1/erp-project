@@ -2,9 +2,9 @@ export const STATUS_LABELS: Record<string, string> = {
   REQUESTED: "승인 대기",
   APPROVED: "승인 완료",
   REJECTED: "반려",
-  COMPLETED: "입고 완료",
+  COMPLETED: "완료",
   SHIPPED: "출고 완료",
-  CANCELED: "취소됨",
+  CANCELED: "취소",
   PENDING: "대기",
   ACTIVE: "사용",
   INACTIVE: "비활성",
@@ -13,10 +13,12 @@ export const STATUS_LABELS: Record<string, string> = {
   PARTIAL: "부분 납부",
   PAID: "완납",
   NORMAL: "정상",
-  SOLD_OUT: "품절",
+  SOLD_OUT: "소진",
   GOOD: "양호",
   WARNING: "주의",
   DANGER: "위험",
+  CRITICAL: "긴급",
+  INFO: "안내",
 };
 
 export const PAYMENT_TYPE_LABELS: Record<string, string> = {

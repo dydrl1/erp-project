@@ -107,8 +107,15 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     const role = user?.role ?? '';
     const department = user?.deptCode ?? '';
 
+    // WS 주소: NEXT_PUBLIC_API_URL이 있으면 그걸(http→ws), 없으면(상대경로 배포)
+    // 현재 접속한 호스트 기준으로 same-origin 연결 (Ingress가 /ws-connect를 백엔드로 라우팅).
+    const apiBase = process.env.NEXT_PUBLIC_API_URL;
+    const wsUrl = apiBase
+      ? apiBase.replace(/^http/, 'ws') + '/ws-connect'
+      : `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}/ws-connect`;
+
     const client = new Client({
-      brokerURL: 'ws://localhost:8080/ws-connect',
+      brokerURL: wsUrl,
       reconnectDelay: 5000,
       onConnect: () => {
         client.subscribe('/topic/notifications', handleMessage);

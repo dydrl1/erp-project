@@ -80,7 +80,13 @@ export default function ReceivingProcessPage() {
           await receivingApi.process({
             poId: Number(poId),
             memo: memo || undefined,
-            details: rows.map(({ productName, orderQty, ...rest }) => rest),
+            details: rows.map((row) => ({
+              productId: row.productId,
+              lotNo: row.lotNo,
+              expiryDate: row.expiryDate,
+              receivedQty: row.receivedQty,
+              unitPrice: row.unitPrice,
+            })),
           });
 
           message.success('입고 처리가 완료되었습니다.');

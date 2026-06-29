@@ -33,13 +33,10 @@ export default function ShipmentDetailPage() {
 
   const columns = useMemo<ColumnsType<ShipmentDetail>>(
     () => [
-      { title: '제품명', dataIndex: 'productName' },
+      { title: '상품명', dataIndex: 'productName' },
+      { title: '로트번호', dataIndex: 'lotNo' },
       {
-        title: '로트번호',
-        dataIndex: 'lotNo',
-      },
-      {
-        title: '유효기간',
+        title: '유통기한',
         dataIndex: 'expiryDate',
         render: (value?: string) => value?.slice(0, 10) ?? '-',
       },
@@ -55,7 +52,7 @@ export default function ShipmentDetailPage() {
 
   if (error) {
     return (
-      <ErpLayout title="배송 관리 상세">
+      <ErpLayout title="출고 상세">
         <Card>
           <Text type="danger">{error}</Text>
         </Card>
@@ -65,7 +62,7 @@ export default function ShipmentDetailPage() {
 
   if (!shipment.length) {
     return (
-      <ErpLayout title="배송 관리 상세">
+      <ErpLayout title="출고 상세">
         <Card loading />
       </ErpLayout>
     );
@@ -74,7 +71,7 @@ export default function ShipmentDetailPage() {
   const shipmentHeader = shipment[0];
 
   return (
-    <ErpLayout title={`배송 상세 — SH-${String(shipmentHeader.shipmentId).padStart(4, '0')}`}>
+    <ErpLayout title={`출고 상세 SH-${String(shipmentHeader.shipmentId).padStart(4, '0')}`}>
       <Flex justify="space-between" align="center">
         <Button onClick={() => router.back()}>목록으로</Button>
       </Flex>
@@ -89,13 +86,13 @@ export default function ShipmentDetailPage() {
         </Descriptions>
       </Card>
 
-      <Card title="주문 품목">
+      <Card title="출고 품목">
         <Table
           rowKey="shipmentDetailId"
           columns={columns}
-          dataSource={shipment ?? []}
+          dataSource={shipment}
           pagination={false}
-          locale={{ emptyText: '주문 품목이 없습니다.' }}
+          locale={{ emptyText: '출고 품목이 없습니다.' }}
         />
       </Card>
 
