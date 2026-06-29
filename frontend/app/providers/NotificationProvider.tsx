@@ -20,6 +20,7 @@ export const NotificationContext = createContext<NotificationContextValue | null
 export function NotificationProvider({ children }: { children: React.ReactNode }) {
   const [notificationApi, contextHolder] = notification.useNotification();
   const [notifications, setNotifications] = useState<NotificationMessage[]>([]);
+  const receivedIdsRef = useRef<Set<number>>(new Set());
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   const unreadCount = useMemo(
@@ -52,6 +53,10 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     (message: IMessage) => {
       try {
         const received = JSON.parse(message.body) as NotificationMessage;
+        if (receivedIdsRef.current.has(received.notificationId)) {
+          return;
+        }
+        receivedIdsRef.current.add(received.notificationId);
         const newItem: NotificationMessage = {
           notificationId: received.notificationId,
           level: received.level,
@@ -78,6 +83,27 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     },
     [notificationApi],
   );
+  useEffect(() => {
+    const loginId = Number(localStorage.getItem('employeeId'));
+    if (!loginId) return;
+    alertApi
+      .list(loginId)
+      .then((result) => {
+        const mapped: NotificationMessage[] = result.map((item) => ({
+          notificationId: item.alertId,
+          level: item.alertLevel ?? 'INFO',
+          receiver: item.deptCode ?? '',
+          content: item.message,
+          dateTime: item.createdAt,
+          isRead: item.isRead === 'Y',
+        }));
+        setNotifications(mapped);
+        receivedIdsRef.current = new Set(mapped.map((item) => item.notificationId));
+      })
+      .catch((error) => {
+        console.error('기존 알림 조회 실패: ', error);
+      });
+  }, []);
 
   useEffect(() => {
     const user = userStorage.get();
@@ -101,6 +127,13 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
       },
       onWebSocketError: (error) => {
         console.error("WebSocket error:", error);
+      },
+      onWebSocketClose: (event) => {
+        console.error('소켓종료', {
+          code: event.code,
+          reason: event.reason,
+          wasClean: event.wasClean,
+        });
       },
     });
 
@@ -131,18 +164,14 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   );
 }
 
-function getNotificationTitle(alertType?: string) {
-  switch (alertType) {
-    case "SAFETY_STOCK_LOW":
-      return "Safety stock low";
-    case "EXPIRED":
-      return "Expired";
-    case "EXPIRY_10":
-      return "Expires within 10 days";
-    case "EXPIRY_30":
-      return "Expires within 30 days";
-    case "EXPIRY_90":
-      return "Expires within 90 days";
+function getNotificationTitle(level: string) {
+  switch (level) {
+    case 'CRITICAL':
+      return '심각';
+    case 'WARNING':
+      return '주의';
+    case 'INFO':
+      return '안내';
     default:
       return "New notification";
   }

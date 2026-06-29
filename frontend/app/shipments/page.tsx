@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Badge, Button, Card, Flex, Space, Table, Tabs, Typography } from 'antd';
+import { App, Badge, Card, Flex, Space, Table, Tabs, Typography } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import ErpLayout from '@/components/ErpLayout';
 import StatusBadge from '@/components/StatusBadge';
@@ -15,6 +15,7 @@ const TABS = [
 
 export default function ShipmentListPage() {
   const router = useRouter();
+  const { message } = App.useApp();
 
   const [shipments, setShipments] = useState<Shipment[]>([]);
   const [counts, setCounts] = useState<Record<string, number>>({});
@@ -23,14 +24,14 @@ export default function ShipmentListPage() {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
 
-  const totalCount = Object.values(counts).reduce((a, b) => a + b, 0);
-
   useEffect(() => {
     shipmentApi
       .statusCount()
       .then(setCounts)
-      .catch(() => {});
-  }, []);
+      .catch((error) => {
+        message.error((error as Error).message);
+      });
+  }, [message]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -48,17 +49,6 @@ export default function ShipmentListPage() {
     }, 0);
     return () => clearTimeout(timer);
   }, [page, tab]);
-
-  useEffect(() => {
-    // setLoading(true);
-    // salesOrderApi
-    //   .listPaging(tab, page, 20)
-    //   .then((res) => {
-    //     setOrders(res.list);
-    //     setTotal(res.total);
-    //   })
-    //   .finally(() => setLoading(false));
-  }, [tab, page]);
 
   const columns = useMemo<ColumnsType<Shipment>>(
     () => [
@@ -112,11 +102,7 @@ export default function ShipmentListPage() {
             label: (
               <Space size={6}>
                 {item.label}
-                <Badge
-                  count={item.key === '' ? totalCount : (counts[item.key] ?? 0)}
-                  showZero
-                  color={tab === item.key ? '#69B981' : '#B8C7BA'}
-                />
+                <Badge count={counts[item.key] ?? 0} showZero color={tab === item.key ? '#69B981' : '#B8C7BA'} />
               </Space>
             ),
           }))}

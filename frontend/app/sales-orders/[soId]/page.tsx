@@ -2,23 +2,25 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { App, Button, Card, Descriptions, Flex, Input, Space, Table, Typography } from 'antd';
+import { App, Button, Card, Descriptions, Flex, Input, Space, Steps, Table, Typography } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import ErpLayout from '@/components/ErpLayout';
 import StatusBadge from '@/components/StatusBadge';
-import { purchaseOrderApi, salesOrderApi, SalesOrder, SalesOrderDetail, shipmentApi } from '@/lib/api';
-
+import { salesOrderApi, SalesOrder, shipmentApi } from '@/lib/api';
 const { Text } = Typography;
-
 export default function SalesOrderDetailPage() {
   const { soId } = useParams<{ soId: string }>();
   const router = useRouter();
   const { message, modal } = App.useApp();
-
   const [order, setOrder] = useState<SalesOrder | null>(null);
   const [error, setError] = useState('');
   const [role, setRole] = useState('');
   const [processing, setProcessing] = useState(false);
+  const statusStep: Record<string, number> = {
+    REQUESTED: 1,
+    APPROVED: 2,
+    SHIPPED: 3,
+  };
 
   const load = useCallback(() => {
     salesOrderApi
@@ -26,6 +28,10 @@ export default function SalesOrderDetailPage() {
       .then(setOrder)
       .catch((e: Error) => setError(e.message));
   }, [soId]);
+
+  useEffect(() => {
+    setRole(localStorage.getItem('role') ?? '');
+  }, []);
 
   useEffect(() => {
     load();
@@ -66,7 +72,7 @@ export default function SalesOrderDetailPage() {
     modal.confirm({
       title: '판매 주문 반려',
       width: 520,
-      okText: '판매 주문 확정',
+      okText: '주문 반려 확정',
       cancelText: '취소',
       okButtonProps: { danger: true },
       content: (
@@ -92,7 +98,8 @@ export default function SalesOrderDetailPage() {
         setProcessing(true);
 
         try {
-          await purchaseOrderApi.reject(Number(soId), reason.trim());
+          // await purchaseOrderApi.reject(Number(soId), reason.trim());
+          //주문반려 등록 필요
           message.success('판매 주문이 반려되었습니다.');
           router.push('/sales-orders');
         } catch (e) {
@@ -130,6 +137,9 @@ export default function SalesOrderDetailPage() {
     });
   };
 
+  const currentStep = statusStep[order?.status ?? 'REQUESTED'];
+
+  const columns = useMemo<ColumnsType<any>>(
   const columns = useMemo<ColumnsType<SalesOrderDetail>>(
     () => [
       { title: '제품코드', dataIndex: 'productCode' },
@@ -178,28 +188,28 @@ export default function SalesOrderDetailPage() {
     <ErpLayout title={`주문 상세 — SO-${String(order.soId).padStart(4, '0')}`}>
       <Flex justify="space-between" align="center">
         <Button onClick={() => router.back()}>목록으로</Button>
-        <StatusBadge status={order.status} />
       </Flex>
 
       <Card>
         <Descriptions bordered column={3} size="small">
           <Descriptions.Item label="고객사명">{order.customerName}</Descriptions.Item>
-
           <Descriptions.Item label="주문자">{order.reqEmployeeName}</Descriptions.Item>
-
           <Descriptions.Item label="주문일">{order.orderDate?.slice(0, 10)}</Descriptions.Item>
-
           <Descriptions.Item label="총금액">
             <Text strong>{order.totalAmount?.toLocaleString()}원</Text>
           </Descriptions.Item>
-
           <Descriptions.Item label="승인자">{order.appEmployeeName ?? '-'}</Descriptions.Item>
-
           <Descriptions.Item label="상태">
             <StatusBadge status={order.status} />
           </Descriptions.Item>
         </Descriptions>
       </Card>
+      {order.status !== 'CANCELED' && (
+        <Steps
+          current={currentStep}
+          items={[{ title: '주문 생성' }, { title: '승인대기' }, { title: '승인 완료' }, { title: '출고 완료' }]}
+        />
+      )}
 
       <Card title="주문 품목">
         <Table

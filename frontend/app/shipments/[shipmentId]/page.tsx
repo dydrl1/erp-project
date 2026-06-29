@@ -2,24 +2,19 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { App, Button, Card, Descriptions, Flex, Input, Space, Table, Typography } from 'antd';
+import { App, Button, Card, Descriptions, Flex, Table, Typography } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import ErpLayout from '@/components/ErpLayout';
 import StatusBadge from '@/components/StatusBadge';
-import { purchaseOrderApi, ShipmentDetail, shipmentApi } from '@/lib/api';
+import { ShipmentDetail, shipmentApi } from '@/lib/api';
 
 const { Text } = Typography;
 
 export default function ShipmentDetailPage() {
   const { shipmentId } = useParams<{ shipmentId: string }>();
   const router = useRouter();
-  const { message, modal } = App.useApp();
-
   const [shipment, setShipment] = useState<ShipmentDetail[]>([]);
   const [error, setError] = useState('');
-  const [role, setRole] = useState('');
-  const [processing, setProcessing] = useState(false);
-  const [salesOrderId, setSalesOrderId] = useState('');
 
   const load = useCallback(() => {
     shipmentApi
@@ -88,7 +83,6 @@ export default function ShipmentDetailPage() {
 
   const columns = useMemo<ColumnsType<ShipmentDetail>>(
     () => [
-      { title: '배송번호', dataIndex: 'shipmentId' },
       { title: '제품명', dataIndex: 'productName' },
       {
         title: '로트번호',
@@ -138,7 +132,7 @@ export default function ShipmentDetailPage() {
       <Card>
         <Descriptions bordered column={3} size="small">
           <Descriptions.Item label="고객사">{shipmentHeader.customerName}</Descriptions.Item>
-          <Descriptions.Item label="주문일">{shipmentHeader.orderDate.slice(0, 10)}</Descriptions.Item>
+          <Descriptions.Item label="주문일">{shipmentHeader.orderDate.slice(0, 10) ?? '-'}</Descriptions.Item>
           <Descriptions.Item label="상태">
             <StatusBadge status={shipmentHeader.status} />
           </Descriptions.Item>

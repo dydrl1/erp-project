@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 
 import { ProductStock, stockMovementApi } from '@/lib/api';
 import { ColumnsType } from 'antd/es/table';
-import { App, Button, Card, Checkbox, Input, Select, Space, Tag, Table } from 'antd';
+import { App, Button, Card, Checkbox, Input, Select, Space, Tag, Table, Typography } from 'antd';
 
 export default function ProductStockTab() {
   const { message } = App.useApp();
@@ -67,6 +67,7 @@ export default function ProductStockTab() {
     {
       title: '상품코드',
       dataIndex: 'productCode',
+      sorter: (a, b) => a.productCode.localeCompare(b.productCode),
     },
     {
       title: '상품명',
@@ -151,14 +152,18 @@ export default function ProductStockTab() {
           </Button>
         </Space>
       </Card>
-      <Card styles={{ body: { padding: 0 } }}>
+      <Card
+        title="상품별 재고"
+        extra={<Typography.Text type="secondary"> 총 {productStocks.length.toLocaleString()}건</Typography.Text>}
+        styles={{ body: { padding: 0 } }}
+      >
         <Table
           columns={columns}
           dataSource={productStocks}
           rowKey={'productId'}
           loading={loading}
           locale={{
-            emptyText: '조회딘 상품별 재고가 없습니다.',
+            emptyText: '조회된 상품 재고가 없습니다.',
           }}
         />
       </Card>

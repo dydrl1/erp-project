@@ -380,11 +380,16 @@ export interface AlertMessage {
   dateTime: string;
   alertType?: string;
   alertLevel?: 'INFO' | 'WARNING' | 'CRITICAL';
-  isRead: boolean;
+  isRead: 'Y' | 'N';
   productId?: number;
   inventoryLotId?: number;
   productName?: string;
   lotNo?: string;
+  message: string;
+  createdAt: string;
+  empId: number;
+  deptCode: string;
+  roleCode: string;
 }
 
 export interface PageResult<T> {
@@ -518,6 +523,12 @@ export const stockMovementApi = {
 };
 
 export const alertApi = {
+  list: (loginId: number) => {
+    const params = new URLSearchParams();
+    params.set('loginId', String(loginId));
+    const qs = params.toString();
+    return api.get<AlertMessage[]>(`/api/alert${qs ? `?${qs}` : ''}`);
+  },
   markRead: (alertId: number, loginId: number) => {
     const param = new URLSearchParams();
     param.set('loginId', String(loginId));
