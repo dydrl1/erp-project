@@ -4,20 +4,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import ErpLayout from "@/components/ErpLayout";
 import { paymentTypeLabel } from "@/lib/display-labels";
+import { PaymentHistory, settlementPaymentApi } from "@/lib/api";
 import "../../settlement.css";
-
-type PaymentHistory = {
-    paymentId: number;
-    arId: number;
-    customerId: number;
-    customerName: string;
-    paymentDate: string;
-    paymentAmount: number;
-    paymentType: string;
-    createdBy: number;
-    createdByName: string;
-    createdAt: string;
-};
 
 export default function PaymentHistoryPage() {
     const router = useRouter();
@@ -43,26 +31,23 @@ export default function PaymentHistoryPage() {
     
     const fetchList = () => {
         setLoading(true);
-        
-        const params = new URLSearchParams();
-        if (customerName) params.append("customerName", customerName);
-        if (startDate) params.append("startDate", startDate);
-        if (endDate) params.append("endDate", endDate);
-        
-        const query = params.toString() ? `?${params.toString()}` : "";
-        
-        fetch(`http://localhost:8080/api/settlement/payments${query}`)
-        .then((res) => res.json())
-        .then((res) => {
-            setList(res.data ?? []);
-            setPage(1);
-        })
-        .catch((err) => {
-            console.error("수금내역 조회 실패:", err);
-        })
-        .finally(() => {
-            setLoading(false);
-        });
+
+        settlementPaymentApi
+            .list({
+                customerName,
+                startDate,
+                endDate,
+            })
+            .then((data) => {
+                setList(data ?? []);
+                setPage(1);
+            })
+            .catch((err) => {
+                console.error("수금내역 조회 실패:", err);
+            })
+            .finally(() => {
+                setLoading(false);
+            });
     };
     
     useEffect(() => {
@@ -124,15 +109,15 @@ export default function PaymentHistoryPage() {
             <div className="erp-table-wrap">
                 <table className="erp-table">
                     <thead>
-                    <tr>
-                    <th>수금번호</th>
-                    <th>미수금번호</th>
-                    <th>거래처명</th>
-                    <th>수금일자</th>
-                    <th className="num">수금금액</th>
-                    <th>수금방법</th>
-                    <th>처리자</th>
-                    </tr>
+                        <tr>
+                            <th>수금번호</th>
+                            <th>미수금번호</th>
+                            <th>거래처명</th>
+                            <th>수금일자</th>
+                            <th className="num">수금금액</th>
+                            <th>수금방법</th>
+                            <th>처리자</th>
+                        </tr>
                     </thead>
 
                     <tbody>

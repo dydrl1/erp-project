@@ -3,19 +3,8 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import ErpLayout from "@/components/ErpLayout";
+import { AccountReceivable, settlementReceivableApi } from "@/lib/api";
 import "../settlement.css";
-
-type AccountReceivable = {
-    arId: number;
-    salesInvoiceId: number;
-    customerId: number;
-    customerName: string;
-    totalAmount: number;
-    paidAmount: number;
-    remainAmount: number;
-    dueDate: string;
-    status: string;
-};
 
 export default function ReceivablesPage() {
     const router = useRouter();
@@ -43,25 +32,24 @@ export default function ReceivablesPage() {
     
     const fetchList = () => {
         setLoading(true);
-        const params = new URLSearchParams();
-        if (customerName) params.append("customerName", customerName);
-        if (status) params.append("status", status);
-        if (startDate) params.append("startDate", startDate);
-        if (endDate) params.append("endDate", endDate);
-        const query = params.toString() ? `?${params.toString()}` : "";
-        
-        fetch(`http://localhost:8080/api/settlement/receivables${query}`)
-        .then((res) => res.json())
-        .then((res) => {
-            setList(res.data ?? []);
-            setPage(1);
-        })
-        .catch((err) => {
-            console.error("거래처별 미수금 조회 실패:", err);
-        })
-        .finally(() => {
-            setLoading(false);
-        });
+
+        settlementReceivableApi
+            .list({
+                customerName,
+                status,
+                startDate,
+                endDate,
+            })
+            .then((data) => {
+                setList(data ?? []);
+                setPage(1);
+            })
+            .catch((err) => {
+                console.error("거래처별 미수금 조회 실패:", err);
+            })
+            .finally(() => {
+                setLoading(false);
+            });
     };
 
     useEffect(() => {
@@ -76,7 +64,8 @@ export default function ReceivablesPage() {
     return (
         <ErpLayout title="미수금 관리">
             <div className="erp-filter">
-                <input className="erp-input"
+                <input
+                    className="erp-input"
                     placeholder="거래처명 검색"
                     value={customerName}
                     onChange={(e) => setCustomerName(e.target.value)}
@@ -112,9 +101,10 @@ export default function ReceivablesPage() {
 
                 <button className="erp-btn primary" onClick={handleSearch}>
                     검색
-                    </button>
+                </button>
 
-                <button className="erp-btn"
+                <button
+                    className="erp-btn"
                     onClick={() => {
                         setCustomerName("");
                         setStatus("");
@@ -134,33 +124,33 @@ export default function ReceivablesPage() {
                 </button>
             </div>
 
-        <div className="erp-table-wrap">
-            <table className="erp-table">
-                <thead>
-                    <tr>
-                        <th>거래처명</th>
-                        <th className="num">청구금액</th>
-                        <th className="num">수금금액</th>
-                        <th className="num">남은 미수금</th>
-                        <th>만기일</th>
-                        <th>상태</th>
-                        <th>수금등록</th>
-                    </tr>
-                </thead>
+            <div className="erp-table-wrap">
+                <table className="erp-table">
+                    <thead>
+                        <tr>
+                            <th>거래처명</th>
+                            <th className="num">청구금액</th>
+                            <th className="num">수금금액</th>
+                            <th className="num">남은 미수금</th>
+                            <th>만기일</th>
+                            <th>상태</th>
+                            <th>수금등록</th>
+                        </tr>
+                    </thead>
 
-                <tbody>
-                    {loading ? (
-                        <tr>
-                            <td colSpan={7} style={{ textAlign: "center", padding: 40 }}>
-                            불러오는 중...
-                            </td>
-                        </tr>
+                    <tbody>
+                        {loading ? (
+                            <tr>
+                                <td colSpan={7} style={{ textAlign: "center", padding: 40 }}>
+                                    불러오는 중...
+                                </td>
+                            </tr>
                         ) : list.length === 0 ? (
-                        <tr>
-                            <td colSpan={7} style={{ textAlign: "center", padding: 40 }}>
-                            조회된 거래처가 없습니다.
-                            </td>
-                        </tr>
+                            <tr>
+                                <td colSpan={7} style={{ textAlign: "center", padding: 40 }}>
+                                    조회된 거래처가 없습니다.
+                                </td>
+                            </tr>
                         ) : (
                             pagedList.map((item) => (
                                 <tr key={item.arId}>
@@ -185,50 +175,50 @@ export default function ReceivablesPage() {
                     </tbody>
                 </table>
 
-            {!loading && (
-                <div
-                    style={{
-                        display: "flex",
-                        justifyContent: "center",
-                        alignItems: "center",
-                        gap: 8,
-                        padding: 12,
-                    }}
-                >
-                    <button
-                        className="erp-btn"
-                        disabled={page === 1}
-                        onClick={() => setPage(page - 1)}
+                {!loading && (
+                    <div
+                        style={{
+                            display: "flex",
+                            justifyContent: "center",
+                            alignItems: "center",
+                            gap: 8,
+                            padding: 12,
+                        }}
                     >
-                        &lt;
-                    </button>
-
-                    {pageNumbers.map((p) => (
                         <button
-                            key={p}
                             className="erp-btn"
-                            onClick={() => setPage(p)}
-                            style={{
-                                background: p === page ? "var(--erp-primary)" : "#fff",
-                                color: p === page ? "#fff" : "var(--erp-text)",
-                                borderColor: p === page ? "var(--erp-primary)" : "var(--erp-line)",
-                                minWidth: 36,
-                            }}
+                            disabled={page === 1}
+                            onClick={() => setPage(page - 1)}
                         >
-                            {p}
+                            &lt;
                         </button>
-                    ))}
 
-                    <button
-                        className="erp-btn"
-                        disabled={page === totalPages}
-                        onClick={() => setPage(page + 1)}
-                    >
-                        &gt;
-                    </button>
-                </div>
-            )}
-        </div>
-    </ErpLayout>
-  );
+                        {pageNumbers.map((p) => (
+                            <button
+                                key={p}
+                                className="erp-btn"
+                                onClick={() => setPage(p)}
+                                style={{
+                                    background: p === page ? "var(--erp-primary)" : "#fff",
+                                    color: p === page ? "#fff" : "var(--erp-text)",
+                                    borderColor: p === page ? "var(--erp-primary)" : "var(--erp-line)",
+                                    minWidth: 36,
+                                }}
+                            >
+                                {p}
+                            </button>
+                        ))}
+
+                        <button
+                            className="erp-btn"
+                            disabled={page === totalPages}
+                            onClick={() => setPage(page + 1)}
+                        >
+                            &gt;
+                        </button>
+                    </div>
+                )}
+            </div>
+        </ErpLayout>
+    );
 }

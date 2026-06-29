@@ -4,20 +4,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import ErpLayout from "@/components/ErpLayout";
 import { paymentTypeLabel } from "@/lib/display-labels";
+import { PayablePayment, settlementPayablePaymentApi } from "@/lib/api";
 import "../../settlement.css";
-
-type PayablePayment = {
-    payablePaymentId: number;
-    apId: number;
-    supplierId: number;
-    supplierName: string;
-    paymentDate: string;
-    paymentAmount: number;
-    paymentType: string;
-    createdBy: number;
-    createdByName: string;
-    createdAt: string;
-};
 
 export default function PayablePaymentHistoryPage() {
     const router = useRouter();
@@ -46,31 +34,23 @@ export default function PayablePaymentHistoryPage() {
         setLoading(true);
         setErrorMessage("");
 
-        const params = new URLSearchParams();
-
-        if (supplierName) params.append("supplierName", supplierName);
-        if (startDate) params.append("startDate", startDate);
-        if (endDate) params.append("endDate", endDate);
-
-        const query = params.toString() ? `?${params.toString()}` : "";
-
-        fetch(`http://localhost:8080/api/settlement/payables/payments${query}`)
-            .then(async (response) => {
-                const body = await response.json().catch(() => null);
-
-                if (!response.ok || body?.success === false) {
-                    throw new Error(body?.message ?? "Failed to load payable payments.");
-                }
-
-                return body;
+        settlementPayablePaymentApi
+            .list({
+                supplierName,
+                startDate,
+                endDate,
             })
-            .then((body) => {
-                setList(body.data ?? []);
+            .then((data) => {
+                setList(data ?? []);
                 setPage(1);
             })
             .catch((err) => {
                 setList([]);
-                setErrorMessage(err instanceof Error ? err.message : "Failed to load payable payments.");
+                setErrorMessage(
+                    err instanceof Error
+                        ? err.message
+                        : "Failed to load payable payments."
+                );
                 console.error("지급내역 조회 실패:", err);
             })
             .finally(() => {

@@ -3,23 +3,17 @@
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import ErpLayout from "@/components/ErpLayout";
+import { CustomerReceivableSummary, 
+  settlementInvoiceApi, 
+  settlementReceivableApi } from "@/lib/api";
 import "../../settlement.css";
 
-type CustomerInfo = {
-  customerId: number;
-  customerName: string;
-  monthSalesAmount: number;
-  remainAmount: number;
-  creditLimit: number;
-  creditBalance: number;
-};
-
 export default function SalesInvoiceNewPage() {
-
   const router = useRouter();
   const params = useParams();
   const customerId = params.customerId as string;
-  const [customer, setCustomer] = useState<CustomerInfo | null>(null);
+
+  const [customer, setCustomer] = useState<CustomerReceivableSummary | null>(null);
   const [issueDate, setIssueDate] = useState("");
   const [totalAmount, setTotalAmount] = useState("");
   const [status, setStatus] = useState("ISSUED");
@@ -35,13 +29,13 @@ export default function SalesInvoiceNewPage() {
       return () => clearTimeout(timer);
     }
 
-    fetch("http://localhost:8080/api/settlement/receivables/customer-summary")
-      .then((res) => res.json())
-      .then((res) => {
-        const list: CustomerInfo[] = res.data ?? [];
-        const selected = list.find(
+    settlementReceivableApi
+      .customerSummary()
+      .then((list) => {
+        const selected = (list ?? []).find(
           (item) => String(item.customerId) === String(customerId)
         );
+
         setCustomer(selected ?? null);
       })
       .catch((err) => {
@@ -71,29 +65,17 @@ export default function SalesInvoiceNewPage() {
       status,
     };
 
-    fetch("http://localhost:8080/api/settlement/invoices", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(body),
-    })
-    .then(async (res) => {
-      if (!res.ok) {
-        const error = await res.json().catch(() => null);
-        throw new Error(error?.message || "매출청구 등록 실패");
-      }
-      return res.json().catch(() => null);
-    })
-    .then(() => {
-      alert("매출청구가 등록되었습니다.");
+    settlementInvoiceApi
+      .create(body)
+      .then(() => {
+        alert("매출청구가 등록되었습니다.");
         router.push("/settlement/invoices");
       })
       .catch((err) => {
         console.error(err);
         alert(err.message || "매출청구 등록 중 오류가 발생했습니다.");
       });
-    };
+  };
 
   return (
     <ErpLayout title="매출청구 등록">

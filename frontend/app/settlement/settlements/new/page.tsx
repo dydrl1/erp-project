@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import ErpLayout from "@/components/ErpLayout";
+import { settlementApi, userStorage } from "@/lib/api";
 import "../../settlement.css";
 
 export default function SettlementNewPage() {
@@ -10,7 +11,6 @@ export default function SettlementNewPage() {
 
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-  const [createdBy] = useState(1);
 
   const handleSubmit = () => {
     if (!startDate || !endDate) {
@@ -23,33 +23,28 @@ export default function SettlementNewPage() {
       return;
     }
 
+    const user = userStorage.get();
+
+    if (!user) {
+      alert("로그인 사용자 정보를 찾을 수 없습니다.");
+      return;
+    }
+
     const body = {
       startDate,
       endDate,
-      createdBy,
+      createdBy: user.empId,
     };
 
-    fetch("http://localhost:8080/api/settlement/settlements", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(body),
-    })
-      .then(async (res) => {
-        if (!res.ok) {
-          const errorText = await res.text();
-          throw new Error(errorText || "손익정산 등록 실패");
-        }
-        return res.text();
-      })
+    settlementApi
+      .create(body)
       .then(() => {
         alert("손익정산이 등록되었습니다.");
         router.push("/settlement/settlements");
       })
       .catch((err) => {
         console.error(err);
-        alert("손익정산 등록 중 오류가 발생했습니다.");
+        alert(err.message || "손익정산 등록 중 오류가 발생했습니다.");
       });
   };
 
@@ -57,6 +52,24 @@ export default function SettlementNewPage() {
     <ErpLayout title="손익정산 등록">
       <div className="erp-card">
         <h3>정산 기간 선택</h3>
+
+        <div
+          style={{
+            marginBottom: 16,
+            padding: 12,
+            background: "#f8f9fa",
+            border: "1px solid #ddd",
+            borderRadius: 6,
+            fontSize: 14,
+            lineHeight: 1.6,
+          }}
+        >
+          <div>
+            선택한 기간의 매출청구, 매입청구, 미수금, 미지급금 데이터를
+            기준으로 손익정산이 생성됩니다.
+          </div>
+          <strong>정산 기준: 생성일 기준</strong>
+        </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
           <div>

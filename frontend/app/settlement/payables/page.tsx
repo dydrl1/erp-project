@@ -3,20 +3,8 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import ErpLayout from "@/components/ErpLayout";
+import { AccountPayable, settlementPayableApi } from "@/lib/api";
 import "../settlement.css";
-
-type AccountPayable = {
-    apId: number;
-    purchaseInvoiceId: number;
-    supplierId: number;
-    supplierName: string;
-    dueDate: string;
-    totalAmount: number;
-    paidAmount: number;
-    remainAmount: number;
-    status: string;
-    createdAt: string;
-};
 
 export default function PayablesPage() {
     const router = useRouter();
@@ -44,27 +32,24 @@ export default function PayablesPage() {
     
     const fetchList = () => {
         setLoading(true);
-        
-        const params = new URLSearchParams();
-        if (status) params.append("status", status);
-        if (supplierName) params.append("supplierName", supplierName);
-        if (startDate) params.append("startDate", startDate);
-        if (endDate) params.append("endDate", endDate);
-        
-        const query = params.toString() ? `?${params.toString()}` : "";
-        
-        fetch(`http://localhost:8080/api/settlement/payables${query}`)
-        .then((res) => res.json())
-        .then((res) => {
-            setList(res.data ?? []);
-            setPage(1);
-        })
-        .catch((err) => {
-            console.error("미지급금 조회 실패:", err);
-        })
-        .finally(() => {
-            setLoading(false);
-        });
+
+        settlementPayableApi
+            .list({
+                supplierName,
+                status,
+                startDate,
+                endDate,
+            })
+            .then((data) => {
+                setList(data ?? []);
+                setPage(1);
+            })
+            .catch((err) => {
+                console.error("미지급금 조회 실패:", err);
+            })
+            .finally(() => {
+                setLoading(false);
+            });
     };
     
     useEffect(() => {

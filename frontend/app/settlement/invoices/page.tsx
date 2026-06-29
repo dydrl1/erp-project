@@ -3,18 +3,8 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import ErpLayout from "@/components/ErpLayout";
+import { SalesInvoice, settlementInvoiceApi } from "@/lib/api";
 import "../settlement.css";
-
-type SalesInvoice = {
-    salesInvoiceId: number;
-    soId: number;
-    customerId: number;
-    customerName: string;
-    issueDate: string;
-    totalAmount: number;
-    status: string;
-    createdAt: string;
-};
 
 export default function SalesInvoiceListPage() {
     const router = useRouter();
@@ -40,26 +30,24 @@ export default function SalesInvoiceListPage() {
 
     const fetchList = () => {
         setLoading(true);
-        const params = new URLSearchParams();
-        
-        if (customerName) params.append("customerName", customerName);
-        if (status) params.append("status", status);
-        if (startDate) params.append("startDate", startDate);
-        if (endDate) params.append("endDate", endDate);
-        const query = params.toString() ? `?${params.toString()}` : "";
 
-        fetch(`http://localhost:8080/api/settlement/invoices${query}`)
-        .then((res) => res.json())
-        .then((res) => {
-            setList(res.data ?? res ?? []);
-            setPage(1);
-        })
-        .catch((err) => {
-            console.error("매출청구 목록 조회 실패:", err);
-        })
-        .finally(() => {
-            setLoading(false);
-        });
+        settlementInvoiceApi
+            .list({
+                customerName,
+                status,
+                startDate,
+                endDate,
+            })
+            .then((data) => {
+                setList(data ?? []);
+                setPage(1);
+            })
+            .catch((err) => {
+                console.error("매출청구 목록 조회 실패:", err);
+            })
+            .finally(() => {
+                setLoading(false);
+            });
     };
 
     useEffect(() => {
@@ -119,12 +107,6 @@ export default function SalesInvoiceListPage() {
                 >
                     초기화
                 </button>
-                {/* <button
-                    className="erp-btn primary"
-                    onClick={() => router.push("/settlement/receivables?mode=invoice")}
-                >
-                    매출청구 등록
-                </button> */}
             </div>
 
             <div className="erp-table-wrap">
@@ -142,11 +124,11 @@ export default function SalesInvoiceListPage() {
 
                     <tbody>
                         {loading ? (
-                        <tr>
-                            <td colSpan={6} style={{ textAlign: "center", padding: 40 }}>
-                                불러오는 중...
-                            </td>
-                        </tr>
+                            <tr>
+                                <td colSpan={6} style={{ textAlign: "center", padding: 40 }}>
+                                    불러오는 중...
+                                </td>
+                            </tr>
                         ) : list.length === 0 ? (
                             <tr>
                                 <td colSpan={6} style={{ textAlign: "center", padding: 40 }}>
@@ -156,15 +138,15 @@ export default function SalesInvoiceListPage() {
                         ) : (
                             pagedList.map((item) => (
                                 <tr key={item.salesInvoiceId}>
-                                    <td>SI-{String(item.salesInvoiceId).padStart(4, "0")}</td>
+                                    <td
+                                        className="link"
+                                        onClick={() => router.push(`/settlement/invoices/${item.salesInvoiceId}`)}
+                                        style={{ cursor: "pointer" }}
+                                    >
+                                        SI-{String(item.salesInvoiceId).padStart(4, "0")}
+                                    </td>
                                     <td>SO-{String(item.soId).padStart(4, "0")}</td>
                                     <td>{item.customerName}</td>
-                                    {/* <td
-                                        className="link"
-                                        onClick={() => router.push(`/settlement/invoices/${item.customerId}`)}
-                                    >
-                                        {item.customerName ?? `거래처 ${item.customerId}`}
-                                    </td> */}
                                     <td>{item.issueDate?.slice(0, 10)}</td>
                                     <td className="num">{formatMoney(item.totalAmount)}</td>
                                     <td>{item.status}</td>
