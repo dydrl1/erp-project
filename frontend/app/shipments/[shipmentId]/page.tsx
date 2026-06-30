@@ -33,10 +33,10 @@ export default function ShipmentDetailPage() {
 
   const columns = useMemo<ColumnsType<ShipmentDetail>>(
     () => [
-      { title: '상품명', dataIndex: 'productName' },
+      { title: '제품명', dataIndex: 'productName' },
       { title: '로트번호', dataIndex: 'lotNo' },
       {
-        title: '유통기한',
+        title: '유효기간',
         dataIndex: 'expiryDate',
         render: (value?: string) => value?.slice(0, 10) ?? '-',
       },

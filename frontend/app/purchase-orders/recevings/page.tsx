@@ -83,7 +83,7 @@ export default function ReceivableListPage() {
         type="info"
         showIcon
         message="승인 완료된 발주 목록입니다."
-        description="입고 처리 시 로트번호, 유통기한, 입고수량을 입력하면 LOT 재고와 재고 이동 이력이 생성됩니다."
+        description="입고 처리 시 로트번호, 유효기한, 입고수량을 입력하면 LOT 재고와 재고 이동 이력이 생성됩니다."
         style={{ marginBottom: 16 }}
       />
 

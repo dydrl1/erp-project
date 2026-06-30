@@ -52,12 +52,12 @@ export default function ReceivingProcessPage() {
       }
 
       if (!row.expiryDate) {
-        message.warning(`${row.productName}: 유통기한을 입력해주세요.`);
+        message.warning(`${row.productName}: 유효기한을 입력해주세요.`);
         return;
       }
 
       if (isExpired(row.expiryDate)) {
-        message.warning(`${row.productName}: 유통기한이 이미 만료된 날짜입니다.`);
+        message.warning(`${row.productName}: 유효기한이 이미 만료된 날짜입니다.`);
         return;
       }
 
@@ -122,7 +122,7 @@ export default function ReceivingProcessPage() {
         ),
       },
       {
-        title: "유통기한",
+        title: "유효기한",
         width: 180,
         render: (_, row, index) => (
           <DatePicker
@@ -172,7 +172,7 @@ export default function ReceivingProcessPage() {
         <Alert
           type="warning"
           showIcon
-          message="유통기한이 이미 만료된 품목이 있습니다."
+          message="유효기한이 이미 만료된 품목이 있습니다."
           description="날짜를 확인하고 다시 입력해주세요."
         />
       )}
