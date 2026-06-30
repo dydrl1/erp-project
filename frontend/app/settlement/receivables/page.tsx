@@ -29,6 +29,18 @@ export default function ReceivablesPage() {
     const formatMoney = (value?: number) => {
         return `${(value ?? 0).toLocaleString()}원`;
     };
+
+    const isOverdue = (dueDate?: string, remainAmount?: number) => {
+        if (!dueDate || (remainAmount ?? 0) <= 0) return false;
+
+        const today = new Date();
+        const due = new Date(dueDate);
+
+        today.setHours(0, 0, 0, 0);
+        due.setHours(0, 0, 0, 0);
+
+        return due < today;
+    };
     
     const fetchList = () => {
         setLoading(true);
@@ -129,6 +141,8 @@ export default function ReceivablesPage() {
                 <table className="erp-table">
                     <thead>
                         <tr>
+                            <th>미수금번호</th>
+                            <th>매출청구번호</th>
                             <th>거래처명</th>
                             <th className="num">청구금액</th>
                             <th className="num">수금금액</th>
@@ -142,25 +156,46 @@ export default function ReceivablesPage() {
                     <tbody>
                         {loading ? (
                             <tr>
-                                <td colSpan={7} style={{ textAlign: "center", padding: 40 }}>
+                                <td colSpan={9} style={{ textAlign: "center", padding: 40 }}>
                                     불러오는 중...
                                 </td>
                             </tr>
                         ) : list.length === 0 ? (
                             <tr>
-                                <td colSpan={7} style={{ textAlign: "center", padding: 40 }}>
+                                <td colSpan={9} style={{ textAlign: "center", padding: 40 }}>
                                     조회된 거래처가 없습니다.
                                 </td>
                             </tr>
                         ) : (
                             pagedList.map((item) => (
                                 <tr key={item.arId}>
+                                    <td>AR-{String(item.arId).padStart(4, "0")}</td>
+                                    <td>SI-{String(item.salesInvoiceId).padStart(4, "0")}</td>
                                     <td>{item.customerName}</td>
                                     <td className="num">{formatMoney(item.totalAmount)}</td>
                                     <td className="num">{formatMoney(item.paidAmount)}</td>
                                     <td className="num">{formatMoney(item.remainAmount)}</td>
                                     <td>{item.dueDate?.slice(0, 10)}</td>
-                                    <td>{item.status}</td>
+                                    <td>
+                                        {item.status}
+                                        {isOverdue(item.dueDate, item.remainAmount) && (
+                                            <span
+                                                style={{
+                                                    display: "inline-block",
+                                                    marginLeft: 8,
+                                                    padding: "2px 8px",
+                                                    borderRadius: 999,
+                                                    backgroundColor: "#fee2e2",
+                                                    color: "#b91c1c",
+                                                    fontSize: 12,
+                                                    fontWeight: 600,
+                                                    lineHeight: 1.4,
+                                                }}
+                                            >
+                                                연체
+                                            </span>
+                                            )}
+                                    </td>
                                     <td>
                                         <button
                                             className="erp-btn primary"

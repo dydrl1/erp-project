@@ -26,6 +26,18 @@ export default function PaymentNewPage() {
     return `${(value ?? 0).toLocaleString()}원`;
   };
 
+  const isOverdue = (dueDate?: string, remainAmount?: number) => {
+    if (!dueDate || (remainAmount ?? 0) <= 0) return false;
+
+    const today = new Date();
+    const due = new Date(dueDate);
+
+    today.setHours(0, 0, 0, 0);
+    due.setHours(0, 0, 0, 0);
+
+    return due < today;
+  };
+
   useEffect(() => {
     if (!arId) {
       const timer = setTimeout(() => setLoading(false), 0);
@@ -134,7 +146,26 @@ export default function PaymentNewPage() {
 
                 <div className="erp-card">
                   <p>상태</p>
-                  <strong>{receivable.status}</strong>
+                  <strong>
+                    {receivable.status}
+                    {isOverdue(receivable.dueDate, receivable.remainAmount) && (
+                      <span
+                        style={{
+                          display: "inline-block",
+                          marginLeft: 8,
+                          padding: "2px 8px",
+                          borderRadius: 999,
+                          backgroundColor: "#fee2e2",
+                          color: "#b91c1c",
+                          fontSize: 12,
+                          fontWeight: 600,
+                          lineHeight: 1.4,
+                        }}
+                      >
+                        연체
+                      </span>
+                    )}
+                  </strong>
                 </div>
               </div>
             ) : (

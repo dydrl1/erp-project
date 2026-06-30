@@ -29,6 +29,18 @@ export default function PayablesPage() {
     const formatMoney = (value?: number) => {
         return `${(value ?? 0).toLocaleString()}원`;
     };
+
+    const isDelayed = (dueDate?: string, remainAmount?: number) => {
+        if (!dueDate || (remainAmount ?? 0) <= 0) return false;
+
+        const today = new Date();
+        const due = new Date(dueDate);
+
+        today.setHours(0, 0, 0, 0);
+        due.setHours(0, 0, 0, 0);
+
+        return due < today;
+    };
     
     const fetchList = () => {
         setLoading(true);
@@ -160,7 +172,26 @@ export default function PayablesPage() {
                                     <td className="num">{formatMoney(item.totalAmount)}</td>
                                     <td className="num">{formatMoney(item.paidAmount)}</td>
                                     <td className="num">{formatMoney(item.remainAmount)}</td>
-                                    <td>{item.status}</td>
+                                    <td>
+                                        {item.status}
+                                        {isDelayed(item.dueDate, item.remainAmount) && (
+                                            <span
+                                                style={{
+                                                    display: "inline-block",
+                                                    marginLeft: 8,
+                                                    padding: "2px 8px",
+                                                    borderRadius: 999,
+                                                    backgroundColor: "#fef3c7",
+                                                    color: "#92400e",
+                                                    fontSize: 12,
+                                                    fontWeight: 600,
+                                                    lineHeight: 1.4,
+                                                }}
+                                            >
+                                                지연
+                                            </span>
+                                        )}
+                                    </td>
                                     <td>
                                         <button
                                             className="erp-btn primary"
