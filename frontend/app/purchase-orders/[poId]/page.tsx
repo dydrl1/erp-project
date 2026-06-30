@@ -93,7 +93,7 @@ export default function PurchaseOrderDetailPage() {
       dataIndex: "productCode",
     },
     {
-      title: "상품명",
+      title: "제품명",
       dataIndex: "productName",
     },
     {

@@ -102,7 +102,7 @@ export default function ReceivingProcessPage() {
   const columns = useMemo<ColumnsType<ReceivingDetailInput>>(
     () => [
       {
-        title: "상품명",
+        title: "제품명",
         dataIndex: "productName",
       },
       {

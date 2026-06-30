@@ -100,7 +100,7 @@ export default function StockMovementTab() {
       render: (value?: string) => (value ? value.replace('T', ' ').slice(0, 19) : '-'),
     },
     {
-      title: '상품명',
+      title: '제품명',
       dataIndex: 'productName',
       width: 180,
     },
@@ -190,7 +190,7 @@ export default function StockMovementTab() {
           }}
         >
           <Input
-            placeholder="상품명"
+            placeholder="제품명"
             value={productName}
             onChange={(e) => setProductName(e.target.value)}
             onPressEnter={handleSearch}

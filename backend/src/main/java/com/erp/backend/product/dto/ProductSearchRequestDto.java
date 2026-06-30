@@ -10,8 +10,8 @@ import lombok.Setter;
 @NoArgsConstructor
 public class ProductSearchRequestDto {
 
-    private String keyword;        // 상품명 또는 상품코드 부분검색
-    private String status;         // 상품 사용 상태 (ACTIVE/INACTIVE 등)
+    private String keyword; // 제품명 또는 상품코드 부분검색
+    private String status; // 상품 사용 상태 (ACTIVE/INACTIVE 등)
     private String isPrescription; // 전문 의약품 여부 (Y/N)
-    private String storageType;    // 보관 유형 (ROOM/COLD/FROZEN)
+    private String storageType; // 보관 유형 (ROOM/COLD/FROZEN)
 }
