@@ -1,0 +1,14 @@
+.gradle
+build
+out
+*.log
+
+.git
+.gitignore
+.idea
+*.iml
+
+src/main/resources/Wallet
+src/main/resources/application.yml
+
+tmp
