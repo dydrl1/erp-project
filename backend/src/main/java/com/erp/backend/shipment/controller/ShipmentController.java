@@ -6,6 +6,7 @@ import com.erp.backend.shipment.service.ShipmentService;
 import com.erp.backend.shipment.vo.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -27,10 +28,9 @@ public class ShipmentController {
     public ResponseEntity<ApiResponse<PageResponse<ShipmentVO>>> getShipments(@RequestParam(required = false) Integer salesOrderId,
                                                                               @RequestParam(required = false) String status,
                                                                               @RequestParam(required = false) String employeeName,
-                                                                              @RequestParam(defaultValue = "1") Integer offset,
+                                                                              @RequestParam(defaultValue = "1") Integer page,
                                                                               @RequestParam(defaultValue = "10") Integer size) {
-        size = shipmentService.findCountsForShipments(status);
-        PageResponse<ShipmentVO> result = shipmentService.findShipments(salesOrderId, status, employeeName, offset, size);
+        PageResponse<ShipmentVO> result = shipmentService.findShipments(salesOrderId, status, employeeName, page, size);
         return ResponseEntity.ok(ApiResponse.success(result.getSize() + "의건이 조회되었습니다", result));
     }
 
@@ -48,7 +48,7 @@ public class ShipmentController {
 
     //출고 처리
     @PostMapping("/process")
-    public ResponseEntity<ApiResponse<Integer>> processShipment(@RequestParam Integer salesOrderId, @RequestParam Integer employeeId) {
+    public ResponseEntity<ApiResponse<Integer>> processShipment(@RequestParam Integer salesOrderId, @AuthenticationPrincipal long employeeId) {
         int shipmentId = shipmentService.processShipment(salesOrderId, employeeId);
         return ResponseEntity.ok(ApiResponse.success("출고 처리 완료", shipmentId));
     }

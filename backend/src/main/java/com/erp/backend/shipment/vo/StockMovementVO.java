@@ -20,6 +20,6 @@ public class StockMovementVO {
     private Integer createdBy;
     private LocalDateTime createdAt;
     private String reason;
-    private Integer employeeId;
+    private long employeeId;
     private LocalTime updatedAt;
 }

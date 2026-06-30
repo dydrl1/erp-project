@@ -2,23 +2,25 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { App, Button, Card, Descriptions, Flex, Input, Space, Table, Typography } from 'antd';
+import { App, Button, Card, Descriptions, Flex, Input, Space, Steps, Table, Typography } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import ErpLayout from '@/components/ErpLayout';
 import StatusBadge from '@/components/StatusBadge';
-import { purchaseOrderApi, salesOrderApi, SalesOrder, SalesOrderDetail, shipmentApi } from '@/lib/api';
-
+import { salesOrderApi, SalesOrderDetail, SalesOrder, shipmentApi } from '@/lib/api';
 const { Text } = Typography;
-
 export default function SalesOrderDetailPage() {
   const { soId } = useParams<{ soId: string }>();
   const router = useRouter();
   const { message, modal } = App.useApp();
-
   const [order, setOrder] = useState<SalesOrder | null>(null);
   const [error, setError] = useState('');
   const [role, setRole] = useState('');
   const [processing, setProcessing] = useState(false);
+  const statusStep: Record<string, number> = {
+    REQUESTED: 1,
+    APPROVED: 2,
+    SHIPPED: 3,
+  };
 
   const load = useCallback(() => {
     salesOrderApi
@@ -26,6 +28,10 @@ export default function SalesOrderDetailPage() {
       .then(setOrder)
       .catch((e: Error) => setError(e.message));
   }, [soId]);
+
+  useEffect(() => {
+    setRole(localStorage.getItem('role') ?? '');
+  }, []);
 
   useEffect(() => {
     load();
@@ -38,7 +44,7 @@ export default function SalesOrderDetailPage() {
 
   const canApprove = order?.status === 'REQUESTED' && (role === 'MANAGER' || role === 'ADMIN');
 
-  const handleApprove = () => {
+  const handleApprove = async () => {
     modal.confirm({
       title: '판매 주문 승인',
       content: '이 판매주문 주문을 승인하시겠습니까?',
@@ -48,8 +54,7 @@ export default function SalesOrderDetailPage() {
         setProcessing(true);
 
         try {
-          //employeeId: 자신의 번호로 바꿔야함
-          await salesOrderApi.approve(Number(soId), { employeeId: 1 });
+          await salesOrderApi.approve(Number(soId));
           message.success('주문이 승인되었습니다.');
           router.push('/sales-orders');
         } catch (e) {
@@ -67,7 +72,7 @@ export default function SalesOrderDetailPage() {
     modal.confirm({
       title: '판매 주문 반려',
       width: 520,
-      okText: '판매 주문 확정',
+      okText: '주문 반려 확정',
       cancelText: '취소',
       okButtonProps: { danger: true },
       content: (
@@ -93,7 +98,8 @@ export default function SalesOrderDetailPage() {
         setProcessing(true);
 
         try {
-          await purchaseOrderApi.reject(Number(soId), reason.trim());
+          // await purchaseOrderApi.reject(Number(soId), reason.trim());
+          //주문반려 등록 필요
           message.success('판매 주문이 반려되었습니다.');
           router.push('/sales-orders');
         } catch (e) {
@@ -105,7 +111,7 @@ export default function SalesOrderDetailPage() {
     });
   };
 
-  const handleShipping = () => {
+  const handleShipping = async () => {
     modal.confirm({
       title: '출고 승인',
       content: '이 출고요청을 승낙하시겠습니다?',
@@ -119,7 +125,7 @@ export default function SalesOrderDetailPage() {
             message.error('출고 가능한 주문이 아닙니다.');
             return;
           }
-          await shipmentApi.process(Number(soId), 10); //담당자 번호로 바꿔야함
+          await shipmentApi.process(Number(soId));
           message.success('출고 처리과 완료되었습니다.');
           router.push('/shipments');
         } catch (e) {
@@ -130,6 +136,8 @@ export default function SalesOrderDetailPage() {
       },
     });
   };
+
+  const currentStep = statusStep[order?.status ?? 'REQUESTED'];
 
   const columns = useMemo<ColumnsType<SalesOrderDetail>>(
     () => [
@@ -179,28 +187,54 @@ export default function SalesOrderDetailPage() {
     <ErpLayout title={`주문 상세 — SO-${String(order.soId).padStart(4, '0')}`}>
       <Flex justify="space-between" align="center">
         <Button onClick={() => router.back()}>목록으로</Button>
-        <StatusBadge status={order.status} />
       </Flex>
 
       <Card>
         <Descriptions bordered column={3} size="small">
           <Descriptions.Item label="고객사명">{order.customerName}</Descriptions.Item>
-
           <Descriptions.Item label="주문자">{order.reqEmployeeName}</Descriptions.Item>
-
           <Descriptions.Item label="주문일">{order.orderDate?.slice(0, 10)}</Descriptions.Item>
-
           <Descriptions.Item label="총금액">
             <Text strong>{order.totalAmount?.toLocaleString()}원</Text>
           </Descriptions.Item>
-
           <Descriptions.Item label="승인자">{order.appEmployeeName ?? '-'}</Descriptions.Item>
-
           <Descriptions.Item label="상태">
             <StatusBadge status={order.status} />
           </Descriptions.Item>
         </Descriptions>
       </Card>
+      {order.status !== 'CANCELED' && (
+        <Card style={{ marginTop: 16, marginBottom: 16 }}>
+          <div className="order-detail-steps">
+            <Steps
+              current={currentStep}
+              titlePlacement="vertical"
+              items={[{ title: '주문 생성' }, { title: '승인대기' }, { title: '승인 완료' }, { title: '출고 완료' }]}
+            />
+          </div>
+          <style jsx global>{`
+            .order-detail-steps {
+              padding: 16px 24px;
+            }
+            .order-detail-steps .ant-steps-item-icon {
+              width: 48px;
+              height: 48px;
+              line-height: 48px;
+              font-size: 20px;
+            }
+            .order-detail-steps .ant-steps-icon {
+              font-size: 20px;
+            }
+            .order-detail-steps .ant-steps-item-title {
+              font-size: 18px;
+              font-weight: 700;
+            }
+            .order-detail-steps .ant-steps-item-tail {
+              top: 23px;
+            }
+          `}</style>
+        </Card>
+      )}
 
       <Card title="주문 품목">
         <Table

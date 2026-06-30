@@ -10,6 +10,11 @@ import com.erp.backend.sales.dto.SalesOrderStatusCountDTO;
 import com.erp.backend.sales.mapper.SalesOrderMapper;
 import com.erp.backend.sales.util.OrderStatus;
 import com.erp.backend.sales.vo.*;
+import com.erp.backend.settlement.mapper.SettlementMapper;
+import com.erp.backend.settlement.service.SettlementService;
+import com.erp.backend.settlement.vo.AccountPayableVO;
+import com.erp.backend.settlement.vo.AccountReceivableVO;
+import com.erp.backend.settlement.vo.SalesInvoiceVO;
 import com.erp.backend.shipment.dto.ShipmentStatusCountDTO;
 import com.erp.backend.shipment.util.MovementType;
 import com.erp.backend.shipment.util.ShipmentStatus;
@@ -20,6 +25,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -30,6 +36,7 @@ public class ShipmentService {
     private final ShipmentMapper shipmentMapper;
     private final SalesOrderMapper salesOrderMapper;
     private final AlertService alertService;
+    private final SettlementService settlementService;
 
     //주문 출고 승인여부 확인
     private SalesOrderVO verifySalesOrderStatus(int salesOrderId) {
@@ -40,10 +47,6 @@ public class ShipmentService {
     private ShipmentVO preventDuplicatingShipment(int salesOrderId) {
         return shipmentMapper.preventDuplicatingShipment(salesOrderId);
     }
-
-//    public List<ShipmentDetailVO> findShipmentDetail(int shipmentId){
-//        return shipmentMapper.findShipmentDetails(shipmentId);
-//    }
 
     //출고 정보 생성
     private int arrangeShipmentHeader(ShipmentVO shipmentVO) {
@@ -94,17 +97,6 @@ public class ShipmentService {
         }
     }
 
-    private int calculateShippableQty(List<ItemLotVO> itemLotVOList) {
-        int availableQty = 0;
-        int safetyQty = 0;
-        for (ItemLotVO itemLotVO : itemLotVOList) {
-            if (itemLotVO.getCurrentQty() != null) {
-                availableQty += itemLotVO.getCurrentQty();
-            }
-        }
-        return availableQty - safetyQty;
-    }
-
     /*승인돈 주문 FEFO에 따른 재고 차감
      *
      *승인된 주문 기준 출고를 생성하고
@@ -118,7 +110,10 @@ public class ShipmentService {
      */
 
     @Transactional
-    public int processShipment(Integer salesOrderId, Integer employeeId) {
+    public int processShipment(Integer salesOrderId, long employeeId) {
+        if (salesOrderId == null || employeeId <= 0) {
+            throw new CustomException(ErrorCode.NOT_FOUND);
+        }
         SalesOrderVO order = verifySalesOrderStatus(salesOrderId);
         if (order == null) {
             throw new CustomException(ErrorCode.SALES_APPROVE_FAILED);
@@ -154,6 +149,7 @@ public class ShipmentService {
         if (orderUpdated != 1) {
             throw new CustomException(ErrorCode.NOT_FOUND);
         }
+        createSalesInvoiceAfterShipment(salesOrderId);
         for (Integer productId : shippedProductIds) {
             alertService.checkAfterShipment(productId);
         }
@@ -162,7 +158,7 @@ public class ShipmentService {
 
     //주문 상세 수량을 FEFO기준으로 로트에 배정
     //
-    //가용 재고를 확인한 뒤 유통기한이 빠른 순서로 출고수량을 배정
+    //가용 재고를 확인한 뒤 유효기간이 빠른 순서로 출고수량을 배정
     private Map<Integer, Integer> allocateLots(SalesOrderDetailVO salesOrderdetailVO) {
         int productId = salesOrderdetailVO.getProductId();
         int orderQty = salesOrderdetailVO.getOrderQty();
@@ -175,15 +171,9 @@ public class ShipmentService {
 
         //안전재고 반영 수량 계산
         int availableQty = salesOrderMapper.findAvailableQtyByProductId(productId);
-        int safetyQty = salesOrderMapper.findSafetyQtyByProductId(productId);
         if (orderQty > availableQty) {
             throw new CustomException(ErrorCode.SALES_NOT_AVAILABLE_STOCK);
         }
-
-//        int afterAvailableQty = availableQty - orderQty;
-//        if (afterAvailableQty <= safetyQty) {
-//            createSafetyStockAlert(productId, afterAvailableQty, safetyQty);
-//        }
 
         Map<Integer, Integer> allocatableLots = new LinkedHashMap<>();
         int remains = orderQty;
@@ -204,7 +194,7 @@ public class ShipmentService {
     }
 
     //배정된 로트 기준으로 출고 상세,재고 이력생성, 재고 차감 처리
-    private void applyShipmentAllocation(Map<Integer, Integer> allocatableLots, SalesOrderDetailVO salesOrderdetailVO, Integer shipmentId, Integer employeeId) {
+    private void applyShipmentAllocation(Map<Integer, Integer> allocatableLots, SalesOrderDetailVO salesOrderdetailVO, Integer shipmentId, long employeeId) {
         int productId = salesOrderdetailVO.getProductId();
         int detailId = salesOrderdetailVO.getSoDetailId();
         for (Map.Entry<Integer, Integer> lot : allocatableLots.entrySet()) {
@@ -226,7 +216,7 @@ public class ShipmentService {
         shipmentDetailVO.setInventoryLotId(lotId);
         shipmentDetailVO.setProductId(productId);
         shipmentDetailVO.setShippedQty(assignedQty);
-        int inserted = shipmentMapper.arrangeShipmentDetail(shipmentDetailVO);
+        int inserted = arrangeShipmentDetail(shipmentDetailVO);
         if (inserted != 1) {
             throw new CustomException(ErrorCode.SHIPMENT_DETAIL_FAILED);
         }
@@ -234,7 +224,7 @@ public class ShipmentService {
     }
 
     //재고 변동 이력 기록
-    private void insertStockMovement(Integer shipmentDetailId, Integer employeeId, Integer lotId, Integer assignedQty) {
+    private void insertStockMovement(Integer shipmentDetailId, long employeeId, Integer lotId, Integer assignedQty) {
         int movementId = shipmentMapper.currentStockMovementSeq();
         StockMovementVO stockMovementVO = new StockMovementVO();
         stockMovementVO.setMovementId(movementId);
@@ -296,4 +286,19 @@ public class ShipmentService {
         return shipmentMapper.findProductStockList();
     }
 
+    //청구 생성
+    private void createSalesInvoiceAfterShipment(int salesOrderId) {
+        SalesOrderVO salesOrder = salesOrderMapper.findOrderHeaderById(salesOrderId);
+        if (salesOrder == null) {
+            throw new CustomException(ErrorCode.SALES_ORDER_FAILED);
+        }
+        SalesInvoiceVO salesInvoiceVO = new SalesInvoiceVO();
+        salesInvoiceVO.setSoId(salesOrderId);
+        salesInvoiceVO.setCustomerId(salesOrder.getCustomerId());
+        salesInvoiceVO.setTotalAmount(salesOrder.getTotalAmount());
+        salesInvoiceVO.setIssueDate(LocalDate.now());
+        salesInvoiceVO.setStatus("ISSUED");
+        AccountReceivableVO accountReceivable = new AccountReceivableVO();
+        settlementService.createSalesInvoice(salesInvoiceVO, accountReceivable);
+    }
 }

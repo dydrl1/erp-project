@@ -7,12 +7,11 @@ import com.erp.backend.sales.dto.SalesOrderListResponseDTO;
 import com.erp.backend.sales.dto.SalesOrderRequestDTO;
 import com.erp.backend.sales.service.SalesOrderService;
 import com.erp.backend.sales.vo.*;
-import lombok.NonNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -31,10 +30,9 @@ public class SalesOrderController {
     //주문전체조회
     @GetMapping("/paging")
     public ResponseEntity<ApiResponse<PageResponse<SalesOrderListResponseDTO>>> findAllSalesOrders(@RequestParam(required = false) String status,
-                                                                                                   @RequestParam(defaultValue = "1") Integer offset,
+                                                                                                   @RequestParam(defaultValue = "1") Integer page,
                                                                                                    @RequestParam(defaultValue = "10") Integer size) {
-        size = salesOrderService.findCountsForSalesOrders(status);
-        PageResponse<SalesOrderListResponseDTO> result = salesOrderService.findALllSalesOrdersPaging(status, offset, size);
+        PageResponse<SalesOrderListResponseDTO> result = salesOrderService.findAllSalesOrdersPaging(status, page, size);
         return ResponseEntity.ok(ApiResponse.success(result.getSize()+"의건이 조회되었습니다",result));
     }
 
@@ -74,17 +72,19 @@ public class SalesOrderController {
 
     //주문생성
     @PostMapping
-    public ResponseEntity<ApiResponse<SalesOrderVO>> makeOrder(@RequestBody SalesOrderRequestDTO requestDTO){
-        SalesOrderVO responseVO = salesOrderService.makeOrder(requestDTO);
+    public ResponseEntity<ApiResponse<SalesOrderVO>> makeOrder(@RequestBody SalesOrderRequestDTO requestDTO,
+                                                               @AuthenticationPrincipal long empId) {
+        SalesOrderVO responseVO = salesOrderService.makeOrder(requestDTO, empId);
         return ResponseEntity.ok(ApiResponse.success("주문이 생성되었습니다",responseVO));
     }
 
     //주문승인
     @PatchMapping("/{salesOrderId}/approve")
-    public ResponseEntity<ApiResponse<SalesOrderVO>> approveRequest(@PathVariable int salesOrderId,@RequestBody SalesOrderRequestDTO request){
+    public ResponseEntity<ApiResponse<SalesOrderVO>> approveRequest(@PathVariable int salesOrderId,
+                                                                    @AuthenticationPrincipal long empId) {
         SalesOrderVO salesOrderVO = new SalesOrderVO();
         salesOrderVO.setSoId(salesOrderId);
-        salesOrderVO.setAppEmployeeId(request.getEmployeeId());
+        salesOrderVO.setAppEmployeeId(empId);
         SalesOrderVO updateSalesOrder = salesOrderService.approveRequest(salesOrderVO);
         return ResponseEntity.ok(ApiResponse.success("주문이 승인되었습니다",updateSalesOrder));
     }
@@ -104,7 +104,7 @@ public class SalesOrderController {
 
     @GetMapping("/products")
     public ResponseEntity<ApiResponse<List<ProductVO>>> findAllProducts(){
-        List<ProductVO> results = salesOrderService.findAllActiveProducts();
+        List<ProductVO> results = salesOrderService.findAllAvailableActiveProducts();
         return ResponseEntity.ok(ApiResponse.success("의약품을 조회했습니다",results));
     }
 

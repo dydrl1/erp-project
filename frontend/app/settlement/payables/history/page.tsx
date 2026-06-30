@@ -1,23 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import ErpLayout from "@/components/ErpLayout";
 import { paymentTypeLabel } from "@/lib/display-labels";
+import { PayablePayment, settlementPayablePaymentApi } from "@/lib/api";
 import "../../settlement.css";
 
-type PayablePayment = {
-    payablePaymentId: number;
-    apId: number;
-    supplierId: number;
-    supplierName: string;
-    paymentDate: string;
-    paymentAmount: number;
-    paymentType: string;
-    createdBy: number;
-    createdAt: string;
-};
-
 export default function PayablePaymentHistoryPage() {
+    const router = useRouter();
     const [list, setList] = useState<PayablePayment[]>([]);
     const [supplierName, setSupplierName] = useState("");
     const [startDate, setStartDate] = useState("");
@@ -43,31 +34,23 @@ export default function PayablePaymentHistoryPage() {
         setLoading(true);
         setErrorMessage("");
 
-        const params = new URLSearchParams();
-
-        if (supplierName) params.append("supplierName", supplierName);
-        if (startDate) params.append("startDate", startDate);
-        if (endDate) params.append("endDate", endDate);
-
-        const query = params.toString() ? `?${params.toString()}` : "";
-
-        fetch(`http://localhost:8080/api/settlement/payables/payments${query}`)
-            .then(async (response) => {
-                const body = await response.json().catch(() => null);
-
-                if (!response.ok || body?.success === false) {
-                    throw new Error(body?.message ?? "Failed to load payable payments.");
-                }
-
-                return body;
+        settlementPayablePaymentApi
+            .list({
+                supplierName,
+                startDate,
+                endDate,
             })
-            .then((body) => {
-                setList(body.data ?? []);
+            .then((data) => {
+                setList(data ?? []);
                 setPage(1);
             })
             .catch((err) => {
                 setList([]);
-                setErrorMessage(err instanceof Error ? err.message : "Failed to load payable payments.");
+                setErrorMessage(
+                    err instanceof Error
+                        ? err.message
+                        : "Failed to load payable payments."
+                );
                 console.error("지급내역 조회 실패:", err);
             })
             .finally(() => {
@@ -78,6 +61,7 @@ export default function PayablePaymentHistoryPage() {
     useEffect(() => {
         const timer = setTimeout(fetchList, 0);
         return () => clearTimeout(timer);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     return (
@@ -122,6 +106,13 @@ export default function PayablePaymentHistoryPage() {
                 >
                     초기화
                 </button>
+
+                <button
+                    className="erp-btn"
+                    onClick={() => router.push("/settlement/payables")}
+                >
+                    미지급금 관리
+                </button>
             </div>
 
             <div className="erp-table-wrap">
@@ -135,26 +126,25 @@ export default function PayablePaymentHistoryPage() {
                             <th className="num">지급금액</th>
                             <th>지급방법</th>
                             <th>처리자</th>
-                            <th>등록일</th>
                         </tr>
                     </thead>
 
                     <tbody>
                         {loading ? (
                             <tr>
-                                <td colSpan={8} style={{ textAlign: "center", padding: 40 }}>
+                                <td colSpan={7} style={{ textAlign: "center", padding: 40 }}>
                                     불러오는 중...
                                 </td>
                             </tr>
                         ) : errorMessage ? (
                             <tr>
-                                <td colSpan={8} style={{ textAlign: "center", padding: 40 }}>
+                                <td colSpan={7} style={{ textAlign: "center", padding: 40 }}>
                                     {errorMessage}
                                 </td>
                             </tr>
                         ) : list.length === 0 ? (
                             <tr>
-                                <td colSpan={8} style={{ textAlign: "center", padding: 40 }}>
+                                <td colSpan={7} style={{ textAlign: "center", padding: 40 }}>
                                     조회된 지급내역이 없습니다.
                                 </td>
                             </tr>
@@ -167,8 +157,7 @@ export default function PayablePaymentHistoryPage() {
                                     <td>{item.paymentDate?.slice(0, 10)}</td>
                                     <td className="num">{formatMoney(item.paymentAmount)}</td>
                                     <td>{paymentTypeLabel(item.paymentType)}</td>
-                                    <td>{item.createdBy}</td>
-                                    <td>{item.createdAt?.slice(0, 10)}</td>
+                                    <td>{item.createdByName}</td>
                                 </tr>
                             ))
                         )}

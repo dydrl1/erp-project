@@ -62,6 +62,8 @@ public enum ErrorCode {
     SALES_APPROVE_FAILED(HttpStatus.BAD_REQUEST,"승인이 되지 않았습니다"),
     SALES_ALREADY_APPROVED(HttpStatus.BAD_REQUEST,"승인이 이미 되었습니다"),
     SALES_LOT_ALLOCATE_FAILED(HttpStatus.CONFLICT,"로트번호 배정 작업이 실패했습니다"),
+    SALES_INSUFFICIENT_STOCK(HttpStatus.BAD_REQUEST, "재고가 충분하지 않습니다"),
+    SALES_CREDIT_LIMIT_EXCEED(HttpStatus.BAD_REQUEST, "여신 한도를 초과하여 주문 등록 불가합니다"),
 
     // 거래처 관련
     DUPLICATE_BUSINESS_NO(HttpStatus.CONFLICT, "이미 등록된 사업자번호입니다."),
@@ -76,8 +78,23 @@ public enum ErrorCode {
     SHIPMENT_DETAIL_FAILED(HttpStatus.BAD_REQUEST,"배송 세부내역 생성에 실패했습니다"),
 
     // 재고
-    STOCK_MOVEMENT_FAILED(HttpStatus.BAD_REQUEST,"재고변동이력 생성에 실패했습니다.");
-
+    STOCK_MOVEMENT_FAILED(HttpStatus.BAD_REQUEST, "재고변동이력 생성에 실패했습니다."),
+    // 환불
+    RETURN_REQUEST_FAILED(HttpStatus.BAD_REQUEST, "반품 요청 품목이 없습니다."),
+    RETURN_SALES_ORDER_NOT_FOUND(HttpStatus.NOT_FOUND, "주문을 찾을 수 없습니다."),
+    RETURN_TARGET_NOT_FOUND(HttpStatus.NOT_FOUND, "반품 가능한 출고 품목을 찾을 수 없습니다."),
+    RETURN_QTY_ERROR(HttpStatus.BAD_REQUEST, "반품 수량이 잘못되었습니다."),
+    RETURN_DIFFERENT_SALES_ORDER_INCLUDED(HttpStatus.BAD_REQUEST, "서로 다른 주문의 품목을 함께 반품할 수 없습니다."),
+    RETURN_PROCESS_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "반품 재고변동에 실패했습니다."),
+    RETURN_QUANTITY_MISMATCH(HttpStatus.CONFLICT, "출고 수량과 반품 수량이 일치하지 않습니다."),
+    RETURN_INVALID_REFUND_AMOUNT(HttpStatus.CONFLICT, "반품 금액을 계산할 수 없습니다."),
+    RETURN_SALES_ORDER_BALANCE_UPDATE_FAILED(HttpStatus.CONFLICT, "주문 금액 차감에 실패했습니다."),
+    RETURN_REQUEST_NOT_FOUND(HttpStatus.NOT_FOUND, "반품 요청을 찾을 수 없습니다."),
+    RETURN_REQUEST_NOT_REQUESTED(HttpStatus.CONFLICT, "요청 상태의 반품만 승인하거나 반려할 수 있습니다."),
+    RETURN_REQUEST_NOT_APPROVED(HttpStatus.CONFLICT, "승인된 반품만 완료 처리할 수 있습니다."),
+    RETURN_APPROVAL_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "반품 승인 처리에 실패했습니다."),
+    RETURN_REJECTION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "반품 반려 처리에 실패했습니다."),
+    REJECT_REASON_REQUIRED(HttpStatus.BAD_REQUEST, "반려 사유를 입력해야 합니다.");
 
     private final HttpStatus status;
     private final String message;

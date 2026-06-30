@@ -47,9 +47,7 @@ export default function SalesOrderCreatePage() {
 
   const [products, setProducts] = useState<Product[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
-  const [productId, setProductId] = useState<number>();
   const [customerId, setCustomerId] = useState<number>();
-  const [orderQty, setOrderQty] = useState<number | null>(null);
   const [memo, setMemo] = useState('');
   const [rows, setRows] = useState<OrderRow[]>([]);
   const [processing, setProcessing] = useState(false);
@@ -68,16 +66,17 @@ export default function SalesOrderCreatePage() {
       .then((data) => setProducts(data as unknown as Product[]))
       .catch((e) => message.error(e.message));
   }, [message]);
+
   const selectedIds = useMemo(() => new Set(rows.map((row) => row.productId)), [rows]);
-  const productMap = useMemo(() => new Map(products.map((p) => [p.productId, p])), [products]);
+  const productMap = useMemo(() => new Map(products.map((product) => [product.productId, product])), [products]);
   const filteredProducts = useMemo(() => {
     const lower = keyword.toLowerCase();
 
-    return products.filter((p) => {
-      if (selectedIds.has(p.productId)) return false;
+    return products.filter((product) => {
+      if (selectedIds.has(product.productId)) return false;
       if (!keyword) return true;
 
-      return p.productName.toLowerCase().includes(lower) || p.productCode.toLowerCase().includes(lower);
+      return product.productName.toLowerCase().includes(lower) || product.productCode.toLowerCase().includes(lower);
     });
   }, [keyword, products, selectedIds]);
 
@@ -100,13 +99,11 @@ export default function SalesOrderCreatePage() {
   const toggleCheck = (productId: number) => {
     setChecked((prev) => {
       const next = new Set(prev);
-
       if (next.has(productId)) {
         next.delete(productId);
       } else {
         next.add(productId);
       }
-
       return next;
     });
   };
@@ -118,11 +115,11 @@ export default function SalesOrderCreatePage() {
     }
 
     const newRows: OrderRow[] = products
-      .filter((p) => checked.has(p.productId))
-      .map((p) => ({
-        productId: p.productId,
+      .filter((product) => checked.has(product.productId))
+      .map((product) => ({
+        productId: product.productId,
         orderQty: 1,
-        unitPrice: p.standardSalesPrice,
+        unitPrice: product.standardSalesPrice,
       }));
 
     setRows((prev) => [...prev, ...newRows]);
@@ -131,7 +128,7 @@ export default function SalesOrderCreatePage() {
 
   const handleSubmit = async () => {
     if (!customerId) {
-      message.warning('거래처를 선택해주세요');
+      message.warning('거래처를 선택해주세요.');
       return;
     }
 
@@ -152,12 +149,14 @@ export default function SalesOrderCreatePage() {
     try {
       await salesOrderApi.create({
         customerId,
-        employeeId: 1, //employeeId: 자신의 번호로 바꿔야함
         memo: memo || undefined,
-        details: rows,
+        details: rows.map((row) => ({
+          productId: row.productId,
+          orderQty: row.orderQty,
+        })),
       });
 
-      message.success('주문이 접수되었습니다.');
+      message.success('판매 주문이 등록되었습니다.');
       router.push('/sales-orders');
     } catch (e) {
       message.error((e as Error).message);
@@ -271,6 +270,7 @@ export default function SalesOrderCreatePage() {
           }}
         />
       </Card>
+
       <Flex justify="flex-end">
         <Typography.Text>
           총금액{' '}
@@ -296,9 +296,9 @@ export default function SalesOrderCreatePage() {
         cancelText="취소"
         width={620}
       >
-        <Space orientation="vertical" style={{ width: '100%' }}>
+        <Space direction="vertical" style={{ width: '100%' }}>
           <Typography.Text type="secondary">
-            추가할 의약품을 검색하고 선택하세요. 이미 담긴 의약품은 제외됩니다.
+            추가할 의약품을 검색하고 선택하세요. 이미 선택된 의약품은 제외됩니다.
           </Typography.Text>
 
           <Input.Search
@@ -313,22 +313,22 @@ export default function SalesOrderCreatePage() {
             style={{ maxHeight: 360, overflow: 'auto' }}
             dataSource={filteredProducts}
             locale={{
-              emptyText: keyword ? '검색 결과가 없습니다.' : '추가할 수 있는 의약품이 없습니다.',
+              emptyText: keyword ? '검색 결과가 없습니다.' : '추가 가능한 의약품이 없습니다.',
             }}
-            renderItem={(p) => (
+            renderItem={(product) => (
               <List.Item
                 style={{
                   cursor: 'pointer',
-                  background: checked.has(p.productId) ? '#F0FAF3' : undefined,
+                  background: checked.has(product.productId) ? '#F0FAF3' : undefined,
                 }}
-                onClick={() => toggleCheck(p.productId)}
+                onClick={() => toggleCheck(product.productId)}
               >
-                <Checkbox checked={checked.has(p.productId)} />
+                <Checkbox checked={checked.has(product.productId)} />
                 <div style={{ flex: 1, marginLeft: 12 }}>
-                  <Typography.Text strong>{p.productName}</Typography.Text>
+                  <Typography.Text strong>{product.productName}</Typography.Text>
                   <br />
                   <Typography.Text type="secondary">
-                    {p.productCode} · {p.standardSalesPrice?.toLocaleString()}원
+                    {product.productCode} · {product.standardSalesPrice?.toLocaleString()}원
                   </Typography.Text>
                 </div>
               </List.Item>

@@ -3,18 +3,8 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import ErpLayout from "@/components/ErpLayout";
+import { PaymentTarget, settlementPaymentApi } from "@/lib/api";
 import "../settlement.css";
-
-type PaymentTarget = {
-  arId: number;
-  customerId: number;
-  customerName: string;
-  totalAmount: number;
-  paidAmount: number;
-  remainAmount: number;
-  dueDate: string;
-  status: string;
-};
 
 export default function PaymentsPage() {
   const router = useRouter();
@@ -39,14 +29,10 @@ export default function PaymentsPage() {
   const fetchList = () => {
     setLoading(true);
 
-    const query = customerName
-      ? `?customerName=${encodeURIComponent(customerName)}`
-      : "";
-
-    fetch(`http://localhost:8080/api/settlement/payments/receivables${query}`)
-      .then((res) => res.json())
-      .then((res) => {
-        setList(res.data ?? []);
+    settlementPaymentApi
+      .targets(customerName)
+      .then((data) => {
+        setList(data ?? []);
         setPage(1);
       })
       .catch((err) => {
@@ -60,6 +46,7 @@ export default function PaymentsPage() {
   useEffect(() => {
     const timer = setTimeout(fetchList, 0);
     return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -124,7 +111,7 @@ export default function PaymentsPage() {
                   <td className="num">{formatMoney(item.totalAmount)}</td>
                   <td className="num">{formatMoney(item.paidAmount)}</td>
                   <td className="num">{formatMoney(item.remainAmount)}</td>
-                  <td>{item.dueDate}</td>
+                  <td>{item.dueDate?.slice(0, 10)}</td>
                   <td>{item.status}</td>
                   <td>
                     <button

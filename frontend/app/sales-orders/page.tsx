@@ -11,9 +11,9 @@ import { salesOrderApi, SalesOrder } from '@/lib/api';
 const TABS = [
   { key: '', label: '전체' },
   { key: 'REQUESTED', label: '승인 대기' },
-  { key: 'APPROVED', label: '승인 완료 ' },
+  { key: 'APPROVED', label: '승인 완료' },
   { key: 'SHIPPED', label: '출고 완료' },
-  { key: 'CANCELED', label: '취소됨' },
+  { key: 'CANCELED', label: '취소' },
 ];
 
 export default function SalesOrderListPage() {
@@ -54,6 +54,7 @@ export default function SalesOrderListPage() {
       {
         title: '주문번호',
         dataIndex: 'soId',
+        width: 130,
         render: (soId: number) => (
           <Typography.Text strong style={{ color: '#3A7CA5' }}>
             SO-{String(soId).padStart(4, '0')}
@@ -67,21 +68,25 @@ export default function SalesOrderListPage() {
       {
         title: '기안자',
         dataIndex: 'reqEmployeeName',
+        width: 130,
       },
       {
         title: '주문접수일',
         dataIndex: 'orderDate',
+        width: 140,
         render: (value?: string) => value?.slice(0, 10) ?? '-',
       },
       {
         title: '상태',
         dataIndex: 'status',
+        width: 120,
         render: (status: string) => <StatusBadge status={status} />,
       },
       {
         title: '총금액',
         dataIndex: 'totalAmount',
         align: 'right',
+        width: 150,
         render: (value?: number) => `${value?.toLocaleString() ?? 0}원`,
       },
     ],
@@ -136,7 +141,7 @@ export default function SalesOrderListPage() {
           onRow={(record) => ({
             className: 'erp-clickable-row',
             onClick: () => {
-              (console.log(record), router.push(`/sales-orders/${record.soId}`));
+              router.push(`/sales-orders/${record.soId}`);
             },
           })}
         />

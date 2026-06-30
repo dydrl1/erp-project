@@ -1,30 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import {
-  Alert,
-  Button,
-  DatePicker,
-  Input,
-  InputNumber,
-  Popconfirm,
-  Space,
-  Table,
-  Typography,
-  message,
-} from "antd";
-import type { ColumnsType } from "antd/es/table";
-import { ArrowLeftOutlined, CheckOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
+import { Alert, App, Button, Card, DatePicker, Flex, Input, InputNumber, Table } from "antd";
+import type { ColumnsType } from "antd/es/table";
 import ErpLayout from "@/components/ErpLayout";
 import { receivingApi, ReceivingDetailInput } from "@/lib/api";
-
-const { Text } = Typography;
 
 export default function ReceivingProcessPage() {
   const { poId } = useParams<{ poId: string }>();
   const router = useRouter();
+  const { message, modal } = App.useApp();
 
   const [rows, setRows] = useState<ReceivingDetailInput[]>([]);
   const [memo, setMemo] = useState("");
@@ -50,22 +37,14 @@ export default function ReceivingProcessPage() {
       .catch((e: Error) => setError(e.message));
   }, [poId]);
 
-  const updateRow = (
-    index: number,
-    field: keyof ReceivingDetailInput,
-    value: string | number,
-  ) => {
-    setRows((prev) =>
-      prev.map((row, rowIndex) =>
-        rowIndex === index ? { ...row, [field]: value } : row,
-      ),
-    );
+  const updateRow = (index: number, field: keyof ReceivingDetailInput, value: string | number) => {
+    setRows((prev) => prev.map((row, i) => (i === index ? { ...row, [field]: value } : row)));
   };
 
-  const isExpired = (date: string) =>
-    date !== "" && dayjs(date).isBefore(dayjs(), "day");
+  const isExpired = (date: string) => !!date && dayjs(date).isBefore(dayjs().startOf("day"));
+  const hasExpiredRow = rows.some((row) => isExpired(row.expiryDate));
 
-  const handleSubmit = async () => {
+  const submit = async () => {
     for (const row of rows) {
       if (!row.lotNo.trim()) {
         message.warning(`${row.productName}: 로트번호를 입력해주세요.`);
@@ -73,153 +52,141 @@ export default function ReceivingProcessPage() {
       }
 
       if (!row.expiryDate) {
-        message.warning(`${row.productName}: 유효기간을 입력해주세요.`);
+        message.warning(`${row.productName}: 유효기한을 입력해주세요.`);
         return;
       }
 
       if (isExpired(row.expiryDate)) {
-        message.warning(`${row.productName}: 이미 지난 유효기간입니다.`);
+        message.warning(`${row.productName}: 유효기한이 이미 만료된 날짜입니다.`);
         return;
       }
 
       if (!row.receivedQty || row.receivedQty < 1) {
-        message.warning(`${row.productName}: 입고수량을 확인해주세요.`);
+        message.warning(`${row.productName}: 입고 수량을 확인해주세요.`);
         return;
       }
     }
 
-    setProcessing(true);
+    modal.confirm({
+      title: "입고 처리",
+      content: "입고 처리하시겠습니까? 처리 후 LOT 재고와 재고 이동 이력이 생성됩니다.",
+      okText: "입고 처리",
+      cancelText: "취소",
+      onOk: async () => {
+        setProcessing(true);
 
-    try {
-      await receivingApi.process({
-        poId: Number(poId),
-        memo: memo || undefined,
-        details: rows.map(({ productName, orderQty, ...rest }) => rest),
-      });
+        try {
+          await receivingApi.process({
+            poId: Number(poId),
+            memo: memo || undefined,
+            details: rows.map((row) => ({
+              productId: row.productId,
+              lotNo: row.lotNo,
+              expiryDate: row.expiryDate,
+              receivedQty: row.receivedQty,
+              unitPrice: row.unitPrice,
+            })),
+          });
 
-      message.success("입고 처리가 완료되었습니다.");
-      router.push("/purchase-orders/recevings");
-    } catch (e) {
-      message.error((e as Error).message);
-    } finally {
-      setProcessing(false);
-    }
+          message.success("입고 처리가 완료되었습니다.");
+          router.push("/purchase-orders/recevings");
+        } catch (e) {
+          message.error((e as Error).message);
+        } finally {
+          setProcessing(false);
+        }
+      },
+    });
   };
 
-  const columns: ColumnsType<ReceivingDetailInput> = [
-    {
-      title: "상품명",
-      dataIndex: "productName",
-      render: (value) => <Text strong>{value}</Text>,
-    },
-    {
-      title: "발주수량",
-      dataIndex: "orderQty",
-      align: "right",
-      width: 110,
-      render: (value) => value?.toLocaleString(),
-    },
-    {
-      title: "로트번호",
-      dataIndex: "lotNo",
-      width: 180,
-      render: (value, _row, index) => (
-        <Input
-          placeholder="LOT-2606-A01"
-          value={value}
-          onChange={(e) => updateRow(index, "lotNo", e.target.value)}
-        />
-      ),
-    },
-    {
-      title: "유효기간",
-      dataIndex: "expiryDate",
-      width: 180,
-      render: (value, _row, index) => (
-        <DatePicker
-          value={value ? dayjs(value) : null}
-          status={isExpired(value) ? "error" : undefined}
-          style={{ width: "100%" }}
-          onChange={(date) =>
-            updateRow(index, "expiryDate", date ? date.format("YYYY-MM-DD") : "")
-          }
-        />
-      ),
-    },
-    {
-      title: "입고수량",
-      dataIndex: "receivedQty",
-      width: 130,
-      render: (value, _row, index) => (
-        <InputNumber
-          min={1}
-          value={value}
-          style={{ width: "100%" }}
-          onChange={(nextValue) =>
-            updateRow(index, "receivedQty", nextValue ?? 0)
-          }
-        />
-      ),
-    },
-  ];
-
-  const hasExpiredItem = rows.some((row) => isExpired(row.expiryDate));
+  const columns = useMemo<ColumnsType<ReceivingDetailInput>>(
+    () => [
+      {
+        title: "상품명",
+        dataIndex: "productName",
+      },
+      {
+        title: "발주수량",
+        dataIndex: "orderQty",
+        align: "right",
+      },
+      {
+        title: "로트번호",
+        width: 180,
+        render: (_, row, index) => (
+          <Input
+            placeholder="LOT-2606-A01"
+            value={row.lotNo}
+            onChange={(e) => updateRow(index, "lotNo", e.target.value)}
+          />
+        ),
+      },
+      {
+        title: "유효기한",
+        width: 180,
+        render: (_, row, index) => (
+          <DatePicker
+            style={{ width: "100%" }}
+            value={row.expiryDate ? dayjs(row.expiryDate) : null}
+            status={isExpired(row.expiryDate) ? "error" : undefined}
+            disabledDate={(current) => !!current && current.isBefore(dayjs().startOf("day"))}
+            onChange={(date) => updateRow(index, "expiryDate", date ? date.format("YYYY-MM-DD") : "")}
+          />
+        ),
+      },
+      {
+        title: "입고수량",
+        width: 130,
+        render: (_, row, index) => (
+          <InputNumber
+            min={1}
+            value={row.receivedQty}
+            style={{ width: "100%" }}
+            onChange={(value) => updateRow(index, "receivedQty", value ?? 1)}
+          />
+        ),
+      },
+    ],
+    [],
+  );
 
   return (
-    <ErpLayout title={`입고 처리 - PO-${String(poId).padStart(4, "0")}`}>
-      <Space direction="vertical" size={16} style={{ width: "100%" }}>
-        <Button icon={<ArrowLeftOutlined />} onClick={() => router.back()}>
-          목록으로
-        </Button>
+    <ErpLayout title={`입고 처리 PO-${String(poId).padStart(4, "0")}`}>
+      <Button style={{ alignSelf: "flex-start" }} onClick={() => router.push("/purchase-orders/recevings")}>
+        입고 목록으로
+      </Button>
 
-        {error && <Alert type="error" message={error} showIcon />}
+      {error && <Alert type="error" showIcon message={error} />}
 
+      <Card title="입고 품목">
         <Table
-          rowKey="productId"
+          rowKey={(row) => String(row.productId)}
           columns={columns}
           dataSource={rows}
           pagination={false}
-          locale={{ emptyText: "입고할 품목이 없습니다." }}
+          locale={{ emptyText: "입고 처리할 품목이 없습니다." }}
         />
+      </Card>
 
-        {hasExpiredItem && (
-          <Alert
-            type="warning"
-            message="유효기간이 지난 품목이 있습니다. 날짜를 확인해주세요."
-            showIcon
-          />
-        )}
+      {hasExpiredRow && (
+        <Alert
+          type="warning"
+          showIcon
+          message="유효기한이 이미 만료된 품목이 있습니다."
+          description="날짜를 확인하고 다시 입력해주세요."
+        />
+      )}
 
-        <Space direction="vertical" size={6} style={{ width: "100%" }}>
-          <Text strong>메모</Text>
-          <Input
-            placeholder="입고 관련 메모를 입력하세요"
-            value={memo}
-            onChange={(e) => setMemo(e.target.value)}
-          />
-        </Space>
+      <Card title="메모">
+        <Input placeholder="입고 관련 메모를 입력하세요" value={memo} onChange={(e) => setMemo(e.target.value)} />
+      </Card>
 
-        <Space style={{ width: "100%", justifyContent: "flex-end" }}>
-          <Button onClick={() => router.back()}>취소</Button>
-
-          <Popconfirm
-            title="입고 처리"
-            description="입고 처리 후 재고 로트를 생성하시겠습니까?"
-            okText="처리"
-            cancelText="취소"
-            onConfirm={handleSubmit}
-          >
-            <Button
-              type="primary"
-              icon={<CheckOutlined />}
-              loading={processing}
-              disabled={rows.length === 0}
-            >
-              입고 완료
-            </Button>
-          </Popconfirm>
-        </Space>
-      </Space>
+      <Flex justify="flex-end" gap={8}>
+        <Button onClick={() => router.push("/purchase-orders/recevings")}>취소</Button>
+        <Button type="primary" loading={processing} disabled={rows.length === 0} onClick={submit}>
+          입고 처리 완료
+        </Button>
+      </Flex>
     </ErpLayout>
   );
 }

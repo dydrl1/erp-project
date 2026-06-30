@@ -48,11 +48,12 @@ public class SettlementController {
     @Operation(summary = "미수금 조회")
     @GetMapping("/receivables")
     public ResponseEntity<ApiResponse<List<AccountReceivableVO>>> getAccountReceivableList(
+            @RequestParam(required = false) String customerName,
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String startDate,
             @RequestParam(required = false) String endDate) {
         return ResponseEntity.ok(
-                ApiResponse.success(settlementService.getAccountReceivableList(status, startDate, endDate))
+                ApiResponse.success(settlementService.getAccountReceivableList(customerName, status, startDate, endDate))
         );
     }
 

@@ -1,4 +1,3 @@
-// components/EmployeeStatusBadge.tsx — 직원 계정 상태 뱃지
 import type { EmployeeStatus } from "@/lib/api";
 
 const LABELS: Record<EmployeeStatus, string> = {

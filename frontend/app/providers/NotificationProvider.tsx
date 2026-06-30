@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import { createContext, useCallback, useEffect, useMemo, useState } from "react";
-import { notification } from "antd";
-import { Client, IMessage } from "@stomp/stompjs";
-import { alertApi, type NotificationMessage } from "@/lib/api";
-import { userStorage } from "@/lib/api-client";
+import { createContext, useCallback, useEffect, useMemo, useState, useRef } from 'react';
+import { notification } from 'antd';
+import { Client, IMessage } from '@stomp/stompjs';
+import { alertApi, type NotificationMessage } from '@/lib/api';
+import { userStorage } from '@/lib/api-client';
 
 interface NotificationContextValue {
   notifications: NotificationMessage[];
@@ -20,12 +20,10 @@ export const NotificationContext = createContext<NotificationContextValue | null
 export function NotificationProvider({ children }: { children: React.ReactNode }) {
   const [notificationApi, contextHolder] = notification.useNotification();
   const [notifications, setNotifications] = useState<NotificationMessage[]>([]);
+  const receivedIdsRef = useRef<Set<number>>(new Set());
   const [drawerOpen, setDrawerOpen] = useState(false);
 
-  const unreadCount = useMemo(
-    () => notifications.filter((item) => !item.isRead).length,
-    [notifications],
-  );
+  const unreadCount = useMemo(() => notifications.filter((item) => !item.isRead).length, [notifications]);
 
   const openDrawer = useCallback(() => {
     setDrawerOpen(true);
@@ -36,15 +34,13 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   }, []);
 
   const markAsRead = useCallback(async (notificationId: number) => {
-    const user = userStorage.get();
-
     try {
-      await alertApi.markRead(notificationId, user?.empId ?? 0);
+      await alertApi.markRead(notificationId);
       setNotifications((prev) =>
         prev.map((item) => (item.notificationId === notificationId ? { ...item, isRead: true } : item)),
       );
     } catch (error) {
-      console.error("Failed to mark notification as read:", error);
+      console.error('Failed to mark notification as read:', error);
     }
   }, []);
 
@@ -52,6 +48,10 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     (message: IMessage) => {
       try {
         const received = JSON.parse(message.body) as NotificationMessage;
+        if (receivedIdsRef.current.has(received.notificationId)) {
+          return;
+        }
+        receivedIdsRef.current.add(received.notificationId);
         const newItem: NotificationMessage = {
           notificationId: received.notificationId,
           level: received.level,
@@ -59,6 +59,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
           content: received.content,
           dateTime: received.dateTime,
           isRead: false,
+          alertType: received.alertType,
         };
 
         setNotifications((prev) => {
@@ -69,26 +70,55 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
         notificationApi.warning({
           message: getNotificationTitle(received.level),
           description: received.content,
-          placement: "topRight",
+          placement: 'topRight',
           duration: 15,
         });
       } catch (error) {
-        console.error("Failed to parse notification message:", error);
+        console.error('Failed to parse notification message:', error);
       }
     },
     [notificationApi],
   );
+  useEffect(() => {
+    const loginId = Number(localStorage.getItem('empId'));
+    if (!loginId) return;
+    alertApi
+      .list()
+      .then((result) => {
+        const mapped: NotificationMessage[] = result.map((item) => ({
+          notificationId: item.alertId,
+          level: item.alertLevel ?? 'INFO',
+          alertType: item.alertType,
+          receiver: item.deptCode ?? '',
+          content: item.message,
+          dateTime: item.createdAt,
+          isRead: item.isRead === 'Y',
+        }));
+        setNotifications(mapped);
+        receivedIdsRef.current = new Set(mapped.map((item) => item.notificationId));
+      })
+      .catch((error) => {
+        console.error('기존 알림 조회 실패: ', error);
+      });
+  }, []);
 
   useEffect(() => {
     const user = userStorage.get();
-    const role = user?.role ?? "";
-    const department = user?.deptCode ?? "";
+    const role = user?.role ?? '';
+    const department = user?.deptCode ?? '';
+
+    // WS 주소: NEXT_PUBLIC_API_URL이 있으면 그걸(http→ws), 없으면(상대경로 배포)
+    // 현재 접속한 호스트 기준으로 same-origin 연결 (Ingress가 /ws-connect를 백엔드로 라우팅).
+    const apiBase = process.env.NEXT_PUBLIC_API_URL;
+    const wsUrl = apiBase
+      ? apiBase.replace(/^http/, 'ws') + '/ws-connect'
+      : `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}/ws-connect`;
 
     const client = new Client({
-      brokerURL: "ws://localhost:8080/ws-connect",
+      brokerURL: wsUrl,
       reconnectDelay: 5000,
       onConnect: () => {
-        client.subscribe("/topic/notifications", handleMessage);
+        client.subscribe('/topic/notifications', handleMessage);
         if (department) {
           client.subscribe(`/topic/departments/${department}/notifications`, handleMessage);
         }
@@ -97,10 +127,17 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
         }
       },
       onStompError: (frame) => {
-        console.error("STOMP error:", frame);
+        console.error('STOMP error:', frame);
       },
       onWebSocketError: (error) => {
-        console.error("WebSocket error:", error);
+        console.error('WebSocket error:', error);
+      },
+      onWebSocketClose: (event) => {
+        console.error('소켓종료', {
+          code: event.code,
+          reason: event.reason,
+          wasClean: event.wasClean,
+        });
       },
     });
 
@@ -131,19 +168,15 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   );
 }
 
-function getNotificationTitle(alertType?: string) {
-  switch (alertType) {
-    case "SAFETY_STOCK_LOW":
-      return "Safety stock low";
-    case "EXPIRED":
-      return "Expired";
-    case "EXPIRY_10":
-      return "Expires within 10 days";
-    case "EXPIRY_30":
-      return "Expires within 30 days";
-    case "EXPIRY_90":
-      return "Expires within 90 days";
+function getNotificationTitle(level: string) {
+  switch (level) {
+    case 'CRITICAL':
+      return '심각';
+    case 'WARNING':
+      return '주의';
+    case 'INFO':
+      return '안내';
     default:
-      return "New notification";
+      return '새로운 알림';
   }
 }

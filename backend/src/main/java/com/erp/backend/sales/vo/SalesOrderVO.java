@@ -10,9 +10,9 @@ public class SalesOrderVO {
     Integer soId;
     Integer customerId;
     String customerName;
-    Integer reqEmployeeId;
+    long reqEmployeeId;
     String reqEmployeeName;
-    Integer appEmployeeId;
+    long appEmployeeId;
     String appEmployeeName;
     LocalDateTime orderDate;
     LocalDateTime approveDate;

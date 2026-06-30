@@ -1,47 +1,38 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import ErpLayout from "@/components/ErpLayout";
-import "../../settlement.css";
-
-type CustomerInfo = {
-  customerId: number;
-  customerName: string;
-  monthSalesAmount: number;
-  remainAmount: number;
-  creditLimit: number;
-  creditBalance: number;
-};
+import {
+  CustomerReceivableSummary,
+  settlementInvoiceApi,
+  settlementReceivableApi,
+} from "@/lib/api";
+import "../../../settlement.css";
 
 export default function SalesInvoiceNewPage() {
-
   const router = useRouter();
-  const params = useParams();
-  const customerId = params.customerId as string;
-  const [customer, setCustomer] = useState<CustomerInfo | null>(null);
+  const params = useParams<{ customerId: string }>();
+  const customerId = params.customerId;
+
+  const [customer, setCustomer] = useState<CustomerReceivableSummary | null>(null);
+  const [soId, setSoId] = useState("");
   const [issueDate, setIssueDate] = useState("");
   const [totalAmount, setTotalAmount] = useState("");
-  const [status, setStatus] = useState("PENDING");
   const [loading, setLoading] = useState(true);
 
-  const formatMoney = (value?: number) => {
-    return `${(value ?? 0).toLocaleString()}원`;
-  };
+  const formatMoney = (value?: number) => `${(value ?? 0).toLocaleString()}원`;
 
   useEffect(() => {
     if (!customerId) {
-      const timer = setTimeout(() => setLoading(false), 0);
-      return () => clearTimeout(timer);
+      setLoading(false);
+      return;
     }
 
-    fetch("http://localhost:8080/api/settlement/receivables/customer-summary")
-      .then((res) => res.json())
-      .then((res) => {
-        const list: CustomerInfo[] = res.data ?? [];
-        const selected = list.find(
-          (item) => String(item.customerId) === String(customerId)
-        );
+    settlementReceivableApi
+      .customerSummary()
+      .then((list) => {
+        const selected = (list ?? []).find((item) => String(item.customerId) === String(customerId));
         setCustomer(selected ?? null);
       })
       .catch((err) => {
@@ -58,31 +49,24 @@ export default function SalesInvoiceNewPage() {
       return;
     }
 
-    if (!issueDate || !totalAmount) {
-      alert("청구일자와 청구금액을 입력해주세요.");
+    if (!soId || !issueDate || !totalAmount) {
+      alert("판매주문번호, 청구일자, 청구금액을 입력해주세요.");
       return;
     }
 
-    const body = {
-      customerId: Number(customerId),
-      soId: Date.now() % 100000,
-      issueDate,
-      totalAmount: Number(totalAmount),
-      status,
-    };
+    const amount = Number(totalAmount);
+    if (Number(soId) <= 0 || amount <= 0) {
+      alert("판매주문번호와 청구금액은 0보다 커야 합니다.");
+      return;
+    }
 
-    fetch("http://localhost:8080/api/settlement/invoices", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(body),
-    })
-      .then((res) => {
-        if (!res.ok) {
-          throw new Error("매출청구 등록 실패");
-        }
-        return res.json().catch(() => null);
+    settlementInvoiceApi
+      .create({
+        customerId: Number(customerId),
+        soId: Number(soId),
+        issueDate,
+        totalAmount: amount,
+        status: "ISSUED",
       })
       .then(() => {
         alert("매출청구가 등록되었습니다.");
@@ -90,7 +74,7 @@ export default function SalesInvoiceNewPage() {
       })
       .catch((err) => {
         console.error(err);
-        alert("매출청구 등록 중 오류가 발생했습니다.");
+        alert(err.message || "매출청구 등록 중 오류가 발생했습니다.");
       });
   };
 
@@ -131,9 +115,7 @@ export default function SalesInvoiceNewPage() {
                 </div>
               </div>
             ) : (
-              <p style={{ color: "var(--erp-text-muted)" }}>
-                거래처 정보를 찾을 수 없습니다.
-              </p>
+              <p style={{ color: "var(--erp-text-muted)" }}>거래처 정보를 찾을 수 없습니다.</p>
             )}
           </div>
 
@@ -142,9 +124,19 @@ export default function SalesInvoiceNewPage() {
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
               <div>
-                <p style={{ fontSize: 13, color: "var(--erp-text-muted)" }}>
-                  청구일자
-                </p>
+                <p style={{ fontSize: 13, color: "var(--erp-text-muted)" }}>판매주문번호</p>
+                <input
+                  className="erp-input"
+                  type="number"
+                  value={soId}
+                  onChange={(e) => setSoId(e.target.value)}
+                  placeholder="판매주문번호 입력"
+                  style={{ width: "100%" }}
+                />
+              </div>
+
+              <div>
+                <p style={{ fontSize: 13, color: "var(--erp-text-muted)" }}>청구일자</p>
                 <input
                   className="erp-input"
                   type="date"
@@ -155,9 +147,7 @@ export default function SalesInvoiceNewPage() {
               </div>
 
               <div>
-                <p style={{ fontSize: 13, color: "var(--erp-text-muted)" }}>
-                  청구금액
-                </p>
+                <p style={{ fontSize: 13, color: "var(--erp-text-muted)" }}>청구금액</p>
                 <input
                   className="erp-input"
                   type="number"
@@ -169,27 +159,15 @@ export default function SalesInvoiceNewPage() {
               </div>
 
               <div>
-                <p style={{ fontSize: 13, color: "var(--erp-text-muted)" }}>
-                  상태
-                </p>
-                <select
-                  className="erp-select"
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value)}
-                  style={{ width: "100%" }}
-                >
-                  <option value="PENDING">대기</option>
-                  <option value="APPROVED">승인</option>
-                  <option value="PAID">완납</option>
+                <p style={{ fontSize: 13, color: "var(--erp-text-muted)" }}>상태</p>
+                <select className="erp-select" value="ISSUED" disabled style={{ width: "100%" }}>
+                  <option value="ISSUED">ISSUED</option>
                 </select>
               </div>
             </div>
 
             <div className="erp-page-actions">
-              <button
-                className="erp-btn"
-                onClick={() => router.push("/settlement/invoices")}
-              >
+              <button className="erp-btn" onClick={() => router.push("/settlement/invoices")}>
                 목록
               </button>
 
