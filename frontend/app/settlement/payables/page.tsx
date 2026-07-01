@@ -3,20 +3,8 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import ErpLayout from "@/components/ErpLayout";
+import { AccountPayable, settlementPayableApi } from "@/lib/api";
 import "../settlement.css";
-
-type AccountPayable = {
-    apId: number;
-    purchaseInvoiceId: number;
-    supplierId: number;
-    supplierName: string;
-    dueDate: string;
-    totalAmount: number;
-    paidAmount: number;
-    remainAmount: number;
-    status: string;
-    createdAt: string;
-};
 
 export default function PayablesPage() {
     const router = useRouter();
@@ -41,35 +29,45 @@ export default function PayablesPage() {
     const formatMoney = (value?: number) => {
         return `${(value ?? 0).toLocaleString()}원`;
     };
+
+    const isDelayed = (dueDate?: string, remainAmount?: number) => {
+        if (!dueDate || (remainAmount ?? 0) <= 0) return false;
+
+        const today = new Date();
+        const due = new Date(dueDate);
+
+        today.setHours(0, 0, 0, 0);
+        due.setHours(0, 0, 0, 0);
+
+        return due < today;
+    };
     
     const fetchList = () => {
         setLoading(true);
-        
-        const params = new URLSearchParams();
-        if (status) params.append("status", status);
-        if (supplierName) params.append("supplierName", supplierName);
-        if (startDate) params.append("startDate", startDate);
-        if (endDate) params.append("endDate", endDate);
-        
-        const query = params.toString() ? `?${params.toString()}` : "";
-        
-        fetch(`http://localhost:8080/api/settlement/payables${query}`)
-        .then((res) => res.json())
-        .then((res) => {
-            setList(res.data ?? []);
-            setPage(1);
-        })
-        .catch((err) => {
-            console.error("미지급금 조회 실패:", err);
-        })
-        .finally(() => {
-            setLoading(false);
-        });
+
+        settlementPayableApi
+            .list({
+                supplierName,
+                status,
+                startDate,
+                endDate,
+            })
+            .then((data) => {
+                setList(data ?? []);
+                setPage(1);
+            })
+            .catch((err) => {
+                console.error("미지급금 조회 실패:", err);
+            })
+            .finally(() => {
+                setLoading(false);
+            });
     };
     
     useEffect(() => {
         const timer = setTimeout(fetchList, 0);
         return () => clearTimeout(timer);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
     
     return (
@@ -174,7 +172,26 @@ export default function PayablesPage() {
                                     <td className="num">{formatMoney(item.totalAmount)}</td>
                                     <td className="num">{formatMoney(item.paidAmount)}</td>
                                     <td className="num">{formatMoney(item.remainAmount)}</td>
-                                    <td>{item.status}</td>
+                                    <td>
+                                        {item.status}
+                                        {isDelayed(item.dueDate, item.remainAmount) && (
+                                            <span
+                                                style={{
+                                                    display: "inline-block",
+                                                    marginLeft: 8,
+                                                    padding: "2px 8px",
+                                                    borderRadius: 999,
+                                                    backgroundColor: "#fef3c7",
+                                                    color: "#92400e",
+                                                    fontSize: 12,
+                                                    fontWeight: 600,
+                                                    lineHeight: 1.4,
+                                                }}
+                                            >
+                                                지연
+                                            </span>
+                                        )}
+                                    </td>
                                     <td>
                                         <button
                                             className="erp-btn primary"

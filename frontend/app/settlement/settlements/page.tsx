@@ -3,21 +3,8 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import ErpLayout from "@/components/ErpLayout";
+import { settlementApi, Settlement } from "@/lib/api";
 import "../settlement.css";
-
-type Settlement = {
-    settlementId: number;
-    startDate: string;
-    endDate: string;
-    totalPurchase: number;
-    totalSales: number;
-    totalReceivable: number;
-    totalPayable: number;
-    grossProfit: number;
-    profitRate: number;
-    createdBy: number;
-    createdAt: string;
-};
 
 export default function SettlementListPage() {
     const router = useRouter();
@@ -27,41 +14,31 @@ export default function SettlementListPage() {
     const [endDate, setEndDate] = useState("");
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(1);
-    
+
     const pageSize = 10;
     const totalPages = Math.max(1, Math.ceil(list.length / pageSize));
     const pagedList = list.slice((page - 1) * pageSize, page * pageSize);
-    
+
     const pageNumbers = Array.from(
         { length: Math.min(totalPages, 10) },
         (_, i) => i + 1
     );
-    
+
     const formatMoney = (value?: number) => {
         return `${(value ?? 0).toLocaleString()}원`;
     };
-    
-    const formatRate = (value?: number) => {
-        return `${(value ?? 0).toFixed(2)}%`;
-    };
-    
+
     const fetchList = () => {
         setLoading(true);
-        
-        const params = new URLSearchParams();
-        if (startDate) params.append("startDate", startDate);
-        if (endDate) params.append("endDate", endDate);
-        
-        const query = params.toString() ? `?${params.toString()}` : "";
-        
-        fetch(`http://localhost:8080/api/settlement/settlements${query}`)
-        .then((res) => res.json())
-        .then((res) => {
-            setList(res.data ?? []);
+
+        settlementApi
+        .list(startDate, endDate)
+        .then((data) => {
+            setList(data ?? []);
             setPage(1);
         })
         .catch((err) => {
-            console.error("손익정산 조회 실패:", err);
+            console.error("손익정산 목록 조회 실패:", err);
         })
         .finally(() => {
             setLoading(false);
@@ -71,8 +48,9 @@ export default function SettlementListPage() {
     useEffect(() => {
         const timer = setTimeout(fetchList, 0);
         return () => clearTimeout(timer);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
-    
+
     return (
         <ErpLayout title="손익정산 목록">
             <div className="erp-filter">
@@ -97,9 +75,9 @@ export default function SettlementListPage() {
                 <button
                     className="erp-btn"
                     onClick={() => {
-                        setStartDate("");
-                        setEndDate("");
-                        setTimeout(fetchList, 0);
+                    setStartDate("");
+                    setEndDate("");
+                    setTimeout(fetchList, 0);
                     }}
                 >
                     초기화
@@ -120,12 +98,12 @@ export default function SettlementListPage() {
                             <th>정산번호</th>
                             <th>시작일</th>
                             <th>종료일</th>
-                            <th className="num">총매출</th>
-                            <th className="num">총매입</th>
-                            <th className="num">총미수금</th>
-                            <th className="num">총미지급금</th>
+                            <th className="num">총 매출</th>
+                            <th className="num">총 매입</th>
+                            <th className="num">미수금</th>
+                            <th className="num">미지급금</th>
                             <th className="num">매출총이익</th>
-                            <th className="num">이익률</th>
+                            <th>이익률</th>
                         </tr>
                     </thead>
 
@@ -139,13 +117,13 @@ export default function SettlementListPage() {
                         ) : list.length === 0 ? (
                             <tr>
                                 <td colSpan={9} style={{ textAlign: "center", padding: 40 }}>
-                                    조회된 손익정산 내역이 없습니다.
+                                    조회된 손익정산이 없습니다.
                                 </td>
                             </tr>
                         ) : (
                             pagedList.map((item) => (
                                 <tr key={item.settlementId}>
-                                    <td>SET-{String(item.settlementId).padStart(4, "0")}</td>
+                                    <td>ST-{String(item.settlementId).padStart(4, "0")}</td>
                                     <td>{item.startDate?.slice(0, 10)}</td>
                                     <td>{item.endDate?.slice(0, 10)}</td>
                                     <td className="num">{formatMoney(item.totalSales)}</td>
@@ -153,7 +131,7 @@ export default function SettlementListPage() {
                                     <td className="num">{formatMoney(item.totalReceivable)}</td>
                                     <td className="num">{formatMoney(item.totalPayable)}</td>
                                     <td className="num">{formatMoney(item.grossProfit)}</td>
-                                    <td className="num">{formatRate(item.profitRate)}</td>
+                                    <td>{item.profitRate ?? 0}%</td>
                                 </tr>
                             ))
                         )}
@@ -166,7 +144,7 @@ export default function SettlementListPage() {
                             display: "flex",
                             justifyContent: "center",
                             alignItems: "center",
-                            gap: 4,
+                            gap: 8,
                             padding: 12,
                         }}
                     >
@@ -185,10 +163,10 @@ export default function SettlementListPage() {
                                 onClick={() => setPage(p)}
                                 style={{
                                     background: p === page ? "var(--erp-primary)" : "#fff",
-                                    color: p === page ? "#fff" : "var(--erp-text)",                                            borderColor:
-                                        p === page ? "var(--erp-primary)" : "var(--erp-line)",
-                                        minWidth: 36,
-                                    }}
+                                    color: p === page ? "#fff" : "var(--erp-text)",
+                                    borderColor: p === page ? "var(--erp-primary)" : "var(--erp-line)",
+                                    minWidth: 36,
+                                }}
                             >
                                 {p}
                             </button>

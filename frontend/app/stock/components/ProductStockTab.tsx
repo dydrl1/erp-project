@@ -70,7 +70,7 @@ export default function ProductStockTab() {
       sorter: (a, b) => a.productCode.localeCompare(b.productCode),
     },
     {
-      title: '상품명',
+      title: '제품명',
       dataIndex: 'productName',
     },
     {
@@ -117,7 +117,7 @@ export default function ProductStockTab() {
           }}
         >
           <Input
-            placeholder="상품명"
+            placeholder="제품명"
             value={productName}
             onChange={(e) => setProductName(e.target.value)}
             onPressEnter={handleSearch}

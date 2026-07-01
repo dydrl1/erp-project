@@ -85,7 +85,7 @@ export default function ProductPage() {
         </select>
         <input
           className="erp-input"
-          placeholder="상품명 · 상품코드 검색"
+          placeholder="제품명 · 상품코드 검색"
           value={keyword}
           onChange={(e) => setKeyword(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && apply()}
@@ -109,7 +109,7 @@ export default function ProductPage() {
         <table className="erp-table">
           <thead>
             <tr>
-              <th>상품코드</th><th>상품명</th><th>제조사</th><th>단위</th><th>구분</th><th>보관</th>
+              <th>상품코드</th><th>제품명</th><th>제조사</th><th>단위</th><th>구분</th><th>보관</th>
               <th className="num">매입가</th><th className="num">판매가</th>
             </tr>
           </thead>

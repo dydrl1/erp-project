@@ -3,34 +3,39 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import ErpLayout from "@/components/ErpLayout";
+import {
+  AccountReceivable,
+  settlementPaymentApi,
+  settlementReceivableApi,
+  userStorage
+} from "@/lib/api";
 import "../../../settlement.css";
-
-type ReceivableInfo = {
-  arId: number;
-  customerId: number;
-  customerName: string;
-  totalAmount: number;
-  paidAmount: number;
-  remainAmount: number;
-  dueDate: string;
-  status: string;
-};
 
 export default function PaymentNewPage() {
   const router = useRouter();
   const params = useParams();
   const arId = params.arId as string;
 
-  const [receivable, setReceivable] = useState<ReceivableInfo | null>(null);
+  const [receivable, setReceivable] = useState<AccountReceivable | null>(null);
   const [paymentDate, setPaymentDate] = useState("");
   const [paymentAmount, setPaymentAmount] = useState("");
   const [paymentType, setPaymentType] = useState("계좌이체");
-  const createdBy = 1; // TODO: 로그인 연동 시 사용자 ID로 변경
-  //const userId = localStorage.getItem("userId");
   const [loading, setLoading] = useState(true);
 
   const formatMoney = (value?: number) => {
     return `${(value ?? 0).toLocaleString()}원`;
+  };
+
+  const isOverdue = (dueDate?: string, remainAmount?: number) => {
+    if (!dueDate || (remainAmount ?? 0) <= 0) return false;
+
+    const today = new Date();
+    const due = new Date(dueDate);
+
+    today.setHours(0, 0, 0, 0);
+    due.setHours(0, 0, 0, 0);
+
+    return due < today;
   };
 
   useEffect(() => {
@@ -39,10 +44,10 @@ export default function PaymentNewPage() {
       return () => clearTimeout(timer);
     }
 
-    fetch(`http://localhost:8080/api/settlement/receivables/${arId}`)
-      .then((res) => res.json())
-      .then((res) => {
-        setReceivable(res.data ?? null);
+    settlementReceivableApi
+      .detail(Number(arId))
+      .then((data) => {
+        setReceivable(data ?? null);
       })
       .catch((err) => {
         console.error("미수금 상세 조회 실패:", err);
@@ -63,6 +68,13 @@ export default function PaymentNewPage() {
       return;
     }
 
+    const user = userStorage.get();
+
+    if (!user) {
+      alert("로그인 사용자 정보를 찾을 수 없습니다.");
+      return;
+    }
+
     const amount = Number(paymentAmount);
 
     if (amount <= 0) {
@@ -76,38 +88,25 @@ export default function PaymentNewPage() {
     }
 
     const body = {
-        arId: receivable.arId,
-        customerId: receivable.customerId,
-        paymentDate,
-        paymentAmount: amount,
-        paymentType,
-        createdBy: 1,
-        //createdBy: Number(userId),
+      arId: receivable.arId,
+      customerId: receivable.customerId,
+      paymentDate,
+      paymentAmount: amount,
+      paymentType,
+      createdBy: user.empId,
     };
 
-    fetch("http://localhost:8080/api/settlement/payments", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify(body),
-    })
-        .then(async (res) => {
-            if (!res.ok) {
-                const errorText = await res.text();
-                throw new Error(errorText || "수금 처리 실패");
-            }
-            return res.text();
-        })
-        .then(() => {
-            alert("수금 처리가 완료되었습니다.");
-            router.push("/settlement/payments/history");
-        })
-        .catch((err) => {
-            console.error(err);
-            alert("수금 처리 중 오류가 발생했습니다.");
-        });
-    };
+    settlementPaymentApi
+      .create(body)
+      .then(() => {
+        alert("수금 처리가 완료되었습니다.");
+        router.push("/settlement/payments/history");
+      })
+      .catch((err) => {
+        console.error(err);
+        alert(err.message || "수금 처리 중 오류가 발생했습니다.");
+      });
+  };
 
   return (
     <ErpLayout title="수금 등록">
@@ -142,12 +141,31 @@ export default function PaymentNewPage() {
 
                 <div className="erp-card">
                   <p>만기일</p>
-                  <strong>{receivable.dueDate}</strong>
+                  <strong>{receivable.dueDate?.slice(0, 10)}</strong>
                 </div>
 
                 <div className="erp-card">
                   <p>상태</p>
-                  <strong>{receivable.status}</strong>
+                  <strong>
+                    {receivable.status}
+                    {isOverdue(receivable.dueDate, receivable.remainAmount) && (
+                      <span
+                        style={{
+                          display: "inline-block",
+                          marginLeft: 8,
+                          padding: "2px 8px",
+                          borderRadius: 999,
+                          backgroundColor: "#fee2e2",
+                          color: "#b91c1c",
+                          fontSize: 12,
+                          fontWeight: 600,
+                          lineHeight: 1.4,
+                        }}
+                      >
+                        연체
+                      </span>
+                    )}
+                  </strong>
                 </div>
               </div>
             ) : (
@@ -203,13 +221,12 @@ export default function PaymentNewPage() {
                   <option value="카드">카드</option>
                 </select>
               </div>
-
             </div>
 
             <div className="erp-page-actions">
               <button
                 className="erp-btn"
-                onClick={() => router.push("/settlement/payments")}
+                onClick={() => router.push("/settlement/receivables")}
               >
                 목록
               </button>

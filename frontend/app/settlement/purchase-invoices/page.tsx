@@ -1,21 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import ErpLayout from "@/components/ErpLayout";
+import { PurchaseInvoice, settlementPurchaseInvoiceApi } from "@/lib/api";
 import "../settlement.css";
 
-type PurchaseInvoice = {
-    purchaseInvoiceId: number;
-    poId: number;
-    supplierId: number;
-    supplierName: string;
-    issueDate: string;
-    totalAmount: number;
-    status: string;
-    createdAt: string;
-};
-
 export default function PurchaseInvoiceListPage() {
+    const router = useRouter();
     const [list, setList] = useState<PurchaseInvoice[]>([]);
     const [supplierName, setSupplierName] = useState("");
     const [status, setStatus] = useState("");
@@ -40,32 +32,29 @@ export default function PurchaseInvoiceListPage() {
     const fetchList = () => {
         setLoading(true);
         
-        const params = new URLSearchParams();
-
-        if (supplierName) params.append("supplierName", supplierName);
-        if (status) params.append("status", status);
-        if (startDate) params.append("startDate", startDate);
-        if (endDate) params.append("endDate", endDate);
-
-        const query = params.toString() ? `?${params.toString()}` : "";
-        
-        fetch(`http://localhost:8080/api/settlement/purchase-invoices${query}`)
-        .then((res) => res.json())
-        .then((res) => {
-            setList(res.data ?? res ?? []);
-            setPage(1);
-        })
-        .catch((err) => {
-            console.error("매입청구 목록 조회 실패:", err);
-        })
-        .finally(() => {
-            setLoading(false);
-        });
+        settlementPurchaseInvoiceApi
+            .list({
+                supplierName,
+                status,
+                startDate,
+                endDate,
+            })
+            .then((data) => {
+                setList(data ?? []);
+                setPage(1);
+            })
+            .catch((err) => {
+                console.error("매입청구 목록 조회 실패:", err);
+            })
+            .finally(() => {
+                setLoading(false);
+            });
     };
     
     useEffect(() => {
         const timer = setTimeout(fetchList, 0);
         return () => clearTimeout(timer);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
     
     return (
@@ -152,7 +141,15 @@ export default function PurchaseInvoiceListPage() {
                         ) : (
                             pagedList.map((item) => (
                                 <tr key={item.purchaseInvoiceId}>
-                                    <td>PI-{String(item.purchaseInvoiceId).padStart(4, "0")}</td>
+                                    <td
+                                        className="link"
+                                        onClick={() =>
+                                            router.push(`/settlement/purchase-invoices/${item.purchaseInvoiceId}`)
+                                        }
+                                        style={{ cursor: "pointer" }}
+                                    >
+                                        PI-{String(item.purchaseInvoiceId).padStart(4, "0")}
+                                    </td>
                                     <td>PO-{String(item.poId).padStart(4, "0")}</td>
                                     <td>{item.supplierName ?? `공급처 ${item.supplierId}`}</td>
                                     <td>{item.issueDate?.slice(0, 10)}</td>

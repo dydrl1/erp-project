@@ -158,7 +158,7 @@ public class ShipmentService {
 
     //주문 상세 수량을 FEFO기준으로 로트에 배정
     //
-    //가용 재고를 확인한 뒤 유통기한이 빠른 순서로 출고수량을 배정
+    //가용 재고를 확인한 뒤 유효기간이 빠른 순서로 출고수량을 배정
     private Map<Integer, Integer> allocateLots(SalesOrderDetailVO salesOrderdetailVO) {
         int productId = salesOrderdetailVO.getProductId();
         int orderQty = salesOrderdetailVO.getOrderQty();

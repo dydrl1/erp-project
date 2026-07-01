@@ -1,5 +1,15 @@
 'use client';
 
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import {
+  ReactNode,
+  useEffect,
+  useMemo,
+  useState,
+  useSyncExternalStore,
+} from "react";
+import { Avatar, Button, Layout, Space, Typography } from "antd";
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { ReactNode, useEffect, useMemo, useState, useSyncExternalStore } from 'react';
@@ -45,6 +55,15 @@ const MENU_GROUPS: MenuGroup[] = [
   {
     title: '기준정보',
     items: [
+      { href: "/dashboard", label: "홈", icon: <HomeOutlined /> },
+      { href: "/attendance", label: "근태 관리", icon: <CalendarOutlined /> },
+      { href: "/customers", label: "거래처 관리", icon: <UserOutlined /> },
+      { href: "/product", label: "의약품 관리", icon: <MedicineBoxOutlined /> },
+      {
+        href: "/recall-drugs",
+        label: "위해의약품",
+        icon: <SafetyCertificateOutlined />,
+      },
       { href: '/dashboard', label: '홈', icon: <HomeOutlined /> },
       { href: '/attendance', label: '근태 관리', icon: <CalendarOutlined /> },
       { href: '/customers', label: '거래처 관리', icon: <UserOutlined /> },
@@ -55,6 +74,16 @@ const MENU_GROUPS: MenuGroup[] = [
   {
     title: '구매 / 입고',
     items: [
+      {
+        href: "/purchase-orders",
+        label: "발주 관리",
+        icon: <ShoppingCartOutlined />,
+      },
+      {
+        href: "/purchase-orders/recevings",
+        label: "입고 관리",
+        icon: <TruckOutlined />,
+      },
       { href: '/purchase-orders', label: '발주 관리', icon: <ShoppingCartOutlined /> },
       { href: '/purchase-orders/recevings', label: '입고 관리', icon: <TruckOutlined /> },
     ],
@@ -62,6 +91,13 @@ const MENU_GROUPS: MenuGroup[] = [
   {
     title: '재고 / 출고',
     items: [
+      {
+        href: "/sales-orders",
+        label: "판매 주문 관리",
+        icon: <ReconciliationOutlined />,
+      },
+      { href: "/shipments", label: "출고 관리", icon: <TruckOutlined /> },
+      { href: "/stock", label: "재고 관리", icon: <MedicineBoxOutlined /> },
       { href: '/sales-orders', label: '판매 주문 관리', icon: <ReconciliationOutlined /> },
       { href: '/shipments', label: '출고 관리', icon: <TruckOutlined /> },
       { href: '/stock', label: '재고 관리', icon: <MedicineBoxOutlined /> },
@@ -72,6 +108,36 @@ const MENU_GROUPS: MenuGroup[] = [
   {
     title: '정산 / 분석',
     items: [
+      {
+        href: "/settlement/dashboard",
+        label: "매출 대시보드",
+        icon: <WalletOutlined />,
+      },
+      {
+        href: "/settlement/invoices",
+        label: "매출청구",
+        icon: <WalletOutlined />,
+      },
+      {
+        href: "/settlement/purchase-invoices",
+        label: "매입청구",
+        icon: <WalletOutlined />,
+      },
+      {
+        href: "/settlement/receivables",
+        label: "미수금 관리",
+        icon: <WalletOutlined />,
+      },
+      {
+        href: "/settlement/payables",
+        label: "미지급금 관리",
+        icon: <WalletOutlined />,
+      },
+      {
+        href: "/settlement/settlements",
+        label: "손익정산",
+        icon: <WalletOutlined />,
+      },
       { href: '/settlement/dashboard', label: '대시보드', icon: <WalletOutlined /> },
       { href: '/settlement/invoices', label: '매출청구', icon: <WalletOutlined /> },
       { href: '/settlement/purchase-invoices', label: '매입청구', icon: <WalletOutlined /> },
@@ -81,6 +147,15 @@ const MENU_GROUPS: MenuGroup[] = [
     ],
   },
   {
+    title: "관리",
+    items: [
+      {
+        href: "/admin",
+        label: "관리자",
+        icon: <SafetyCertificateOutlined />,
+        roles: ["MANAGER", "ADMIN"],
+      },
+    ],
     title: '알림',
     items: [{ href: '/admin', label: '관리자', icon: <SafetyCertificateOutlined />, roles: ['MANAGER', 'ADMIN'] }],
   },
@@ -110,6 +185,8 @@ let cachedSession: SessionSnapshot = SERVER_SESSION;
 
 function getSessionSnapshot(): SessionSnapshot {
   const token = tokenStorage.get();
+  const userRaw =
+    typeof window !== "undefined" ? localStorage.getItem("authUser") : null;
   const userRaw = typeof window !== 'undefined' ? localStorage.getItem('authUser') : null;
 
   if (token === cachedToken && userRaw === cachedUserRaw) {
@@ -136,7 +213,11 @@ function subscribeSession(callback: () => void) {
   return () => window.removeEventListener('storage', callback);
 }
 
-export default function ErpLayout({ title, children, back = false }: ErpLayoutProps) {
+export default function ErpLayout({
+  title,
+  children,
+  back = false,
+}: ErpLayoutProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [checkingSession, setCheckingSession] = useState(true);
@@ -176,7 +257,9 @@ export default function ErpLayout({ title, children, back = false }: ErpLayoutPr
       .filter((menu) => menu.href !== '/dashboard')
       .sort((a, b) => b.href.length - a.href.length);
 
-    return menuItems.find((menu) => pathname.startsWith(menu.href))?.href ?? pathname;
+    return (
+      menuItems.find((menu) => pathname.startsWith(menu.href))?.href ?? pathname
+    );
   }, [pathname]);
 
   const handleLogout = async () => {
@@ -198,14 +281,20 @@ export default function ErpLayout({ title, children, back = false }: ErpLayoutPr
     <NotificationProvider>
       <Layout className="erp-shell">
         <Sider width={252} theme="light" className="erp-sidebar">
-          <Link href="/dashboard" className="erp-brand" aria-label="약통 ERP 홈">
+          <Link
+            href="/dashboard"
+            className="erp-brand"
+            aria-label="약통 ERP 홈"
+          >
             <span className="erp-logo-mark">약</span>
             <span>약통 ERP</span>
           </Link>
 
           <nav className="erp-nav" aria-label="주요 메뉴">
             {MENU_GROUPS.map((group) => {
-              const visibleItems = group.items.filter((item) => !item.roles || item.roles.includes(role));
+              const visibleItems = group.items.filter(
+                (item) => !item.roles || item.roles.includes(role),
+              );
 
               if (visibleItems.length === 0) return null;
 
@@ -255,7 +344,11 @@ export default function ErpLayout({ title, children, back = false }: ErpLayoutPr
                 <Avatar icon={<UserOutlined />} />
                 <Text>{empName} 님</Text>
               </Link>
-              <Button size="small" icon={<LogoutOutlined />} onClick={handleLogout}>
+              <Button
+                size="small"
+                icon={<LogoutOutlined />}
+                onClick={handleLogout}
+              >
                 로그아웃
               </Button>
             </Space>

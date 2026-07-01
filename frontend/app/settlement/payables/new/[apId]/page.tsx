@@ -3,52 +3,73 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import ErpLayout from "@/components/ErpLayout";
+import { AccountPayable,
+    settlementPayableApi, 
+    settlementPayablePaymentApi, 
+    userStorage } from "@/lib/api";
 import "../../../settlement.css";
-
-type PayableInfo = {
-    apId: number;
-    purchaseInvoiceId: number;
-    supplierId: number;
-    supplierName: string;
-    dueDate: string;
-    totalAmount: number;
-    paidAmount: number;
-    remainAmount: number;
-    status: string;
-};
 
 export default function PayablePaymentPage() {
     const router = useRouter();
     const params = useParams();
     const apId = params.apId as string;
     
-    const [payable, setPayable] = useState<PayableInfo | null>(null);
+    const [payable, setPayable] = useState<AccountPayable | null>(null);
     const [paymentDate, setPaymentDate] = useState("");
     const [paymentAmount, setPaymentAmount] = useState("");
     const [paymentType, setPaymentType] = useState("계좌이체");
-    const createdBy = 1; // TODO: 로그인 연동 시 사용자 ID로 변경
     const [loading, setLoading] = useState(true);
     
     const formatMoney = (value?: number) => {
         return `${(value ?? 0).toLocaleString()}원`;
     };
+
+    const isDelayed = (dueDate?: string, remainAmount?: number) => {
+        if (!dueDate || (remainAmount ?? 0) <= 0) return false;
+
+        const today = new Date();
+        const due = new Date(dueDate);
+
+        today.setHours(0, 0, 0, 0);
+        due.setHours(0, 0, 0, 0);
+
+        return due < today;
+    };
     
     useEffect(() => {
-        fetch(`http://localhost:8080/api/settlement/payables/${apId}`)
-        .then((res) => res.json())
-        .then((res) => setPayable(res.data ?? null))
-        .catch((err) => console.error("미지급금 상세 조회 실패:", err))
-        .finally(() => setLoading(false));
+        if (!apId) {
+            setLoading(false);
+            return;
+        }
+
+        settlementPayableApi
+            .detail(Number(apId))
+            .then((data) => {
+                setPayable(data ?? null);
+            })
+            .catch((err) => {
+                console.error("미지급금 상세 조회 실패:", err);
+            })
+            .finally(() => {
+                setLoading(false);
+            });
     }, [apId]);
     
     const handleSubmit = () => {
         if (!payable) {
-        alert("미지급금 정보가 없습니다.");
-        return;
+            alert("미지급금 정보가 없습니다.");
+            return;
         }
 
         if (!paymentDate || !paymentAmount) {
             alert("지급일자와 지급금액을 입력해주세요.");
+            return;
+        }
+
+        const user = userStorage.get();
+
+        if (!user) {
+            alert("로그인 사용자 정보를 찾을 수 없습니다.");
             return;
         }
 
@@ -70,31 +91,19 @@ export default function PayablePaymentPage() {
             paymentDate,
             paymentAmount: amount,
             paymentType,
-            createdBy,
+            createdBy: user.empId,
         };
         
-        fetch("http://localhost:8080/api/settlement/payables/payment", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify(body),
-        })
-        .then(async (res) => {
-            if (!res.ok) {
-                const errorText = await res.text();
-                throw new Error(errorText || "지급 처리 실패");
-            }
-            return res.text();
-        })
-        .then(() => {
-            alert("지급 처리가 완료되었습니다.");
-            router.push("/settlement/payables/history");
-        })
-        .catch((err) => {
-            console.error(err);
-            alert("지급 처리 중 오류가 발생했습니다.");
-        });
+        settlementPayablePaymentApi
+            .create(body)
+            .then(() => {
+                alert("지급 처리가 완료되었습니다.");
+                router.push("/settlement/payables/history");
+            })
+            .catch((err) => {
+                console.error(err);
+                alert(err.message || "지급 처리 중 오류가 발생했습니다.");
+            });
     };
     
     return (
@@ -134,7 +143,26 @@ export default function PayablePaymentPage() {
 
                                 <div className="erp-card">
                                     <p>상태</p>
-                                    <strong>{payable.status}</strong>
+                                    <strong>
+                                        {payable.status}
+                                        {isDelayed(payable.dueDate, payable.remainAmount) && (
+                                            <span
+                                                style={{
+                                                display: "inline-block",
+                                                marginLeft: 8,
+                                                padding: "2px 8px",
+                                                borderRadius: 999,
+                                                backgroundColor: "#fef3c7",
+                                                color: "#92400e",
+                                                fontSize: 12,
+                                                fontWeight: 600,
+                                                lineHeight: 1.4,
+                                                }}
+                                            >
+                                                지연
+                                            </span>
+                                        )}
+                                    </strong>
                                 </div>
                             </div>
                         ) : (

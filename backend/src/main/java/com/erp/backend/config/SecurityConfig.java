@@ -53,31 +53,41 @@ public class SecurityConfig {
                         .accessDeniedHandler((req, res, e) -> writeJsonError(res, 403, "접근 권한이 없습니다.")))
                 .authorizeHttpRequests(auth -> auth
                         // 비밀번호 변경은 로그인 상태에서만 허용 (permitAll 보다 먼저 선언)
-//                        .requestMatchers(HttpMethod.PATCH, "/api/auth/password").authenticated()
-//                        // 로그인·토큰 재발급은 인증 없이 허용
-//                        .requestMatchers("/api/auth/**").permitAll()
-//                        // Swagger 허용
-//                        .requestMatchers("/swagger-ui/**", "/api-docs/**").permitAll()
-//                        // STOMP handshake endpoint
-//                        .requestMatchers("/ws-connect", "/ws-connect/**").permitAll()
-//                        // 부서 조회는 회원가입 폼에서 필요하므로 인증 없이 허용
-//                        .requestMatchers(HttpMethod.GET, "/api/departments/**").permitAll()
-//                        // ADMIN, MANAGER 전용
-//                        .requestMatchers("/api/admin/**").hasAnyRole("MANAGER", "ADMIN")
-//                        // 발주 승인, 반려
-//                        .requestMatchers(HttpMethod.PUT, "/api/purchase-orders/*/approve")
-//                        .hasAnyRole("MANAGER", "ADMIN")
-//                        .requestMatchers(HttpMethod.PUT, "/api/purchase-orders/*/reject")
-//                        .hasAnyRole("MANAGER", "ADMIN")
-//                        // 알림 데이터 API는 로그인 사용자 기준으로 처리
-//                        .requestMatchers("/api/alert/**", "/api/notification/**").authenticated()
-//                        // STORE 허용
-//                        .requestMatchers("/api/sales-order/**").permitAll()
-//                        .requestMatchers("/api/shipment/**").permitAll()
-//                        .requestMatchers("/api/settlement/**").permitAll()
-//                        // 나머지는 인증 필요
-//                        .anyRequest().authenticated())
-                        .anyRequest().permitAll())
+                        .requestMatchers(HttpMethod.PATCH, "/api/auth/password").authenticated()
+                        // 로그인·토큰 재발급은 인증 없이 허용
+                        .requestMatchers("/api/auth/**").permitAll()
+                        // Swagger 허용
+                        .requestMatchers("/swagger-ui/**", "/api-docs/**").permitAll()
+                        // STOMP handshake endpoint
+                        .requestMatchers("/ws-connect", "/ws-connect/**").permitAll()
+                        // 부서 조회는 회원가입 폼에서 필요하므로 인증 없이 허용
+                        .requestMatchers(HttpMethod.GET, "/api/departments/**").permitAll()
+                        // ADMIN, MANAGER 전용
+                        .requestMatchers("/api/admin/**").hasAnyRole("MANAGER", "ADMIN")
+                        // 발주 승인, 반려
+                        .requestMatchers(HttpMethod.PUT, "/api/purchase-orders/*/approve")
+                        .hasAnyRole("MANAGER", "ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/purchase-orders/*/reject")
+                        .hasAnyRole("MANAGER", "ADMIN")
+                        // 수주 승인도 발주 승인과 동일하게 매니저/관리자만 허용 (승인 정책 일관성)
+                        // 더 구체적인 규칙이므로 아래 도메인(부서) 규칙보다 먼저 선언한다.
+                        .requestMatchers(HttpMethod.PATCH, "/api/sales-order/*/approve")
+                        .hasAnyRole("MANAGER", "ADMIN")
+                        // 알림 데이터 API는 로그인 사용자 기준으로 처리
+                        .requestMatchers("/api/alert/**", "/api/notification/**").authenticated()
+                        // 도메인별 부서 권한 제한 (least privilege)
+                        // ADMIN은 JwtAuthFilter에서 모든 DEPT_* 권한을 부여받아 항상 통과한다.
+                        // 수금·미수금은 영업관리부(DEPT_SAL)의 '수금 관리' 업무이므로 재무와 공통 허용.
+                        // (더 구체적인 경로라 아래 정산 전용 규칙보다 먼저 선언)
+                        .requestMatchers("/api/settlement/payments/**", "/api/settlement/receivables/**")
+                        .hasAnyAuthority("DEPT_SAL", "DEPT_FIN")
+                        // 그 외 정산(매출·매입청구, 지급, 손익, 대시보드) = 경영지원부(DEPT_FIN)
+                        .requestMatchers("/api/settlement/**").hasAuthority("DEPT_FIN")
+                        // 수주 = 영업팀, 출하 = 물류팀
+                        .requestMatchers("/api/sales-order/**").hasAuthority("DEPT_SAL")
+                        .requestMatchers("/api/shipment/**").hasAuthority("DEPT_LOG")
+                        // 나머지는 모두 인증 필요
+                        .anyRequest().authenticated())
                 .addFilterBefore(new JwtAuthFilter(jwtTokenProvider),
                         UsernamePasswordAuthenticationFilter.class);
 
