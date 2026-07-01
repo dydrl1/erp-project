@@ -3,9 +3,7 @@ package com.erp.backend.refundItem.controller;
 import com.erp.backend.common.ApiResponse;
 import com.erp.backend.common.PageResponse;
 import com.erp.backend.refundItem.service.RefundItemService;
-import com.erp.backend.refundItem.vo.ReturnedItemGroupVO;
-import com.erp.backend.refundItem.vo.ReturnedItemRequestVO;
-import com.erp.backend.refundItem.vo.ReturnedItemVO;
+import com.erp.backend.refundItem.vo.*;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.tags.Tags;
 import lombok.RequiredArgsConstructor;
@@ -83,7 +81,7 @@ public class RefundItemController {
     }
 
     @PutMapping("/{returnGroupId}/approve")
-    public ResponseEntity<ApiResponse<Void>> approveReturn(@PathVariable int returnGroupId, @RequestParam int empId) {
+    public ResponseEntity<ApiResponse<Void>> approveReturn(@PathVariable int returnGroupId, @AuthenticationPrincipal long empId) {
         if(refundItemService.approveReturn(returnGroupId, empId)){
             return ResponseEntity.ok(ApiResponse.success("요청승인",null));
         }
@@ -91,16 +89,15 @@ public class RefundItemController {
     }
 
     @PutMapping("/{returnGroupId}/reject")
-    public ResponseEntity<ApiResponse<Void>> rejectReturn(@PathVariable int returnGroupId, @RequestParam String rejectReason) {
-
-        if(refundItemService.rejectReturn(returnGroupId, rejectReason)){
+    public ResponseEntity<ApiResponse<Void>> rejectReturn(@PathVariable int returnGroupId, @RequestBody ReturnRejectRequestVO rejectRequest) {
+        if(refundItemService.rejectReturn(returnGroupId, rejectRequest.getRejectReason())){
             return ResponseEntity.ok(ApiResponse.success("반품 거절",null));
         }
         return ResponseEntity.ok(ApiResponse.fail("실패"));
     }
 
     @PutMapping("/{returnGroupId}/complete")
-    public ResponseEntity<ApiResponse<BigDecimal>> completeReturn(@PathVariable int returnGroupId, @RequestParam int empId) {
+    public ResponseEntity<ApiResponse<BigDecimal>> completeReturn(@PathVariable int returnGroupId, @AuthenticationPrincipal long empId) {
         BigDecimal refundAmount = refundItemService.completeReturn(returnGroupId, empId);
         if (refundAmount != null && refundAmount.compareTo(BigDecimal.ZERO) > 0) {
             return ResponseEntity.ok(ApiResponse.success(refundAmount + "반품 금액",refundAmount));
@@ -115,5 +112,10 @@ public class RefundItemController {
             return ResponseEntity.ok(ApiResponse.success(details));
         }
         return ResponseEntity.ok(ApiResponse.fail("조회 실패"));
+    }
+
+    @GetMapping("/groups/{returnGroupId}/finance-summary")
+    public ResponseEntity<ApiResponse<ReturnSummaryVO>> financeSummary(@PathVariable int returnGroupId) {
+        return ResponseEntity.ok(ApiResponse.success(refundItemService.findReturnSummary(returnGroupId)));
     }
 }

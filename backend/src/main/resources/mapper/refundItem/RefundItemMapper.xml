@@ -28,7 +28,7 @@
     <select id="findReturnRequestsByGroupId" resultType="ReturnedItemRequestVO">
         SELECT return_id,
                customer_id,
-               so_id,
+               so_id as salesOrderId,
                product_id,
                inventory_lot_id,
                return_qty,
@@ -357,5 +357,32 @@
                 AND rr.so_id=#{salesOrderId}
             </if>
         </where>
+    </select>
+    <select id="findReturnFinanceSummary" resultType="ReturnSummaryVO">
+        SELECT
+            rr.return_group_id AS returnGroupId,
+            co.customer_id AS customerId,
+            co.customer_name AS customerName,
+            rr.so_id AS salesOrderId,
+            NVL(SUM(rr.return_qty*sod.unit_price),0) AS refundTotalAmount,
+            MAX(rr.completed_at) AS completedAt,
+            rr.status AS status,
+            em.emp_name AS empName
+        FROM
+            return_request rr
+        JOIN customer co ON co.customer_id=rr.customer_id
+        JOIN sales_order_detail sod ON sod.so_id=rr.so_id
+        JOIN product pr ON pr.product_id=rr.product_id
+        JOIN employee em ON em.emp_id=rr.created_by
+        WHERE rr.return_group_id=#{returnGroupId}
+        GROUP BY
+            rr.return_group_id,
+            co.customer_id,
+            co.customer_name,
+            rr.so_id,
+            rr.completed_at,
+            rr.status,
+            rr.created_by,
+            em.emp_name
     </select>
 </mapper>

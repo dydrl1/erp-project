@@ -1155,6 +1155,7 @@ export interface ReturnItem {
   returnedQty: number;
   returnableQty: number;
   totalReturnQty: number;
+  returnQty: number;
   reason: string;
   customerId: number;
   customerName: string;
@@ -1238,4 +1239,9 @@ export const returnItemApi = {
     return api.get<ReturnItem[]>(`/api/return-item/targets/${salesOrderId}`);
   },
   request: (data: ReturnItemRequest[]) => api.post<ReturnItem>('/api/return-item/request', data),
+  approve: (returnGroupId: string) => api.put(`/api/return-item/${returnGroupId}/approve`),
+  reject: (returnGroupId: string, rejectReason: string) => {
+    return api.put(`/api/return-item/${returnGroupId}/reject`, { rejectReason });
+  },
+  complete: (returnGroupId: string) => api.put(`/api/return-item/${returnGroupId}/complete`),
 };

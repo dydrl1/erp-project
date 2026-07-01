@@ -4,10 +4,7 @@ import com.erp.backend.common.CustomException;
 import com.erp.backend.common.ErrorCode;
 import com.erp.backend.common.PageResponse;
 import com.erp.backend.refundItem.mapper.RefundItemMapper;
-import com.erp.backend.refundItem.vo.ReturnedItemGroupVO;
-import com.erp.backend.refundItem.vo.ReturnedItemRequestVO;
-import com.erp.backend.refundItem.vo.ReturnedItemVO;
-import com.erp.backend.refundItem.vo.SalesOrderRefundVO;
+import com.erp.backend.refundItem.vo.*;
 import com.erp.backend.shipment.mapper.ShipmentMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -37,11 +34,11 @@ public class RefundItemService {
         return refundItemMapper.findRefundableItemStatus(shipmentDetailId);
     }
 
-    private List<SalesOrderRefundVO> existSalesOrder(int salesOrderId) {
+    private List<SalesOrderRefundVO> existSalesOrder(Integer salesOrderId) {
         return refundItemMapper.existSalesOrder(salesOrderId);
     }
 
-    public List<ReturnedItemRequestVO> findReturnRequestTarget(int salesOrderId) {
+    public List<ReturnedItemRequestVO> findReturnRequestTarget(Integer salesOrderId) {
         return refundItemMapper.findReturnRequestTarget(salesOrderId);
     }
 
@@ -163,7 +160,7 @@ public class RefundItemService {
     }
 
     @Transactional
-    public boolean approveReturn(int returnGroupId, int approvedBy) {
+    public boolean approveReturn(int returnGroupId, long approvedBy) {
         getRequestedReturnGroup(returnGroupId);
         List<ReturnedItemRequestVO> requests = findReturnRequestsByGroupId(returnGroupId);
         int updated = refundItemMapper.approveReturnRequest(returnGroupId, approvedBy);
@@ -181,7 +178,7 @@ public class RefundItemService {
         return returnedItem.getReturnedQty() <= returnedItem.getOutQty();
     }
 
-    private void insertStockMovement(int empId, int returnId) {
+    private void insertStockMovement(long empId, int returnId) {
         int smvSeq = shipmentMapper.currentStockMovementSeq();
         int result = refundItemMapper.insertStockMovement(smvSeq,empId,returnId);
         if (result != 1) {
@@ -189,7 +186,7 @@ public class RefundItemService {
         }
     }
 
-    private BigDecimal processRefund(int soId, int returnGroupId) {
+    private BigDecimal processRefund(Integer soId, int returnGroupId) {
         BigDecimal refundTotal = refundItemMapper.calculateReturnedRequestAmount(returnGroupId);
         if (refundTotal == null || refundTotal.compareTo(BigDecimal.ZERO) <= 0) {
             throw new CustomException(ErrorCode.RETURN_INVALID_REFUND_AMOUNT);
@@ -202,7 +199,7 @@ public class RefundItemService {
     }
 
     @Transactional
-    public BigDecimal completeReturn(int returnGroupId, int empId) {
+    public BigDecimal completeReturn(int returnGroupId, long empId) {
         List<ReturnedItemRequestVO> requestItems =
                 findReturnRequestsByGroupId(returnGroupId);
         if (requestItems == null || requestItems.isEmpty()) {
@@ -215,7 +212,7 @@ public class RefundItemService {
         }
         Integer soId = requestItems.get(0).getSalesOrderId();
         for (ReturnedItemRequestVO requestItem : requestItems) {
-            int restored = refundItemMapper.restoreLotStock(requestItem.getInventoryLotId(), requestItem.getReturnQty());
+            int restored = refundItemMapper.restoreLotStock(requestItem.getReturnQty(), requestItem.getInventoryLotId());
             if (restored != 1) {
                 throw new CustomException(ErrorCode.RETURN_PROCESS_FAILED);
             }
@@ -230,5 +227,22 @@ public class RefundItemService {
             throw new CustomException(ErrorCode.RETURN_PROCESS_FAILED);
         }
         return refundTotal;
+    }
+
+    public ReturnSummaryVO findReturnSummary(int returnGroupId) {
+        ReturnSummaryVO summary = refundItemMapper.findReturnFinanceSummary(returnGroupId);
+        if(summary == null){
+            throw new CustomException(ErrorCode.RETURN_REQUEST_FAILED);
+        }
+        if(!"COMPLETED".equals(summary.getStatus())){
+            throw new CustomException(ErrorCode.RETURN_REQUEST_NOT_COMPLETED);
+        }
+        if(summary.getSalesOrderId() == null){
+            throw new CustomException(ErrorCode.RETURN_SALES_ORDER_NOT_FOUND);
+        }
+        if(summary.getRefundTotalAmount()==null||summary.getRefundTotalAmount().compareTo(BigDecimal.ZERO)<=0){
+            throw new CustomException(ErrorCode.RETURN_INVALID_REFUND_AMOUNT);
+        }
+        return summary;
     }
 }

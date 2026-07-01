@@ -48,7 +48,7 @@ export default function SalesOrderDetailPage() {
   const [returnFormRows, setReturnFormRows] = useState<ReturnFormRow[]>([]);
   const [returnList, setReturnList] = useState<ReturnItem[]>([]);
   const [returnCount, setReturnCount] = useState<number>(0);
-  const [totalReturnQty, setTotalReturnQty] = useState<number>(0);
+  const [returnQty, setReturnQty] = useState<number>(0);
   const [latestReturnDate, setLatestReturnDate] = useState<string>();
 
   const returnGroupCount = new Set(returnList.map((item) => item.returnGroupId)).size;
@@ -64,13 +64,13 @@ export default function SalesOrderDetailPage() {
       .then((res) => {
         setReturnList(res.list);
         setReturnCount(res.list.length);
-        setTotalReturnQty(res.list.reduce((acc, item) => acc + (item.totalReturnQty ?? 0), 0));
+        setReturnQty(res.list.reduce((acc, item) => acc + (item.returnQty ?? 0), 0));
         setLatestReturnDate(res.list[0]?.createdAt);
       })
       .catch(() => {
         setReturnList([]);
         setReturnCount(0);
-        setTotalReturnQty(0);
+        setReturnQty(0);
         setLatestReturnDate(undefined);
       });
   }, [soId]);
@@ -170,7 +170,7 @@ export default function SalesOrderDetailPage() {
             return;
           }
           await shipmentApi.process(Number(soId));
-          message.success('출고 처리과 완료되었습니다.');
+          message.success('출고 처리가 완료되었습니다.');
           router.push('/shipments');
         } catch (e) {
           message.error((e as Error).message);
@@ -197,7 +197,7 @@ export default function SalesOrderDetailPage() {
 
   const changeReturnQty = (shipmentDetailId: number, value: number | null) => {
     setReturnFormRows((prev) =>
-      prev.map((row) => (row.shipmentDetailId === shipmentDetailId ? { ...row, returnQty: value ?? undefined } : row)),
+      prev.map((row) => (row.shipmentDetailId === shipmentDetailId ? { ...row, returnQty: value ?? 0 } : row)),
     );
   };
 
@@ -352,7 +352,7 @@ export default function SalesOrderDetailPage() {
                 있습니다.
               </Text>
               <Text type="secondary">
-                총 반품수량: {totalReturnQty.toLocaleString()}개
+                총 반품수량: {returnQty.toLocaleString()}개
                 {latestReturnDate ? ` / 최근 요청일: ${String(latestReturnDate).slice(0, 10)}` : ''}
               </Text>
             </Space>
