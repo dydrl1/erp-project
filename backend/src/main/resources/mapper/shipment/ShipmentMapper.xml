@@ -547,6 +547,7 @@
             p.product_code,
             p.product_name,
             p.safety_qty
+        HAVING NVL(SUM(il.current_qty), 0) > 0
         ORDER BY p.product_name
     </select>
 </mapper>
