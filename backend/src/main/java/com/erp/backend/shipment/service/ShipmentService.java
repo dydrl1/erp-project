@@ -66,7 +66,7 @@ public class ShipmentService {
         int offset = (safePage - 1) * safeSize;
         List<ShipmentVO> list = shipmentMapper.findShipmentList(salesOrderId,status,employeeName, offset, safeSize);
         int total = shipmentMapper.findCountsForShipments(status);
-        return new PageResponse<>(list,safePage,safeSize,total);
+        return new PageResponse<>(list, safeSize, total, safePage);
     }
 
     public Map<String,Integer> findCountsByStatus(){

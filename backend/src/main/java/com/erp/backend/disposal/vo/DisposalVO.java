@@ -13,7 +13,7 @@ public class DisposalVO {
     private String status;
     private String createdBy;
     private LocalDateTime createdAt;
-    private String approvedBy;
+    private long approvedBy;
     private LocalDateTime approvedAt;
     private LocalDateTime completedAt;
     private String rejectReason;

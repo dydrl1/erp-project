@@ -496,6 +496,7 @@ export const shipmentApi = {
     if (status) params.set('status', status);
     if (salesOrderId) params.set('salesOrderId', String(salesOrderId));
     if (employeeName) params.set('employeeName', employeeName);
+    console.log(params.toString());
     return api.get<PageResult<Shipment>>(`/api/shipment?${params}`);
   },
   statusCount: () => api.get<Record<string, number>>(`/api/shipment/status-count`),
@@ -778,4 +779,102 @@ export const adminAttendanceApi = {
     api.put<void>(`/api/admin/attendance/${attendanceId}`, data),
   createAbsence: (data: { empId: number; workDate: string; status: 'ABSENT' | 'LEAVE'; memo?: string }) =>
     api.post<Attendance>('/api/admin/attendance/absence', data),
+};
+
+export interface ReturnItem {
+  returnId: number;
+  returnGroupId: number;
+  salesOrderId: number;
+  soDetailId: number;
+  shipmentDetailId: number;
+  productName: string;
+  lotNo: string;
+  productId: number;
+  inventoryLotId: number;
+  returnedQty: number;
+  returnableQty: number;
+  totalReturnQty: number;
+  reason: string;
+  customerId: number;
+  customerName: string;
+  outQty: number;
+  status: string;
+  createdBy: number;
+  createdByName: string;
+  createdAt: string;
+  approvedBy: number;
+  approvedByName: string;
+  approvedAt: string;
+  completedAt: string;
+  rejectReason: string;
+}
+
+export interface ReturnItemRequest {
+  salesOrderId: number;
+  shipmentDetailId: number;
+  returnQty: number;
+  reason: string;
+}
+
+export interface ReturnGroup {
+  returnGroupId: number;
+
+  salesOrderId: number;
+  customerId?: number;
+  customerName?: string;
+
+  itemCount: number;
+  totalReturnQty: number;
+  productSummary?: string;
+
+  reason?: string;
+  status: string;
+
+  createdBy?: number;
+  createdByName?: string;
+  createdAt?: string;
+
+  approvedBy?: number;
+  approvedByName?: string;
+  approvedAt?: string;
+
+  completedAt?: string;
+  rejectReason?: string;
+}
+
+export const returnItemApi = {
+  listPaging: (page: number, size: number, status?: string, salesOrderId?: number, returnGroupId?: number) => {
+    const params = new URLSearchParams();
+    params.set('page', String(page));
+    params.set('size', String(size));
+    if (status) {
+      params.set('status', status ?? '');
+    }
+    if (salesOrderId) {
+      params.set('salesOrderId', String(salesOrderId) ?? '');
+    }
+    if (returnGroupId) {
+      params.set('returnGroupId', String(returnGroupId) ?? '');
+    }
+    return api.get<PageResult<ReturnItem>>(`/api/return-item/paging?${params}`);
+  },
+  listGroupPaging: (page: number, size = 10, status?: string, salesOrderId?: string) => {
+    const params = new URLSearchParams();
+    params.set('page', String(page));
+    params.set('size', String(size));
+    if (status) {
+      params.set('status', status ?? '');
+    }
+    if (salesOrderId) {
+      params.set('salesOrderId', String(salesOrderId) ?? '');
+    }
+    return api.get<PageResult<ReturnGroup>>(`/api/return-item/groups/paging?${params}`);
+  },
+  statusCount: () => {
+    return api.get<Record<string, number>>(`/api/return-item/status-counts`);
+  },
+  getReturnTarget: (salesOrderId: number) => {
+    return api.get<ReturnItem[]>(`/api/return-item/targets/${salesOrderId}`);
+  },
+  request: (data: ReturnItemRequest[]) => api.post<ReturnItem>('/api/return-item/request', data),
 };

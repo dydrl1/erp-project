@@ -2,12 +2,27 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { App, Button, Card, Descriptions, Flex, Input, Space, Steps, Table, Typography } from 'antd';
+import {
+  App,
+  Button,
+  Card,
+  Checkbox,
+  Descriptions,
+  Flex,
+  Input,
+  InputNumber,
+  Modal,
+  Space,
+  Steps,
+  Table,
+  Typography,
+} from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import ErpLayout from '@/components/ErpLayout';
 import StatusBadge from '@/components/StatusBadge';
-import { salesOrderApi, SalesOrderDetail, SalesOrder, shipmentApi } from '@/lib/api';
+import { salesOrderApi, SalesOrderDetail, SalesOrder, shipmentApi, ReturnItem, returnItemApi } from '@/lib/api';
 const { Text } = Typography;
+
 export default function SalesOrderDetailPage() {
   const { soId } = useParams<{ soId: string }>();
   const router = useRouter();
@@ -22,11 +37,42 @@ export default function SalesOrderDetailPage() {
     SHIPPED: 3,
   };
 
+  const [returnModalOpen, setReturnModalOpen] = useState(false);
+  const [reason, setReason] = useState<string>('');
+  type ReturnFormRow = ReturnItem & {
+    checked?: boolean;
+    returnQty?: number;
+    returnReason?: string;
+  };
+
+  const [returnFormRows, setReturnFormRows] = useState<ReturnFormRow[]>([]);
+  const [returnList, setReturnList] = useState<ReturnItem[]>([]);
+  const [returnCount, setReturnCount] = useState<number>(0);
+  const [totalReturnQty, setTotalReturnQty] = useState<number>(0);
+  const [latestReturnDate, setLatestReturnDate] = useState<string>();
+
+  const returnGroupCount = new Set(returnList.map((item) => item.returnGroupId)).size;
+  const returnItemCount = returnList.length;
+
   const load = useCallback(() => {
     salesOrderApi
       .detail(Number(soId))
       .then(setOrder)
       .catch((e: Error) => setError(e.message));
+    returnItemApi
+      .listPaging(1, 10, undefined, Number(soId))
+      .then((res) => {
+        setReturnList(res.list);
+        setReturnCount(res.list.length);
+        setTotalReturnQty(res.list.reduce((acc, item) => acc + (item.totalReturnQty ?? 0), 0));
+        setLatestReturnDate(res.list[0]?.createdAt);
+      })
+      .catch(() => {
+        setReturnList([]);
+        setReturnCount(0);
+        setTotalReturnQty(0);
+        setLatestReturnDate(undefined);
+      });
   }, [soId]);
 
   useEffect(() => {
@@ -41,8 +87,6 @@ export default function SalesOrderDetailPage() {
     const timer = setTimeout(() => setRole(localStorage.getItem('role') ?? ''), 0);
     return () => clearTimeout(timer);
   }, []);
-
-  const canApprove = order?.status === 'REQUESTED' && (role === 'MANAGER' || role === 'ADMIN');
 
   const handleApprove = async () => {
     modal.confirm({
@@ -137,6 +181,70 @@ export default function SalesOrderDetailPage() {
     });
   };
 
+  const moveToReturnList = () => {
+    router.push(`/return?salesOrderId=${order?.soId}`);
+  };
+
+  const changeChecked = (shipmentDetailId: number, checked: boolean) => {
+    setReturnFormRows((prev) =>
+      prev.map((row) =>
+        row.shipmentDetailId === shipmentDetailId
+          ? { ...row, checked, returnQty: checked ? row.returnQty : 0, reason: checked ? row.reason : '' }
+          : row,
+      ),
+    );
+  };
+
+  const changeReturnQty = (shipmentDetailId: number, value: number | null) => {
+    setReturnFormRows((prev) =>
+      prev.map((row) => (row.shipmentDetailId === shipmentDetailId ? { ...row, returnQty: value ?? undefined } : row)),
+    );
+  };
+
+  const handleReturnModalOpen = async () => {
+    try {
+      setProcessing(true);
+      const target = await returnItemApi.getReturnTarget(Number(soId));
+      setReturnFormRows(
+        target.map((item) => ({
+          ...item,
+          checked: false,
+          returnQty: 0,
+          returnReason: '',
+        })),
+      );
+      setReturnModalOpen(true);
+    } catch (e) {
+      message.error((e as Error).message);
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const submitReturnRequest = async () => {
+    const selectedRows = returnFormRows.filter((row) => row.checked);
+    const requestBody = selectedRows.map((row) => ({
+      salesOrderId: row.salesOrderId,
+      shipmentDetailId: row.shipmentDetailId,
+      returnQty: row.returnQty ?? 0,
+      reason: reason,
+    }));
+
+    try {
+      setProcessing(true);
+      console.log(requestBody);
+      await returnItemApi.request(requestBody);
+      message.success('반품 요청이 등록되었습니다.');
+      setReturnModalOpen(false);
+      setReason('');
+      load();
+    } catch (e) {
+      message.error('반품 요청에 실패했습니다.');
+    } finally {
+      setProcessing(false);
+    }
+  };
+
   const currentStep = statusStep[order?.status ?? 'REQUESTED'];
 
   const columns = useMemo<ColumnsType<SalesOrderDetail>>(
@@ -164,6 +272,38 @@ export default function SalesOrderDetailPage() {
     ],
     [],
   );
+
+  const returnColumns: ColumnsType<ReturnFormRow> = [
+    {
+      title: '선택',
+      render: (_, record) => (
+        <Checkbox checked={record.checked} onChange={(e) => changeChecked(record.shipmentDetailId, e.target.checked)} />
+      ),
+    },
+    {
+      title: '상품명',
+      dataIndex: 'productName',
+    },
+    {
+      title: '로트번호',
+      dataIndex: 'lotNo',
+    },
+    {
+      title: '반품가능수량',
+      dataIndex: 'returnableQty',
+    },
+    {
+      title: '반품수량',
+      render: (_, record) => (
+        <InputNumber
+          min={1}
+          max={record.returnableQty}
+          value={record.returnQty}
+          onChange={(value) => changeReturnQty(record.shipmentDetailId, value)}
+        />
+      ),
+    },
+  ];
 
   if (error) {
     return (
@@ -203,6 +343,23 @@ export default function SalesOrderDetailPage() {
           </Descriptions.Item>
         </Descriptions>
       </Card>
+      {order.status === 'SHIPPED' && returnCount > 0 && (
+        <Card title="반품 현황" style={{ marginTop: 16, marginBottom: 16 }}>
+          <Flex justify="space-between" align="center">
+            <Space orientation="vertical" size={4}>
+              <Text>
+                반품 요청 <Text strong>{returnGroupCount}</Text>건에 반품 품목 <Text strong>{returnItemCount}</Text>개가
+                있습니다.
+              </Text>
+              <Text type="secondary">
+                총 반품수량: {totalReturnQty.toLocaleString()}개
+                {latestReturnDate ? ` / 최근 요청일: ${String(latestReturnDate).slice(0, 10)}` : ''}
+              </Text>
+            </Space>
+            <Button onClick={moveToReturnList}>반품 내역 보기</Button>
+          </Flex>
+        </Card>
+      )}
       {order.status !== 'CANCELED' && (
         <Card style={{ marginTop: 16, marginBottom: 16 }}>
           <div className="order-detail-steps">
@@ -253,7 +410,7 @@ export default function SalesOrderDetailPage() {
         </Card>
       )}
 
-      {canApprove && (
+      {order?.status === 'REQUESTED' && (role === 'MANAGER' || role === 'ADMIN') && (
         <div className="erp-page-actions">
           <Button danger disabled={processing} onClick={handleReject}>
             반려
@@ -270,6 +427,44 @@ export default function SalesOrderDetailPage() {
           </Button>
         </div>
       )}
+      {order.status == 'SHIPPED' && returnCount <= 0 && (
+        <div className="erp-page-actions">
+          <Button type="primary" loading={processing} onClick={handleReturnModalOpen}>
+            반품요청
+          </Button>
+        </div>
+      )}
+      <Modal
+        title="반품 요청"
+        open={returnModalOpen}
+        onCancel={() => {
+          setReturnModalOpen(false);
+          setReason('');
+        }}
+        onOk={submitReturnRequest}
+        confirmLoading={processing}
+        okText="요청"
+        cancelText="취소"
+        width={800}
+      >
+        <Table
+          rowKey="shipmentDetailId"
+          columns={returnColumns}
+          dataSource={returnFormRows ?? []}
+          pagination={false}
+          size="small"
+        />
+
+        <div style={{ marginTop: 16 }}>
+          <div style={{ marginBottom: 8 }}>반품 사유</div>
+          <Input.TextArea
+            rows={3}
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            placeholder="반품 사유를 입력하세요"
+          />
+        </div>
+      </Modal>
     </ErpLayout>
   );
 }

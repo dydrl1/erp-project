@@ -2,7 +2,9 @@ package com.erp.backend.refundItem.service;
 
 import com.erp.backend.common.CustomException;
 import com.erp.backend.common.ErrorCode;
+import com.erp.backend.common.PageResponse;
 import com.erp.backend.refundItem.mapper.RefundItemMapper;
+import com.erp.backend.refundItem.vo.ReturnedItemGroupVO;
 import com.erp.backend.refundItem.vo.ReturnedItemRequestVO;
 import com.erp.backend.refundItem.vo.ReturnedItemVO;
 import com.erp.backend.refundItem.vo.SalesOrderRefundVO;
@@ -12,7 +14,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -45,8 +49,40 @@ public class RefundItemService {
         return refundItemMapper.findReturnRequestsByGroupId(returnGroupId);
     }
 
+    public int findCountsForReturnRequest(String status, Integer salesOrderId) {
+        return refundItemMapper.findCountsForReturnRequest(status, salesOrderId);
+    }
+
+    public PageResponse<ReturnedItemVO> findAllReturnItem(int page, int size, String status, Integer salesOrderId, Integer returnGroupId) {
+        int safePage = Math.max(page, 1);
+        int safeSize = Math.max(size, 1);
+        int offset = (safePage - 1) * safeSize;
+        List<ReturnedItemVO> list = refundItemMapper.findAllReturnItem(offset, safeSize, status, salesOrderId, returnGroupId);
+        int total = findCountsForReturnRequest(status, salesOrderId);
+        return new PageResponse<>(list, safeSize, total, safePage);
+    }
+
+    public Map<String, Integer> getCountByStatus() {
+        List<ReturnedItemVO> counts = refundItemMapper.findCountsByStatus();
+        Map<String, Integer> result = new HashMap<>();
+        for (ReturnedItemVO count : counts) {
+            result.put(count.getStatus(), count.getCount());
+        }
+        return result;
+    }
+
+    public PageResponse<ReturnedItemGroupVO> findAllReturnGroups(String status, Integer salesOrderId, int page, int size) {
+        int safePage = Math.max(page, 1);
+        int safeSize = Math.max(size, 1);
+        int offset = (safePage - 1) * safeSize;
+        List<ReturnedItemGroupVO> list = refundItemMapper.findReturnItemGroupList(status, salesOrderId, offset, safeSize);
+        Integer total = refundItemMapper.findCountsForReturnItemGroup(status, salesOrderId);
+        return new PageResponse<>(list, safeSize, total, safePage);
+    }
+
+
     @Transactional
-    public int requestReturn(List<ReturnedItemRequestVO> returnRequests, int empId) {
+    public int requestReturn(List<ReturnedItemRequestVO> returnRequests, long empId) {
         if (returnRequests == null || returnRequests.isEmpty()) {
             throw new CustomException(ErrorCode.RETURN_REQUEST_FAILED);
         }

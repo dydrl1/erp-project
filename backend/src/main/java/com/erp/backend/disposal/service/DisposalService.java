@@ -32,7 +32,7 @@ public class DisposalService {
         return disposalMapper.findDisposalStatus(disposalId);
     }
 
-    private void insertDisposal(int disposalSeq, String reason, int empId) {
+    private void insertDisposal(int disposalSeq, String reason, long empId) {
         int result = disposalMapper.insertDisposalRequest(disposalSeq, reason, empId);
         if (result != 1) {
             throw new CustomException(ErrorCode.NOT_FOUND);//요청헤더 생성 실패
@@ -59,7 +59,7 @@ public class DisposalService {
         throw new CustomException(ErrorCode.NOT_FOUND);//디테일 생성 실패
     }
 
-    public void approveDisposal(int empId, int disposalId) {
+    public void approveDisposal(long empId, int disposalId) {
         int result = disposalMapper.approveDisposalRequest(empId, disposalId);
         if (result != 1) {
             throw new CustomException(ErrorCode.NOT_FOUND);//폐기 승인요청 실패
@@ -94,7 +94,7 @@ public class DisposalService {
     }
 
     @Transactional
-    public int requestDisposal(String reason, int empId, int disposalQty, int inventoryLotId) {
+    public int requestDisposal(String reason, long empId, int disposalQty, int inventoryLotId) {
         int disposalId = getDisposalSeq();
         insertDisposal(disposalId, reason, empId);
         insertDisposalDetail(reason, disposalId, disposalQty, inventoryLotId);
@@ -102,7 +102,7 @@ public class DisposalService {
     }
 
     @Transactional
-    public boolean processDisposal(int empId, int disposalId) {
+    public boolean processDisposal(long empId, int disposalId) {
         String status = findDisposalStatus(disposalId);
         if (!"APPROVED".equals(status)) {
             throw new CustomException(ErrorCode.NOT_FOUND);//상태에 맞는 제품으 존재하지 않음

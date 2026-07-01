@@ -14,13 +14,13 @@ public interface DisposalMapper {
 
     Integer getCurrentDisposalDetailSeq();
 
-    Integer insertDisposalRequest(@Param("disposalId") int disposalId, @Param("reason") String reason, @Param("empId") int empId);
+    Integer insertDisposalRequest(@Param("disposalId") int disposalId, @Param("reason") String reason, @Param("empId") long empId);
 
     String findDisposalStatus(int disposalId);
 
     Integer insertDisposalDetail(DisposalDetailVO disposalDetailVO);
 
-    Integer approveDisposalRequest(@Param("approvedBy") int empId, @Param("disposalId") int disposalId);
+    Integer approveDisposalRequest(@Param("approvedBy") long empId, @Param("disposalId") int disposalId);
 
     Integer rejectDisposalRequest(@Param("rejectReason") String rejectReason, @Param("disposalId") int disposalId);
 

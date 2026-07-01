@@ -12,17 +12,17 @@ public class ReturnedItemRequestVO {
     private Integer returnGroupId;
     private Integer customerId;
     private Integer salesOrderId;
+    private Integer soDetailId;
+    private Integer shipmentDetailId;
     private Integer productId;
+    private String productCode;
+    private String productName;
     private Integer inventoryLotId;
+    private String lotNo;
     private Integer returnQty;
     private String reason;
     private String status;
-    private Integer createdBy;
-    private LocalDateTime createdAt;
-    private Integer approvedBy;
-    private LocalDateTime approvedAt;
-    private LocalDateTime completedAt;
-    private String rejectReason;
-    private Integer soDetailId;
-    private Integer shipmentDetailId;
+    private Integer alreadyReturnQty;
+    private Integer returnableQty;
+    private long createdBy;
 }

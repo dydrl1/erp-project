@@ -1,10 +1,12 @@
 package com.erp.backend.refundItem.mapper;
 
+import com.erp.backend.refundItem.vo.ReturnedItemGroupVO;
 import com.erp.backend.refundItem.vo.ReturnedItemRequestVO;
 import com.erp.backend.refundItem.vo.ReturnedItemVO;
 import com.erp.backend.refundItem.vo.SalesOrderRefundVO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
+import org.springframework.security.core.parameters.P;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -27,4 +29,14 @@ public interface RefundItemMapper {
     BigDecimal calculateReturnedRequestAmount(int returnGroupId);
     Integer modifyBalance(@Param("salesOrderId")int salesOrderId,@Param("returnGroupId")int returnGroupId);
     Integer updateReturnRequestStatus(int returnGroupId);
+
+    List<ReturnedItemVO> findAllReturnItem(@Param("offset") int offset, @Param("size") int size, @Param("status") String status, @Param("salesOrderId") Integer salesOrderId, @Param("returnGroupId") Integer returnGroupId);
+
+    List<ReturnedItemVO> findCountsByStatus();
+
+    Integer findCountsForReturnRequest(String status, Integer salesOrderId);
+
+    List<ReturnedItemGroupVO> findReturnItemGroupList(@Param("status") String status, @Param("salesOrderId") Integer salesOrderId, @Param("offset") int offset, @Param("size") int size);
+
+    Integer findCountsForReturnItemGroup(@Param("status") String status, @Param("salesOrderId") Integer salesOrderId);
 }

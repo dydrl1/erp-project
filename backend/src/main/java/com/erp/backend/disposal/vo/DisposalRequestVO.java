@@ -7,7 +7,7 @@ import lombok.Setter;
 @Setter
 public class DisposalRequestVO {
     private String reason;
-    private int empId;
+    private long empId;
     private int disposalQty;
     private int inventoryLotId;
 }
