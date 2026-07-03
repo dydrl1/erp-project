@@ -168,6 +168,8 @@ public class AlertService {
         return alertMapper.findAlertItemList();
     }
 
-
+    public int readAllMessage(long loginId) {
+        return alertMapper.markAllRead(loginId);
+    }
 
 }

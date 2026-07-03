@@ -222,4 +222,10 @@
         WHERE emp_id = #{empId}
           AND is_read = 'N'
     </select>
+    <update id="markAllRead">
+        UPDATE alert_detail
+        SET is_read='Y'
+        WHERE emp_id = #{loginId}
+          AND is_read = 'N'
+    </update>
 </mapper>
