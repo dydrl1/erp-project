@@ -13,6 +13,7 @@ interface NotificationContextValue {
   openDrawer: () => void;
   closeDrawer: () => void;
   markAsRead: (notificationId: number) => Promise<void>;
+  markAll: () => Promise<void>;
 }
 
 export const NotificationContext = createContext<NotificationContextValue | null>(null);
@@ -41,6 +42,15 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
       );
     } catch (error) {
       console.error('Failed to mark notification as read:', error);
+    }
+  }, []);
+
+  const markAll = useCallback(async () => {
+    try {
+      await alertApi.markAllAsRead();
+      setNotifications((prev) => prev.map((item) => ({ ...item, isRead: true })));
+    } catch (error) {
+      console.error('전체 읽음처리 실패 ');
     }
   }, []);
 
@@ -156,8 +166,9 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
       openDrawer,
       closeDrawer,
       markAsRead,
+      markAll,
     }),
-    [notifications, unreadCount, drawerOpen, openDrawer, closeDrawer, markAsRead],
+    [notifications, unreadCount, drawerOpen, openDrawer, closeDrawer, markAsRead, markAll],
   );
 
   return (

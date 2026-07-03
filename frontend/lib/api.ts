@@ -533,6 +533,9 @@ export const alertApi = {
   markRead: (alertId: number) => {
     return api.put<void>(`/api/alert/${alertId}`);
   },
+  markAllAsRead: () => {
+    return api.put<void>('/api/alert/readAll');
+  },
 };
 
 export interface Customer {
