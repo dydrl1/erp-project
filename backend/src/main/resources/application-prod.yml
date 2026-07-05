@@ -40,10 +40,11 @@ jwt:
 
   # CORS 허용 출처 (프론트엔드 주소)
 cors:
-  allowed-origin: http://localhost:3000
-#  allowed-origin:
-#    - http://192.168.1.190:3000
-#    - http://localhost:3000
+  # allowed-origin: http://localhost:3000
+
+  allowed-origin:
+    - https://yak-tong.com
+    - https://www.yak-tong.com
 # Refresh Token 쿠키 설정
 #cookie:
 #  secure: true     # 운영(HTTPS) 환경에서는 true
