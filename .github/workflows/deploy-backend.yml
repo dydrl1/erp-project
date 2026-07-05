@@ -27,6 +27,15 @@ jobs:
       - name: Checkout source
         uses: actions/checkout@v4
 
+      - name: Debug config
+        run: |
+          echo "AWS_REGION=[$AWS_REGION]"
+          echo "AWS_ACCOUNT_ID=[$AWS_ACCOUNT_ID]"
+          echo "ECR_REPOSITORY=[$ECR_REPOSITORY]"
+          echo "BACKEND_INSTANCE_ID=[$BACKEND_INSTANCE_ID]"
+          echo "BACKEND_SECRET_ID=[$BACKEND_SECRET_ID]"
+          echo "AWS_ROLE_ARN exists? ${{ secrets.AWS_ROLE_ARN != '' }}"
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
