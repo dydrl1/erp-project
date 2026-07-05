@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Badge, Button, Card, Flex, Space, Table, Tabs, Typography } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
@@ -16,7 +16,7 @@ const TABS = [
   { key: 'CANCELED', label: '취소' },
 ];
 
-export default function SalesOrderListPage() {
+function SalesOrderListContent() {
   const router = useRouter();
   const [orders, setOrders] = useState<SalesOrder[]>([]);
   const [counts, setCounts] = useState<Record<string, number>>({});
@@ -165,5 +165,12 @@ export default function SalesOrderListPage() {
         />
       </Card>
     </ErpLayout>
+  );
+}
+export default function SalesOrderListPage() {
+  return (
+    <Suspense fallback={null}>
+      <SalesOrderListContent />
+    </Suspense>
   );
 }
