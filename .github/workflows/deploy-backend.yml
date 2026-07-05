@@ -87,7 +87,7 @@ jobs:
               "docker stop erp-backend || true",
               "docker rm erp-backend || true",
 
-              "docker run -d --name erp-backend --restart unless-stopped -p 8080:8080 -e SPRING_PROFILES_ACTIVE=prod -e SERVER_PORT=8080 -e DB_HOST=\"$DB_HOST\" -e DB_PORT=\"$DB_PORT\" -e DB_SERVICE_NAME=\"$DB_SERVICE_NAME\" -e DB_USERNAME=\"$DB_USERNAME\" -e DB_PASSWORD=\"$DB_PASSWORD\" -e JWT_SECRET=\"$JWT_SECRET\" -e API_SERVICE_KEY=\"$API_SERVICE_KEY\" \"$IMAGE_URI\"",
+              "docker run -d --name erp-backend --restart unless-stopped -p 8080:8080 -e SPRING_PROFILES_ACTIVE=prod -e SERVER_PORT=8080 -e DB_HOST=\"$DB_HOST\" -e DB_PORT=\"$DB_PORT\" -e DB_SERVICE_NAME=\"$DB_SERVICE_NAME\" -e DB_USERNAME=\"$DB_USERNAME\" -e DB_PASSWORD=\"$DB_PASSWORD\" -e JWT_SECRET=\"$JWT_SECRET\" -e API_SERVICE_KEY=\"$API_SERVICE_KEY\" -e CORS_ALLOWED_ORIGIN=https://yak-tong.com,https://www.yak-tong.com \"$IMAGE_URI\"",
 
               "docker ps"
             ]' \
