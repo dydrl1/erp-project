@@ -1,0 +1,98 @@
+name: Deploy Frontend
+
+on:
+  push:
+    branches:
+      - MASTER
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/deploy-front.yml'
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: ap-northeast-2
+  AWS_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
+  ECR_REPOSITORY: ${{ vars.ECR_FRONTEND_REPOSITORY }}
+  FRONTEND_INSTANCE_ID: ${{ vars.FRONTEND_INSTANCE_ID }}
+  NEXT_PUBLIC_API_BASE_URL: ${{ vars.NEXT_PUBLIC_API_BASE_URL }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Debug config
+        run: |
+          echo "AWS_REGION=[$AWS_REGION]"
+          echo "AWS_ACCOUNT_ID=[$AWS_ACCOUNT_ID]"
+          echo "ECR_REPOSITORY=[$ECR_REPOSITORY]"
+          echo "FRONTEND_INSTANCE_ID=[$FRONTEND_INSTANCE_ID]"
+          echo "NEXT_PUBLIC_API_BASE_URL=[$NEXT_PUBLIC_API_BASE_URL]"
+          echo "AWS_ROLE_ARN exists? ${{ secrets.AWS_ROLE_ARN != '' }}"
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        run: |
+          aws ecr get-login-password --region "$AWS_REGION" \
+          | docker login --username AWS --password-stdin "$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com"
+
+      - name: Build frontend image
+        run: |
+          IMAGE_URI="$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:${GITHUB_SHA}"
+          docker build \
+            --build-arg NEXT_PUBLIC_API_BASE_URL="$NEXT_PUBLIC_API_BASE_URL" \
+            -t "$IMAGE_URI" ./frontend
+          echo "IMAGE_URI=$IMAGE_URI" >> "$GITHUB_ENV"
+
+      - name: Push frontend image
+        run: |
+          docker push "$IMAGE_URI"
+
+      - name: Deploy frontend with SSM
+        run: |
+          COMMAND_ID=$(aws ssm send-command \
+            --region "$AWS_REGION" \
+            --instance-ids "$FRONTEND_INSTANCE_ID" \
+            --document-name "AWS-RunShellScript" \
+            --comment "Deploy frontend container from GitHub Actions" \
+            --parameters 'commands=[
+              "set -e",
+              "AWS_REGION='${AWS_REGION}'",
+              "AWS_ACCOUNT_ID='${AWS_ACCOUNT_ID}'",
+              "IMAGE_URI='${IMAGE_URI}'",
+
+              "sudo systemctl start docker",
+              "aws ecr get-login-password --region \"$AWS_REGION\" | docker login --username AWS --password-stdin \"$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com\"",
+
+              "docker pull \"$IMAGE_URI\"",
+              "docker stop erp-frontend || true",
+              "docker rm erp-frontend || true",
+
+              "docker run -d --name erp-frontend --restart unless-stopped -p 3000:3000 \"$IMAGE_URI\"",
+
+              "docker ps"
+            ]' \
+            --query "Command.CommandId" \
+            --output text)
+
+          echo "COMMAND_ID=$COMMAND_ID" >> "$GITHUB_ENV"
+
+      - name: Show SSM command result
+        run: |
+          sleep 10
+          aws ssm get-command-invocation \
+            --region "$AWS_REGION" \
+            --command-id "$COMMAND_ID" \
+            --instance-id "$FRONTEND_INSTANCE_ID"
