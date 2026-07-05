@@ -13,7 +13,7 @@ permissions:
   contents: read
 
 env:
-  AWS_REGION: ${{ vars.AWS_REGION }}
+  AWS_REGION: ${{ secrets.AWS_REGION }}
   AWS_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
   ECR_REPOSITORY: ${{ vars.ECR_BACKEND_REPOSITORY }}
   BACKEND_INSTANCE_ID: ${{ vars.BACKEND_INSTANCE_ID }}
