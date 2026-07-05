@@ -73,7 +73,7 @@ jobs:
 
               "aws ecr get-login-password --region \"$AWS_REGION\" | docker login --username AWS --password-stdin \"$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com\"",
 
-              "SECRET_JSON=$(aws secretsmanager get-secret-value --region \"$AWS_REGION\" --secret-id \"$BACKEND_SECRET_ID\" --query SecretString --output text)",
+              "export SECRET_JSON=$(aws secretsmanager get-secret-value --region \"$AWS_REGION\" --secret-id \"$BACKEND_SECRET_ID\" --query SecretString --output text)",
 
               "DB_HOST=$(python3 -c \"import json,os; print(json.loads(os.environ['\''SECRET_JSON'\''])['\''DB_HOST'\''])\")",
               "DB_PORT=$(python3 -c \"import json,os; print(json.loads(os.environ['\''SECRET_JSON'\''])['\''DB_PORT'\''])\")",
@@ -81,12 +81,13 @@ jobs:
               "DB_USERNAME=$(python3 -c \"import json,os; print(json.loads(os.environ['\''SECRET_JSON'\''])['\''DB_USERNAME'\''])\")",
               "DB_PASSWORD=$(python3 -c \"import json,os; print(json.loads(os.environ['\''SECRET_JSON'\''])['\''DB_PASSWORD'\''])\")",
               "JWT_SECRET=$(python3 -c \"import json,os; print(json.loads(os.environ['\''SECRET_JSON'\''])['\''JWT_SECRET'\''])\")",
+              "API_SERVICE_KEY=$(python3 -c \"import json,os; d=json.loads(os.environ['\''SECRET_JSON'\'']); d=json.loads(d) if isinstance(d,str) else d; print(d['\''API_SERVICE_KEY'\''])\")",
 
               "docker pull \"$IMAGE_URI\"",
               "docker stop erp-backend || true",
               "docker rm erp-backend || true",
 
-              "docker run -d --name erp-backend --restart unless-stopped -p 8080:8080 -e SPRING_PROFILES_ACTIVE=prod -e SERVER_PORT=8080 -e DB_HOST=\"$DB_HOST\" -e DB_PORT=\"$DB_PORT\" -e DB_SERVICE_NAME=\"$DB_SERVICE_NAME\" -e DB_USERNAME=\"$DB_USERNAME\" -e DB_PASSWORD=\"$DB_PASSWORD\" -e JWT_SECRET=\"$JWT_SECRET\" \"$IMAGE_URI\"",
+              "docker run -d --name erp-backend --restart unless-stopped -p 8080:8080 -e SPRING_PROFILES_ACTIVE=prod -e SERVER_PORT=8080 -e DB_HOST=\"$DB_HOST\" -e DB_PORT=\"$DB_PORT\" -e DB_SERVICE_NAME=\"$DB_SERVICE_NAME\" -e DB_USERNAME=\"$DB_USERNAME\" -e DB_PASSWORD=\"$DB_PASSWORD\" -e JWT_SECRET=\"$JWT_SECRET\" -e API_SERVICE_KEY=\"$API_SERVICE_KEY\" \"$IMAGE_URI\"",
 
               "docker ps"
             ]' \
