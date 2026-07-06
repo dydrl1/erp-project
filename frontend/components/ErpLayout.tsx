@@ -214,76 +214,74 @@ export default function ErpLayout({ title, children, back = false }: ErpLayoutPr
   const role = session.user?.role ?? '';
 
   return (
-    <NotificationProvider>
-      <Layout className="erp-shell">
-        <Sider width={252} theme="light" className="erp-sidebar">
-          <Link href="/dashboard" className="erp-brand" aria-label="약통 ERP 홈">
-            <span className="erp-logo-mark">약</span>
-            <span>약통 ERP</span>
-          </Link>
+    <Layout className="erp-shell">
+      <Sider width={252} theme="light" className="erp-sidebar">
+        <Link href="/dashboard" className="erp-brand" aria-label="약동 ERP 홈">
+          <span className="erp-logo-mark">약</span>
+          <span>약동 ERP</span>
+        </Link>
 
-          <nav className="erp-nav" aria-label="주요 메뉴">
-            {MENU_GROUPS.map((group) => {
-              const visibleItems = group.items.filter((item) => !item.roles || item.roles.includes(role));
+        <nav className="erp-nav" aria-label="주요 메뉴">
+          {MENU_GROUPS.map((group) => {
+            const visibleItems = group.items.filter((item) => !item.roles || item.roles.includes(role));
 
-              if (visibleItems.length === 0) return null;
+            if (visibleItems.length === 0) return null;
 
-              return (
-                <section className="erp-nav-section" key={group.title}>
-                  <div className="erp-nav-title">
-                    <span>{group.title}</span>
-                    <span className="erp-nav-caret">⌃</span>
-                  </div>
-                  <div className="erp-nav-items">
-                    {visibleItems.map((item) => (
-                      <Link
-                        key={item.href}
-                        href={item.href}
-                        className={`erp-nav-item${selectedKey === item.href ? ' active' : ''}`}
-                      >
-                        <span className="erp-nav-icon">{item.icon}</span>
-                        <span>{item.label}</span>
-                      </Link>
-                    ))}
-                  </div>
-                </section>
-              );
-            })}
-          </nav>
-        </Sider>
+            return (
+              <section className="erp-nav-section" key={group.title}>
+                <div className="erp-nav-title">
+                  <span>{group.title}</span>
+                  <span className="erp-nav-caret">⌃</span>
+                </div>
+                <div className="erp-nav-items">
+                  {visibleItems.map((item) => (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className={`erp-nav-item${selectedKey === item.href ? ' active' : ''}`}
+                    >
+                      <span className="erp-nav-icon">{item.icon}</span>
+                      <span>{item.label}</span>
+                    </Link>
+                  ))}
+                </div>
+              </section>
+            );
+          })}
+        </nav>
+      </Sider>
 
-        <Layout>
-          <Header className="erp-topbar">
-            <div className="erp-title-wrap">
-              {back && (
-                <Button
-                  className="erp-back-btn"
-                  icon={<ArrowLeftOutlined />}
-                  onClick={() => router.back()}
-                  aria-label="뒤로가기"
-                />
-              )}
-              <Title level={3} className="erp-page-title">
-                {title}
-              </Title>
-            </div>
+      <Layout>
+        <Header className="erp-topbar">
+          <div className="erp-title-wrap">
+            {back && (
+              <Button
+                className="erp-back-btn"
+                icon={<ArrowLeftOutlined />}
+                onClick={() => router.back()}
+                aria-label="뒤로가기"
+              />
+            )}
+            <Title level={3} className="erp-page-title">
+              {title}
+            </Title>
+          </div>
 
-            <Space size={12} className="erp-user-actions">
-              <NotificationBell />
-              <Link href="/mypage" className="erp-user-link">
-                <Avatar icon={<UserOutlined />} />
-                <Text>{empName} 님</Text>
-              </Link>
-              <Button size="small" icon={<LogoutOutlined />} onClick={handleLogout}>
-                로그아웃
-              </Button>
-            </Space>
-          </Header>
+          <Space size={12} className="erp-user-actions">
+            <NotificationBell />
+            <Link href="/mypage" className="erp-user-link">
+              <Avatar icon={<UserOutlined />} />
+              <Text>{empName} 님</Text>
+            </Link>
+            <Button size="small" icon={<LogoutOutlined />} onClick={handleLogout}>
+              로그아웃
+            </Button>
+          </Space>
+        </Header>
 
-          <Content className="erp-content">{children}</Content>
-        </Layout>
-        <NotificationDrawer />
+        <Content className="erp-content">{children}</Content>
       </Layout>
-    </NotificationProvider>
+      <NotificationDrawer />
+    </Layout>
   );
 }
