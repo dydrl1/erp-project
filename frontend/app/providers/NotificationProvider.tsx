@@ -132,6 +132,8 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     const client = new Client({
       brokerURL: wsUrl,
       reconnectDelay: 5000,
+      heartbeatIncoming: 10000,
+      heartbeatOutgoing: 10000,
       onConnect: () => {
         client.subscribe('/topic/notifications', handleMessage);
         if (department) {
