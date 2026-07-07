@@ -790,6 +790,7 @@ export interface Settlement {
   grossProfit: number;
   profitRate: number;
   createdBy: number;
+  createdByName?: string;
   createdAt: string;
 }
 
@@ -812,6 +813,9 @@ export const settlementApi = {
       `/api/settlement/settlements${query ? `?${query}` : ""}`
     );
   },
+
+  detail: (settlementId: number) =>
+    api.get<Settlement>(`/api/settlement/settlements/${settlementId}`),
 
   create: (data: SettlementCreateRequest) =>
     api.post<void>("/api/settlement/settlements", data),
@@ -857,14 +861,6 @@ export interface SalesInvoice {
   createdAt: string;
 }
 
-export interface SalesInvoiceCreateRequest {
-  customerId: number;
-  soId: number;
-  issueDate: string;
-  totalAmount: number;
-  status: string;
-}
-
 export const settlementInvoiceApi = {
   list: (params: {
     customerName?: string;
@@ -888,19 +884,7 @@ export const settlementInvoiceApi = {
 
   detail: (salesInvoiceId: number) =>
     api.get<SalesInvoice>(`/api/settlement/invoices/${salesInvoiceId}`),
-
-  create: (data: SalesInvoiceCreateRequest) =>
-    api.post<void>("/api/settlement/invoices", data),
 };
-
-export interface CustomerReceivableSummary {
-  customerId: number;
-  customerName: string;
-  monthSalesAmount: number;
-  remainAmount: number;
-  creditLimit: number;
-  creditBalance: number;
-}
 
 export interface AccountReceivable {
   arId: number;
@@ -946,18 +930,6 @@ export const settlementReceivableApi = {
 
   detail: (arId: number) =>
     api.get<AccountReceivable>(`/api/settlement/receivables/${arId}`),
-
-  customerSummary: (customerName?: string) => {
-    const params = new URLSearchParams();
-
-    if (customerName) params.set("customerName", customerName);
-
-    const qs = params.toString();
-
-    return api.get<CustomerReceivableSummary[]>(
-      `/api/settlement/receivables/customer-summary${qs ? `?${qs}` : ""}`
-    );
-  },
 };
 
 export interface PurchaseInvoice {
@@ -1011,17 +983,6 @@ export interface PaymentHistory {
   createdAt: string;
 }
 
-export interface PaymentTarget {
-  arId: number;
-  customerId: number;
-  customerName: string;
-  totalAmount: number;
-  paidAmount: number;
-  remainAmount: number;
-  dueDate: string;
-  status: string;
-}
-
 export const settlementPaymentApi = {
   list: (params: {
     customerName?: string;
@@ -1038,18 +999,6 @@ export const settlementPaymentApi = {
 
     return api.get<PaymentHistory[]>(
       `/api/settlement/payments${qs ? `?${qs}` : ""}`
-    );
-  },
-
-  targets: (customerName?: string) => {
-    const query = new URLSearchParams();
-
-    if (customerName) query.set("customerName", customerName);
-
-    const qs = query.toString();
-
-    return api.get<PaymentTarget[]>(
-      `/api/settlement/payments/receivables${qs ? `?${qs}` : ""}`
     );
   },
 
