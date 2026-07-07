@@ -4,11 +4,13 @@ import com.erp.backend.common.ApiResponse;
 import com.erp.backend.common.PageResponse;
 import com.erp.backend.shipment.service.ShipmentService;
 import com.erp.backend.shipment.vo.*;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -91,5 +93,12 @@ public class ShipmentController {
     public ResponseEntity<ApiResponse<List<ProductStockVO>>> findProductStock() {
         List<ProductStockVO> result = shipmentService.findProductStockList();
         return ResponseEntity.ok(ApiResponse.success(result.size() + "개의 상품별 재고가 조회되었습니다.", result));
+    }
+
+    @GetMapping("/product-stock/print")
+    public void downloadProductStockExcel(HttpServletResponse response) throws IOException {
+        response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8");
+        response.setHeader("Content-Disposition", "attachment; filename=\"product-stock.xlsx\"");
+        shipmentService.printFindProductStockList(response.getOutputStream());
     }
 }

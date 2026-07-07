@@ -48,7 +48,7 @@ dependencies {
 
     // STOMP
     implementation 'org.springframework.boot:spring-boot-starter-websocket'
-
+    implementation 'org.apache.poi:poi-ooxml:5.4.1'
 }
 
 tasks.named('test') {

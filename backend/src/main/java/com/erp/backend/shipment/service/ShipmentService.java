@@ -2,6 +2,7 @@ package com.erp.backend.shipment.service;
 
 import com.erp.backend.common.CustomException;
 import com.erp.backend.common.ErrorCode;
+import com.erp.backend.common.ExcelUtil;
 import com.erp.backend.common.PageResponse;
 import com.erp.backend.notification.mapper.AlertMapper;
 import com.erp.backend.notification.service.AlertService;
@@ -22,9 +23,12 @@ import com.erp.backend.shipment.util.SourceType;
 import com.erp.backend.shipment.mapper.ShipmentMapper;
 import com.erp.backend.shipment.vo.*;
 import lombok.RequiredArgsConstructor;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.OutputStream;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -284,6 +288,20 @@ public class ShipmentService {
     //상품별 재고 조회
     public List<ProductStockVO> findProductStockList() {
         return shipmentMapper.findProductStockList();
+    }
+
+    public void printFindProductStockList(OutputStream outputStream){
+        List<ProductStockVO> products = shipmentMapper.findProductStockList();
+        try {
+            Workbook workbook = ExcelUtil.createExcel("상품목록",List.of("상품코드","상품명","배송가능 수량"),List.of(4000,6000,4000),products,(row,product)->{
+                row.createCell(0).setCellValue(product.getProductCode());
+                row.createCell(1).setCellValue(product.getProductName());
+                row.createCell(2).setCellValue(product.getShippableQty());
+            });
+            workbook.write(outputStream);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     //청구 생성
