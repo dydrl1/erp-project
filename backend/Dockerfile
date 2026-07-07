@@ -1,22 +1,25 @@
-FROM gradle:8-jdk17-alpine AS builder
-WORKDIR /workspace
+# ============================================================
+# 약통 ERP 백엔드 Dockerfile
+# 사전 준비: ./gradlew build 로 jar 생성되어 있어야 함
+# 빌드 위치: backend/ 폴더에서 실행
+# ============================================================
+FROM eclipse-temurin:17-jre
 
-COPY build.gradle settings.gradle ./
-COPY src ./src
-
-RUN gradle clean bootJar -x test --no-daemon
-
-FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
 
-ENV JAVA_OPTS=""
-ENV TNS_ADMIN=/app/Wallet
+# 빌드된 jar 복사 (plain.jar 제외하고 실행 가능한 jar만)
+COPY build/libs/*SNAPSHOT.jar app.jar
 
-RUN addgroup -S spring && adduser -S spring -G spring
+# Wallet 폴더를 이미지에 포함 (DB 접속 인증)
+COPY src/main/resources/Wallet /app/Wallet
 
-COPY --from=builder /workspace/build/libs/*.jar /app/app.jar
+# 컨테이너 안 Wallet 경로 (application.yml의 ${TNS_ADMIN_PATH}가 받음)
+ENV TNS_ADMIN_PATH=/app/Wallet
+
+# 타임존 (한국)
+ENV TZ=Asia/Seoul
 
 USER spring
 EXPOSE 8080
 
-ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar /app/app.jar"]
+ENTRYPOINT ["java", "-jar", "app.jar"]
