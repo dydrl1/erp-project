@@ -94,6 +94,8 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     }
   }, []);
   useEffect(() => {
+    console.log('empId ', localStorage.getItem('empId'));
+    console.log('accessToken', localStorage.getItem('accessToken'));
     const loginId = Number(localStorage.getItem('empId'));
     if (!loginId) return;
     alertApi
