@@ -123,6 +123,7 @@ export default function StockMovementTab() {
         };
         return <Tag>{labels[value] ?? value}</Tag>;
       },
+      responsive: ['md'],
     },
     {
       title: '업무구분',
@@ -141,6 +142,7 @@ export default function StockMovementTab() {
         };
         return <Tag>{labels[value] ?? value}</Tag>;
       },
+      responsive: ['md'],
     },
     {
       title: '변경 전',
@@ -300,6 +302,7 @@ export default function StockMovementTab() {
               setPageSize(size);
             },
           }}
+          scroll={{ x: 1200 }}
         />
       </Card>
     </>
