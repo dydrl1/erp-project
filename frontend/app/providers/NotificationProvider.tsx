@@ -97,7 +97,6 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   const loadNotifications = useCallback(() => {
     const token = localStorage.getItem('accessToken');
     if (!token) {
-      console.error('유효한 토큰이 존재하지 않습니다');
       return;
     }
     alertApi

@@ -75,6 +75,7 @@ export default function StockMovementTab() {
 
   useEffect(() => {
     const loadingInitialData = async () => {
+      setLoading(true);
       try {
         const result = await stockMovementApi.search({});
         setStockMovement(result);
@@ -272,7 +273,7 @@ export default function StockMovementTab() {
           </Space>
           <Space>
             <Button onClick={handleReset}>초기화</Button>
-            <Button type="primary" loading={loading} disabled={loading} onClick={handleSearch}>
+            <Button type="primary" onClick={handleSearch} style={{ width: 80 }}>
               검색
             </Button>
           </Space>
