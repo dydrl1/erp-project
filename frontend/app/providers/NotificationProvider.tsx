@@ -93,11 +93,13 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
       console.error('Failed to parse notification message:', error);
     }
   }, []);
-  useEffect(() => {
-    console.log('empId ', localStorage.getItem('empId'));
-    console.log('accessToken', localStorage.getItem('accessToken'));
-    const loginId = Number(localStorage.getItem('empId'));
-    if (!loginId) return;
+
+  const loadNotifications = useCallback(() => {
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+      console.error('유효한 토큰이 존재하지 않습니다');
+      return;
+    }
     alertApi
       .list()
       .then((result) => {
@@ -117,6 +119,14 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
         console.error('기존 알림 조회 실패: ', error);
       });
   }, []);
+
+  useEffect(() => {
+    loadNotifications();
+    window.addEventListener('auth-changed', loadNotifications);
+    return () => {
+      window.removeEventListener('auth-changed', loadNotifications);
+    };
+  }, [loadNotifications]);
 
   useEffect(() => {
     if (clientRef.current) return;
