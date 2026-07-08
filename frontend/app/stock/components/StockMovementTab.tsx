@@ -186,7 +186,7 @@ export default function StockMovementTab() {
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: '1.2fr 1fr 160px 180px 140px',
+            gridTemplateColumns: 'repeat(auto-fit,minmax(160px,1fr))',
             gap: 12,
             marginBottom: 16,
           }}
@@ -255,7 +255,7 @@ export default function StockMovementTab() {
             flexWrap: 'wrap',
           }}
         >
-          <Space>
+          <Space wrap>
             <DatePicker
               placeholder="시작일"
               value={startDate}
