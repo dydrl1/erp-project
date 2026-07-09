@@ -90,7 +90,7 @@ public class SalesOrderController {
         return ResponseEntity.ok(ApiResponse.success("주문이 승인되었습니다",updateSalesOrder));
     }
 
-    @PutMapping("/{salesOrderId/reject")
+    @PutMapping("/{salesOrderId}/reject")
     public ResponseEntity<ApiResponse<String>> rejectRequest(@PathVariable int salesOrderId,@AuthenticationPrincipal long empId)
         {
             salesOrderService.findSalesOrderById(salesOrderId);
