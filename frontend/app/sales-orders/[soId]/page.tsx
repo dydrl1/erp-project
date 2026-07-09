@@ -21,6 +21,7 @@ import type { ColumnsType } from 'antd/es/table';
 import ErpLayout from '@/components/ErpLayout';
 import StatusBadge from '@/components/StatusBadge';
 import { salesOrderApi, SalesOrderDetail, SalesOrder, shipmentApi, ReturnItem, returnItemApi } from '@/lib/api';
+import { ExclamationCircleFilled } from '@ant-design/icons';
 const { Text } = Typography;
 
 export default function SalesOrderDetailPage() {
@@ -92,6 +93,7 @@ export default function SalesOrderDetailPage() {
     modal.confirm({
       title: '판매 주문 승인',
       content: '이 판매주문 주문을 승인하시겠습니까?',
+      icon: <ExclamationCircleFilled style={{ color: 'green' }} />,
       okText: '승인',
       cancelText: '취소',
       onOk: async () => {
@@ -114,8 +116,9 @@ export default function SalesOrderDetailPage() {
     modal.confirm({
       title: '판매 주문 반려',
       width: 520,
-      okText: '주문 반려 확정',
+      okText: '주문 반려',
       cancelText: '취소',
+      icon: <ExclamationCircleFilled style={{ color: 'red' }} />,
       okButtonProps: { danger: true },
       content: (
         <Space orientation="vertical" style={{ width: '100%' }}>
@@ -141,6 +144,7 @@ export default function SalesOrderDetailPage() {
     modal.confirm({
       title: '출고 승인',
       content: '이 출고요청을 승낙하시겠습니다?',
+      icon: <ExclamationCircleFilled style={{ color: 'green' }} />,
       okText: '확인',
       cancelText: '취소',
       onOk: async () => {
@@ -339,7 +343,7 @@ export default function SalesOrderDetailPage() {
         <Button onClick={() => router.back()}>목록으로</Button>
       </Flex>
 
-      <Card>
+      <Card style={{ marginTop: 16 }}>
         <Descriptions bordered column={3} size="small">
           <Descriptions.Item label="고객사명">{order.customerName}</Descriptions.Item>
           <Descriptions.Item label="주문자">{order.reqEmployeeName}</Descriptions.Item>
