@@ -87,11 +87,15 @@ export default function DisposalPage() {
     modal.confirm({
       title: '선택한 재고를 폐기하시겠습니까?',
       content: (
-        <div>
-          <p>선택 LOT: {selectedRowKeys.length}건</p>
-          <p>총 폐기 수량: {totalQty.toLocaleString()}개</p>
-          <p>폐기 사유: {reason}</p>
-          <p>폐기 처리 후 해당 LOT의 재고 수량은 차감되며, 재고 이동 이력에 기록됩니다.</p>
+        <div style={{ lineHeight: 1.8 }}>
+          선택 LOT: {selectedRowKeys.length}건
+          <br />총 폐기 수량: {totalQty.toLocaleString()}개
+          <br />
+          폐기 사유: {reason || '-'}
+          <br />
+          폐기 처리 후 해당 LOT의 재고 수량은 차감되며,
+          <br />
+          재고 이동 이력에 기록됩니다.
         </div>
       ),
       okText: '폐기',
@@ -101,13 +105,6 @@ export default function DisposalPage() {
       },
       async onOk() {
         try {
-          const empId = Number(localStorage.getItem('empId'));
-
-          if (!empId || empId <= 0) {
-            message.error('직원 정보를 확인할 수 없습니다.');
-            return;
-          }
-
           await disposalApi.process({
             inventoryLotId: selectedRowKeys.map((key) => Number(key)),
             reason,
@@ -133,6 +130,7 @@ export default function DisposalPage() {
 
           <Space wrap>
             <Select
+              placeholder="폐기 사유를 선택하세요"
               style={{ width: 180 }}
               value={reason}
               onChange={setReason}
