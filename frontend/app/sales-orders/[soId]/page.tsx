@@ -240,6 +240,17 @@ export default function SalesOrderDetailPage() {
         render: (value?: number) => value?.toLocaleString() ?? 0,
       },
       {
+        title: '반품수량',
+        dataIndex: 'returnQty',
+        align: 'right',
+        render: (value: number) => (value > 0 ? `${value}` : ' '),
+      },
+      {
+        title: '최종수량',
+        dataIndex: 'finalQty',
+        align: 'right',
+      },
+      {
         title: '단가',
         dataIndex: 'unitPrice',
         align: 'right',
@@ -250,6 +261,12 @@ export default function SalesOrderDetailPage() {
         dataIndex: 'amount',
         align: 'right',
         render: (value?: number) => `${value?.toLocaleString() ?? 0}원`,
+      },
+      {
+        title: '최종금액',
+        dataIndex: 'finalPrice',
+        align: 'right',
+        render: (value: number) => `${value?.toLocaleString()}원`,
       },
     ],
     [],

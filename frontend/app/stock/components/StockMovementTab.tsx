@@ -178,12 +178,7 @@ export default function StockMovementTab() {
 
   return (
     <>
-      <Card
-        style={{ marginBottom: 16 }}
-        title="재고 이동 이력"
-        extra={<Typography.Text type="secondary">총 {StockMovement.length.toLocaleString()}건</Typography.Text>}
-        styles={{ body: { padding: 10 } }}
-      >
+      <Card style={{ marginBottom: 16 }} styles={{ body: { padding: 10 } }}>
         <div
           style={{
             display: 'grid',

@@ -279,6 +279,9 @@ export interface SalesOrderDetail {
   unitPrice: number;
   amount: number;
   productName: string;
+  returnQty: number;
+  finalQty: number;
+  finalPrice: number;
 }
 
 // ======Shipments=====

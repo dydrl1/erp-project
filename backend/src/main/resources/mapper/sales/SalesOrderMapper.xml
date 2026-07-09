@@ -139,8 +139,11 @@
         select sod.so_id,
                sod.so_detail_id,
                sod.order_qty,
+               nvl(r.return_qty,0) as return_qty,
+               sod.order_qty - nvl(r.return_qty,0) as final_qty,
                sod.unit_price,
                sod.amount,
+               (sod.order_qty-nvl(r.return_qty,0))*sod.unit_price as final_price,
                sod.product_id,
                p.product_code,
                p.product_name
@@ -149,7 +152,17 @@
              product p
              ON
                  p.product_id = sod.product_id
-        where sod.so_id = #{soId}
+        LEFT JOIN (
+        SELECT sd.so_detail_id,
+               sum(rr.return_qty) as return_qty
+        FROM return_request rr
+        JOIN shipment_detail sd
+        ON sd.shipment_detail_id=rr.shipment_detail_id
+        WHERE rr.status in ('APPROVED','COMPLETED')
+        GROUP BY sd.so_detail_id
+        ) r
+        ON r.so_detail_id=sod.so_detail_id
+        WHERE sod.so_id=#{soId}
         ORDER BY sod.so_detail_id
     </select>
     <select id="currentSalesOrderSeq" resultType="int">

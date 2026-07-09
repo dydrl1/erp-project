@@ -136,7 +136,14 @@ export default function ReturnDetailPage() {
         </Descriptions>
       </Card>
 
-      <Table columns={returnColumns} dataSource={items} loading={loading} pagination={false} size="small" />
+      <Table
+        rowKey="returnGroupId"
+        columns={returnColumns}
+        dataSource={items}
+        loading={loading}
+        pagination={false}
+        size="small"
+      />
       {header?.status === 'REQUESTED' && (
         <Flex justify="end" style={{ marginTop: 16, gap: 16 }}>
           <Button danger onClick={() => setShowRejectModal(true)}>
