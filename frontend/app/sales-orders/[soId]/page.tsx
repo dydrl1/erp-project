@@ -111,8 +111,6 @@ export default function SalesOrderDetailPage() {
   };
 
   const handleReject = () => {
-    let reason = '';
-
     modal.confirm({
       title: '판매 주문 반려',
       width: 520,
@@ -128,7 +126,6 @@ export default function SalesOrderDetailPage() {
         setProcessing(true);
         try {
           await salesOrderApi.reject(Number(soId));
-          //주문반려 등록 필요
           message.success('판매 주문이 반려되었습니다.');
           router.push('/sales-orders');
         } catch (e) {
@@ -223,7 +220,7 @@ export default function SalesOrderDetailPage() {
       setReturnModalOpen(false);
       setReason('');
       load();
-    } catch (e) {
+    } catch {
       message.error('반품 요청에 실패했습니다.');
     } finally {
       setProcessing(false);
