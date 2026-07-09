@@ -11,10 +11,10 @@ public class DisposalVO {
     private Integer disposalId;
     private String disposalName;
     private String status;
-    private String createdBy;
+    private long createdBy;
     private LocalDateTime createdAt;
     private long approvedBy;
     private LocalDateTime approvedAt;
     private LocalDateTime completedAt;
-    private String rejectReason;
+    private String reason;
 }

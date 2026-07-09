@@ -1193,3 +1193,28 @@ export const returnItemApi = {
   },
   complete: (returnGroupId: string) => api.put(`/api/return-item/${returnGroupId}/complete`),
 };
+
+export interface DisposalTarget {
+  inventoryLotId: number;
+  productId: number;
+  productCode?: string;
+  productName?: string;
+  lotNo?: string;
+  currentQty: number;
+  expiryDate?: string;
+  status: string;
+}
+
+export interface DisposalRequest {
+  inventoryLotId: number[];
+  reason: string;
+}
+export const disposalApi = {
+  listTargets: () => {
+    return api.get<DisposalTarget[]>('/api/disposals/targets');
+  },
+
+  process: (data: DisposalRequest) => {
+    return api.post<void>('/api/disposals/process', data);
+  },
+};
