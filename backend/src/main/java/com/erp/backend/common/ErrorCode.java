@@ -57,7 +57,7 @@ public enum ErrorCode {
     // 주문
     SALES_ORDER_REQUEST_INVALID(HttpStatus.BAD_REQUEST,"주문 요청이 유효하지 않습니다"),
     SALES_ORDER_FAILED(HttpStatus.BAD_REQUEST,"주문을 요청할 수 없습니다"),
-    SALES_ORDER_REQUEST_REJECT_FAILED(HttpStatus.BAD_REQUEST,"반려 요청이 실패했습니다."),
+    SALES_ORDER_REQUEST_CANCEL_FAILED(HttpStatus.BAD_REQUEST,"반려 요청이 실패했습니다."),
     SALES_NOT_AVAILABLE_STOCK(HttpStatus.BAD_REQUEST,"재고가 부족합니다."),
     SALES_NOT_AMOUNT_MATCHED(HttpStatus.BAD_REQUEST,"금액이 일치하지 않습니다"),
     SALES_APPROVE_FAILED(HttpStatus.BAD_REQUEST,"승인이 되지 않았습니다"),

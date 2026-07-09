@@ -228,10 +228,10 @@ public class SalesOrderService {
     }
 
     @Transactional
-    public void rejectSalesOrderRequest(SalesOrderVO salesOrderVO) {
-        int result = salesOrderMapper.rejectRequest(salesOrderVO);
+    public void cancelSalesOrderRequest(SalesOrderVO salesOrderVO) {
+        int result = salesOrderMapper.cancelRequest(salesOrderVO);
         if (result != 1) {
-            throw new CustomException(ErrorCode.SALES_ORDER_REQUEST_REJECT_FAILED);
+            throw new CustomException(ErrorCode.SALES_ORDER_REQUEST_CANCEL_FAILED);
         }
     }
 
