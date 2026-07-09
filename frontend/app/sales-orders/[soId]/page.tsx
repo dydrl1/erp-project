@@ -228,49 +228,60 @@ export default function SalesOrderDetailPage() {
   };
 
   const currentStep = statusStep[order?.status ?? 'REQUESTED'];
-
-  const columns = useMemo<ColumnsType<SalesOrderDetail>>(
-    () => [
+  const hasReturn = order?.detailList?.some((detail) => detail.returnQty > 0) ?? false;
+  const columns = useMemo<ColumnsType<SalesOrderDetail>>(() => {
+    const baseColumns: ColumnsType<SalesOrderDetail> = [
       { title: '제품코드', dataIndex: 'productCode' },
       { title: '제품명', dataIndex: 'productName' },
-      {
-        title: '수량',
-        dataIndex: 'orderQty',
-        align: 'right',
-        render: (value?: number) => value?.toLocaleString() ?? 0,
-      },
-      {
-        title: '반품수량',
-        dataIndex: 'returnQty',
-        align: 'right',
-        render: (value: number) => (value > 0 ? `${value}` : ' '),
-      },
-      {
-        title: '최종수량',
-        dataIndex: 'finalQty',
-        align: 'right',
-      },
       {
         title: '단가',
         dataIndex: 'unitPrice',
         align: 'right',
-        render: (value?: number) => value?.toLocaleString() ?? 0,
-      },
-      {
-        title: '금액',
-        dataIndex: 'amount',
-        align: 'right',
         render: (value?: number) => `${value?.toLocaleString() ?? 0}원`,
       },
       {
+        title: hasReturn ? '주문수량' : '수량',
+        dataIndex: 'orderQty',
+        align: 'right',
+        render: (value?: number) => value?.toLocaleString() ?? 0,
+      },
+    ];
+
+    if (hasReturn) {
+      baseColumns.push(
+        {
+          title: '반품수량',
+          dataIndex: 'returnQty',
+          align: 'right',
+          render: (value?: number) => ((value ?? 0) > 0 ? value?.toLocaleString() : '-'),
+        },
+        {
+          title: '최종수량',
+          dataIndex: 'finalQty',
+          align: 'right',
+          render: (value?: number) => value?.toLocaleString() ?? 0,
+        },
+      );
+    }
+
+    baseColumns.push({
+      title: hasReturn ? '주문금액' : '금액',
+      dataIndex: 'amount',
+      align: 'right',
+      render: (value?: number) => `${value?.toLocaleString() ?? 0}원`,
+    });
+
+    if (hasReturn) {
+      baseColumns.push({
         title: '최종금액',
         dataIndex: 'finalPrice',
         align: 'right',
-        render: (value: number) => `${value?.toLocaleString()}원`,
-      },
-    ],
-    [],
-  );
+        render: (value?: number) => `${value?.toLocaleString() ?? 0}원`,
+      });
+    }
+
+    return baseColumns;
+  }, [hasReturn]);
 
   const returnColumns: ColumnsType<ReturnFormRow> = [
     {
@@ -392,7 +403,7 @@ export default function SalesOrderDetailPage() {
         </Card>
       )}
 
-      <Card title="주문 품목">
+      <Card title={hasReturn ? '주문 품목 - 반품 반영' : '주문 품목'}>
         <Table
           rowKey="soDetailId"
           columns={columns}
