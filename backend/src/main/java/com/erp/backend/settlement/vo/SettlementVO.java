@@ -20,6 +20,7 @@ public class SettlementVO {
     private BigDecimal grossProfit; // 매출총이익
     private BigDecimal profitRate; // 이익률
     private Integer createdBy; // 생성자 ID
+    private String createdByName; // 생성자명
     private LocalDate createdAt; // 생성일자
 
 }

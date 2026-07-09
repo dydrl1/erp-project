@@ -123,7 +123,13 @@ export default function SettlementListPage() {
                         ) : (
                             pagedList.map((item) => (
                                 <tr key={item.settlementId}>
-                                    <td>ST-{String(item.settlementId).padStart(4, "0")}</td>
+                                    <td
+                                        className="link"
+                                        onClick={() => router.push(`/settlement/settlements/${item.settlementId}`)}
+                                        style={{ cursor: "pointer" }}
+                                    >
+                                        ST-{String(item.settlementId).padStart(4, "0")}
+                                    </td>
                                     <td>{item.startDate?.slice(0, 10)}</td>
                                     <td>{item.endDate?.slice(0, 10)}</td>
                                     <td className="num">{formatMoney(item.totalSales)}</td>

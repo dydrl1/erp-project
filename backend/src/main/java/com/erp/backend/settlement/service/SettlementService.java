@@ -52,11 +52,6 @@ public class SettlementService {
         return settlementMapper.findAllAccountReceivables(params);
     }
 
-    // 거래처별 미수금 목록
-    public List<AccountReceivableVO> findCustomerReceivableSummary(Map<String, Object> params) {
-        return settlementMapper.findCustomerReceivableSummary(params);
-    }
-
     // 미지급금/매입채무 조회
     public List<AccountPayableVO> getAccountPayableList(
             String status, String supplierName, String startDate, String endDate) {
@@ -66,13 +61,6 @@ public class SettlementService {
         params.put("startDate", startDate);
         params.put("endDate", endDate);
         return settlementMapper.findAllAccountPayables(params);
-    }
-
-    // 수금 대상 목록 조회
-    public List<AccountReceivableVO> getPaymentTargets(String customerName) {
-        Map<String, Object> params = new HashMap<>();
-        params.put("customerName", customerName);
-        return settlementMapper.findPaymentTargets(params);
     }
 
     // 수금내역 조회
@@ -112,11 +100,6 @@ public class SettlementService {
     // 미지급금 상세조회
     public AccountPayableVO getAccountPayable(Long apId) {
         return settlementMapper.findAccountPayableById(apId);
-    }
-
-    // 수금내역 상세조회
-    public PaymentVO getPayment(Long paymentId) {
-        return settlementMapper.findPaymentById(paymentId);
     }
 
     // 손익정산 상세조회

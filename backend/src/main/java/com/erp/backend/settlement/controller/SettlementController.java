@@ -1,7 +1,6 @@
 package com.erp.backend.settlement.controller;
 
 import com.erp.backend.common.ApiResponse;
-import com.erp.backend.settlement.dto.SalesRequestDto;
 import com.erp.backend.settlement.dto.SettlementRequestDto;
 import com.erp.backend.settlement.service.SettlementService;
 import com.erp.backend.settlement.vo.*;
@@ -57,18 +56,6 @@ public class SettlementController {
         );
     }
 
-    @Operation(summary = "거래처별 미수금 목록")
-    @GetMapping("/receivables/customer-summary")
-    public ResponseEntity<ApiResponse<List<AccountReceivableVO>>> getCustomerReceivableSummary(
-            @RequestParam(required = false) String customerName) {
-        Map<String, Object> params = new HashMap<>();
-        params.put("customerName", customerName);
-
-        return ResponseEntity.ok(
-                ApiResponse.success(settlementService.findCustomerReceivableSummary(params))
-        );
-    }
-
     @Operation(summary = "미지급금 조회")
     @GetMapping("/payables")
     public ResponseEntity<ApiResponse<List<AccountPayableVO>>> getAccountPayableList(
@@ -91,15 +78,6 @@ public class SettlementController {
                 ApiResponse.success(
                         settlementService.getPayablePaymentList(supplierName, startDate, endDate)
                 )
-        );
-    }
-
-    @Operation(summary = "수금 대상 목록 조회")
-    @GetMapping("/payments/receivables")
-    public ResponseEntity<ApiResponse<List<AccountReceivableVO>>> getPaymentTargets(
-            @RequestParam(required = false) String customerName) {
-        return ResponseEntity.ok(
-                ApiResponse.success(settlementService.getPaymentTargets(customerName))
         );
     }
 
@@ -156,40 +134,12 @@ public class SettlementController {
         );
     }
 
-    @Operation(summary = "수금내역 상세조회")
-    @GetMapping("/payments/{paymentId}")
-    public ResponseEntity<ApiResponse<PaymentVO>> getPayment(@PathVariable Long paymentId) {
-        return ResponseEntity.ok(
-                ApiResponse.success(settlementService.getPayment(paymentId))
-        );
-    }
-
     @Operation(summary = "손익정산 상세조회")
     @GetMapping("/settlements/{settlementId}")
     public ResponseEntity<ApiResponse<SettlementVO>> getSettlement(@PathVariable Long settlementId) {
         return ResponseEntity.ok(
                 ApiResponse.success(settlementService.getSettlement(settlementId))
         );
-    }
-
-    @Operation(summary = "매출청구 등록")
-    @PostMapping("/invoices")
-    public ResponseEntity<String> createSalesInvoice(@RequestBody SalesRequestDto requestDto) {
-        SalesInvoiceVO salesInvoiceVO = new SalesInvoiceVO();
-        AccountReceivableVO accountReceivableVO = new AccountReceivableVO();
-
-        salesInvoiceVO.setSoId(requestDto.getSoId());
-        salesInvoiceVO.setCustomerId(requestDto.getCustomerId());
-        salesInvoiceVO.setIssueDate(requestDto.getIssueDate());
-        salesInvoiceVO.setTotalAmount(requestDto.getTotalAmount());
-        salesInvoiceVO.setStatus(requestDto.getStatus());
-
-        settlementService.createSalesInvoice(
-                salesInvoiceVO,
-                accountReceivableVO
-        );
-
-        return ResponseEntity.ok("매출청구 등록 완료");
     }
 
     @Operation(summary = "수금 처리")
