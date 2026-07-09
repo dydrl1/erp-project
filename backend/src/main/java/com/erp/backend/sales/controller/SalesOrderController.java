@@ -2,6 +2,7 @@ package com.erp.backend.sales.controller;
 
 
 import com.erp.backend.common.ApiResponse;
+import com.erp.backend.common.CustomException;
 import com.erp.backend.common.PageResponse;
 import com.erp.backend.sales.dto.SalesOrderListResponseDTO;
 import com.erp.backend.sales.dto.SalesOrderRequestDTO;
@@ -88,6 +89,17 @@ public class SalesOrderController {
         SalesOrderVO updateSalesOrder = salesOrderService.approveRequest(salesOrderVO);
         return ResponseEntity.ok(ApiResponse.success("주문이 승인되었습니다",updateSalesOrder));
     }
+
+    @PutMapping("/{salesOrderId/reject")
+    public ResponseEntity<ApiResponse<String>> rejectRequest(@PathVariable int salesOrderId,@AuthenticationPrincipal long empId)
+        {
+            salesOrderService.findSalesOrderById(salesOrderId);
+            SalesOrderVO salesOrderVO = new SalesOrderVO();
+            salesOrderVO.setSoId(salesOrderId);
+            salesOrderVO.setAppEmployeeId(empId);
+            salesOrderService.rejectSalesOrderRequest(salesOrderVO);
+            return ResponseEntity.ok(ApiResponse.success("주문이 반려되었습니다."));
+        }
 
     //주문금액검증
     @GetMapping("/{salesOrderId}/amount-check")

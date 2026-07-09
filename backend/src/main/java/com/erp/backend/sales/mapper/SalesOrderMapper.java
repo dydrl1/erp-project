@@ -39,6 +39,8 @@ public interface SalesOrderMapper {
     int currentSalesOrderDetailSeq();
     //요청 상태 주문 승인
     int approveRequest(SalesOrderVO salesOrderVO);
+    //요청 상태 주문 거절
+    int rejectRequest(SalesOrderVO salesOrderVO);
     //주문과 상세 금액의 일치여부 확인
     SalesOrderAmountCheckVO verifySalesOrderTotal(int salesOrderId);
     //FEFO 기준 출고가능 로트 목록 조회

@@ -475,6 +475,7 @@ export const salesOrderApi = {
   customers: () => api.get<{ customerId: number; customerName: string }[]>(`/api/sales-order/customers`),
   products: () => api.get<Record<string, unknown>[]>(`/api/sales-order/products`),
   approve: (soId: number) => api.patch<SalesOrder>(`/api/sales-order/${soId}/approve`),
+  reject: (soId: number) => api.put<SalesOrder>(`/api/sales-order/${soId}/reject`),
   create: (data: { customerId: number; memo?: string; details: { productId: number; orderQty: number }[] }) =>
     api.post<SalesOrder>('/api/sales-order', data),
 };

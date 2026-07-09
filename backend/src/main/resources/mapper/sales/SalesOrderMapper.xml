@@ -220,6 +220,14 @@
         AND
         status='REQUESTED'
     </update>
+    <update id="rejectRequest">
+        UPDATE SALES_ORDER
+        SET status='REJECTED',
+            approve_emp_id=#{appEmployeeId},
+            approve_date=SYSTIMESTAMP
+        WHERE so_id=#{salesOrderId}
+        AND status='REQUESTED'
+    </update>
     <select id="verifySalesOrderTotal" resultType="SalesOrderAmountCheckVO" parameterType="int">
         SELECT so_id,
                customer_id,

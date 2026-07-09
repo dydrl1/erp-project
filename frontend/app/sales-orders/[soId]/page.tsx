@@ -121,28 +121,13 @@ export default function SalesOrderDetailPage() {
       okButtonProps: { danger: true },
       content: (
         <Space orientation="vertical" style={{ width: '100%' }}>
-          <Text type="secondary">
-            SO-{String(order?.soId).padStart(4, '0')} 판매주문을 반려합니다. 반려 사유는 기안자에게 전달됩니다.
-          </Text>
-          <Input.TextArea
-            rows={4}
-            placeholder="반려 사유를 입력해주세요"
-            onChange={(e) => {
-              reason = e.target.value;
-            }}
-          />
+          <Text type="secondary">SO-{String(order?.soId).padStart(4, '0')} 판매주문을 반려합니다.</Text>
         </Space>
       ),
       onOk: async () => {
-        if (!reason.trim()) {
-          message.warning('반려 사유를 입력해주세요.');
-          return Promise.reject();
-        }
-
         setProcessing(true);
-
         try {
-          // await purchaseOrderApi.reject(Number(soId), reason.trim());
+          await salesOrderApi.reject(Number(soId));
           //주문반려 등록 필요
           message.success('판매 주문이 반려되었습니다.');
           router.push('/sales-orders');
