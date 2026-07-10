@@ -129,7 +129,7 @@ export default function DisposalPage() {
           </div>
 
           <Space wrap>
-            {/* <Select
+            <Select
               placeholder="폐기 사유를 선택하세요"
               style={{ width: 180 }}
               value={reason}
@@ -141,7 +141,7 @@ export default function DisposalPage() {
                 { value: '품질 이상', label: '품질 이상' },
                 { value: '기타', label: '기타' },
               ]}
-            /> */}
+            />
 
             <Button danger type="primary" disabled={selectedRowKeys.length === 0} onClick={handleProcessDisposal}>
               선택 폐기
