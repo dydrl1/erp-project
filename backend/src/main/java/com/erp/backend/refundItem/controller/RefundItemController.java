@@ -36,7 +36,7 @@ public class RefundItemController {
         return ResponseEntity.ok(ApiResponse.success(result));
     }
 
-    @GetMapping("/status-count")
+    @GetMapping("/status-counts")
     public ResponseEntity<ApiResponse<Map<String, Integer>>> getCountByStatus() {
         Map<String, Integer> result = refundItemService.getCountByStatus();
         return ResponseEntity.ok(ApiResponse.success("상태별 갯수", result));

@@ -1,7 +1,7 @@
 'use client';
 
 import ErpLayout from '@/components/ErpLayout';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { App, Button, Card, Select, Space, Table, Tag, Typography } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { disposalApi, DisposalTarget } from '@/lib/api';
@@ -16,22 +16,22 @@ export default function DisposalPage() {
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
   const [reason, setReason] = useState<string>();
 
-  const loadTargets = async () => {
+  const loadTargets = useCallback(async () => {
     try {
       setLoading(true);
       const data = await disposalApi.listTargets();
       setTargets(data);
       setSelectedRowKeys([]);
-    } catch (error) {
+    } catch {
       message.error('폐기 대상 목록을 불러오지 못했습니다.');
     } finally {
       setLoading(false);
     }
-  };
+  }, [message]);
 
   useEffect(() => {
     loadTargets();
-  }, []);
+  }, [loadTargets]);
 
   const selectedTargets = useMemo(() => {
     return targets.filter((item) => selectedRowKeys.includes(item.inventoryLotId));
@@ -112,7 +112,7 @@ export default function DisposalPage() {
 
           message.success('폐기 처리가 완료되었습니다.');
           await loadTargets();
-        } catch (error) {
+        } catch {
           message.error('폐기 처리에 실패했습니다.');
         }
       },

@@ -1,7 +1,7 @@
 'use client';
 
 import ErpLayout from '@/components/ErpLayout';
-import { App, Button, Card, Descriptions, Flex, Modal, Input, Space, Typography } from 'antd';
+import { App, Button, Card, Descriptions, Flex, Modal, Input, Typography } from 'antd';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';

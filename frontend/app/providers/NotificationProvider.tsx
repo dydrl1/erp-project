@@ -53,7 +53,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
       await alertApi.markAllAsRead();
       setNotifications((prev) => prev.map((item) => ({ ...item, isRead: true })));
     } catch (error) {
-      console.error('전체 읽음처리 실패 ');
+      console.error('전체 읽음처리 실패 ', error);
     }
   }, []);
 

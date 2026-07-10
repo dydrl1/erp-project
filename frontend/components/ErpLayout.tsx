@@ -24,7 +24,6 @@ import { authApi } from '@/lib/auth-api';
 import { tokenStorage, userStorage, type AuthUser } from '@/lib/api-client';
 import NotificationBell from '@/components/notification/NotificationBell';
 import NotificationDrawer from '@/components/notification/NotificationDrawer';
-import { NotificationProvider } from '@/app/providers/NotificationProvider';
 
 const { Header, Sider, Content } = Layout;
 const { Title, Text } = Typography;

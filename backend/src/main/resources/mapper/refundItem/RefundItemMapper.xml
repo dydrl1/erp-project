@@ -358,6 +358,12 @@
             </if>
         </where>
     </select>
+    <select id="findCountsByStatus" resultType="ReturnedItemVO">
+        SELECT status,
+               COUNT(DISTINCT return_group_id) AS count
+        FROM return_request
+        GROUP BY status
+    </select>
     <select id="findReturnFinanceSummary" resultType="ReturnSummaryVO">
         SELECT
             rr.return_group_id AS returnGroupId,

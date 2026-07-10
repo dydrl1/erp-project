@@ -74,7 +74,7 @@ public class RefundItemService {
         int offset = (safePage - 1) * safeSize;
         List<ReturnedItemGroupVO> list = refundItemMapper.findReturnItemGroupList(status, salesOrderId, offset, safeSize);
         Integer total = refundItemMapper.findCountsForReturnItemGroup(status, salesOrderId);
-        return new PageResponse<>(list, safeSize, total, safePage);
+        return new PageResponse<>(list, safePage, safeSize, total );
     }
 
 
