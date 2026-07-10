@@ -275,7 +275,7 @@ export default function StockMovementTab() {
         </div>
       </Card>
       <Card
-        title="상품별 재고"
+        title="재고 이동 이력"
         extra={<Typography.Text type="secondary"> 총 {StockMovement.length.toLocaleString()}건</Typography.Text>}
         styles={{ body: { padding: 0 } }}
       >

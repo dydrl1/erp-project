@@ -129,7 +129,7 @@ export default function LotStockTab() {
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: 'minmax(180px, 1.2fr) minmax(180px, 1fr) 1fr auto',
+            gridTemplateColumns: 'repeat(auto-fit,minmax(160px,1fr))',
             gap: 12,
             alignItems: 'center',
           }}

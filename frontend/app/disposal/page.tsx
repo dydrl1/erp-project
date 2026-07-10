@@ -14,7 +14,7 @@ export default function DisposalPage() {
   const [loading, setLoading] = useState(false);
   const [targets, setTargets] = useState<DisposalTarget[]>([]);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
-  const [reason, setReason] = useState<string>('유효기간 만료');
+  const [reason, setReason] = useState<string>();
 
   const loadTargets = async () => {
     try {
@@ -122,14 +122,14 @@ export default function DisposalPage() {
   return (
     <ErpLayout title="폐기 관리">
       <Card>
-        <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+        <Space orientation="vertical" size="middle" style={{ width: '100%' }}>
           <div>
             <Title level={4}>폐기 대상 목록</Title>
             <Text type="secondary">유효기간이 만료되었고 현재 수량이 남아있는 LOT만 표시됩니다.</Text>
           </div>
 
           <Space wrap>
-            <Select
+            {/* <Select
               placeholder="폐기 사유를 선택하세요"
               style={{ width: 180 }}
               value={reason}
@@ -141,7 +141,7 @@ export default function DisposalPage() {
                 { value: '품질 이상', label: '품질 이상' },
                 { value: '기타', label: '기타' },
               ]}
-            />
+            /> */}
 
             <Button danger type="primary" disabled={selectedRowKeys.length === 0} onClick={handleProcessDisposal}>
               선택 폐기
