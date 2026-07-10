@@ -143,3 +143,4 @@ vite.config.ts.timestamp-*
 .vite/
 
 **/k8s/
+/.claude/launch.json

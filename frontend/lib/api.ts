@@ -829,7 +829,6 @@ export const settlementApi = {
 
   create: (data: SettlementCreateRequest) =>
     api.post<void>("/api/settlement/settlements", data),
-  create: (data: SettlementCreateRequest) => api.post<void>('/api/settlement/settlements', data),
 };
 
 export interface DashboardSummary {
@@ -885,9 +884,6 @@ export const settlementInvoiceApi = {
 
   detail: (salesInvoiceId: number) =>
     api.get<SalesInvoice>(`/api/settlement/invoices/${salesInvoiceId}`),
-  detail: (salesInvoiceId: number) => api.get<SalesInvoice>(`/api/settlement/invoices/${salesInvoiceId}`),
-
-  create: (data: SalesInvoiceCreateRequest) => api.post<void>('/api/settlement/invoices', data),
 };
 
 export interface AccountReceivable {
@@ -901,6 +897,19 @@ export interface AccountReceivable {
   dueDate: string;
   status: string;
 }
+
+export interface CustomerReceivableSummary {
+  customerId: number;
+  customerName: string;
+  totalAmount?: number;
+  paidAmount?: number;
+  remainAmount: number;
+  monthSalesAmount?: number;
+  creditLimit?: number;
+  creditBalance?: number;
+}
+
+export type PaymentTarget = AccountReceivable;
 
 export interface PaymentCreateRequest {
   arId: number;
@@ -927,7 +936,6 @@ export const settlementReceivableApi = {
 
   detail: (arId: number) =>
     api.get<AccountReceivable>(`/api/settlement/receivables/${arId}`),
-  detail: (arId: number) => api.get<AccountReceivable>(`/api/settlement/receivables/${arId}`),
 
   customerSummary: (customerName?: string) => {
     const params = new URLSearchParams();
@@ -1006,8 +1014,6 @@ export const settlementPaymentApi = {
 
     return api.get<PaymentTarget[]>(`/api/settlement/payments/receivables${qs ? `?${qs}` : ''}`);
   },
-
-  create: (data: PaymentCreateRequest) => api.post<void>('/api/settlement/payments', data),
 };
 
 export interface AccountPayable {
