@@ -5,9 +5,9 @@ import { ReturnGroup, returnItemApi } from '@/lib/api';
 import { Badge, Flex, Space, Table, Tabs, Typography } from 'antd';
 import { ColumnsType } from 'antd/es/table';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
+import { Suspense, useEffect, useMemo, useState } from 'react';
 
-export default function ReturnPage() {
+function ReturnPage() {
   const router = useRouter();
   const [returnGroup, setReturnGroup] = useState<ReturnGroup[]>([]);
   const [counts, setCounts] = useState<Record<string, number>>({});
@@ -160,5 +160,12 @@ export default function ReturnPage() {
         })}
       />
     </ErpLayout>
+  );
+}
+export default function returnListPage() {
+  return (
+    <Suspense fallback={null}>
+      <ReturnPage />
+    </Suspense>
   );
 }
