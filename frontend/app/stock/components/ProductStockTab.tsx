@@ -1,5 +1,6 @@
 'use client';
 
+import { ReactNode } from 'react';
 import { useEffect, useState } from 'react';
 
 import { ProductStock, stockMovementApi } from '@/lib/api';
@@ -7,7 +8,11 @@ import { ColumnsType } from 'antd/es/table';
 import { App, Button, Card, Checkbox, Input, Select, Space, Tag, Table, Typography } from 'antd';
 import { tokenStorage } from '@/lib/api';
 
-export default function ProductStockTab() {
+type ProductStockTabProps = {
+  tabs: ReactNode;
+};
+
+export default function ProductStockTab({ tabs }: ProductStockTabProps) {
   const { message } = App.useApp();
   const [productStocks, setProductStocks] = useState<ProductStock[]>([]);
   const [productName, setProductName] = useState('');
@@ -132,10 +137,11 @@ export default function ProductStockTab() {
   return (
     <>
       <Card style={{ marginBottom: 16 }}>
+        {tabs}
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: '1.2fr 1fr 180px auto',
+            gridTemplateColumns: 'repeat(auto-fit,minmax(160px,1fr))',
             gap: 12,
             alignItems: 'center',
           }}

@@ -15,13 +15,13 @@ const TABS = [
 
 export default function StockPage() {
   const [tab, setTab] = useState('HISTORY');
+  const tabs = <Tabs activeKey={tab} items={TABS} onChange={setTab} />;
 
   return (
     <ErpLayout title="재고 관리">
-      <Tabs activeKey={tab} items={TABS} onChange={setTab} />
-      {tab === 'HISTORY' && <StockMovementTab />}
-      {tab === 'PRODUCT' && <ProductStockTab />}
-      {tab === 'LOT' && <LotStockTab />}
+      {tab === 'HISTORY' && <StockMovementTab tabs={tabs} />}
+      {tab === 'PRODUCT' && <ProductStockTab tabs={tabs} />}
+      {tab === 'LOT' && <LotStockTab tabs={tabs} />}
     </ErpLayout>
   );
 }

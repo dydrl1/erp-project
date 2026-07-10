@@ -1,15 +1,18 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { ReactNode } from 'react';
+import { useEffect, useState } from 'react';
 import { App, Input, InputNumber, Select, Button, Card, Space, Table, Tag, Typography, DatePicker } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
-import { StockMovement, shipmentApi, stockMovementApi } from '@/lib/api';
+import { StockMovement, stockMovementApi } from '@/lib/api';
 import { Dayjs } from 'dayjs';
 
-export default function StockMovementTab() {
+type StockMovementTabProps = {
+  tabs: ReactNode;
+};
+
+export default function StockMovementTab({ tabs }: StockMovementTabProps) {
   const { message } = App.useApp();
-  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [StockMovement, setStockMovement] = useState<StockMovement[]>([]);
   const [productName, setProductName] = useState('');
@@ -178,13 +181,14 @@ export default function StockMovementTab() {
 
   return (
     <>
-      <Card style={{ marginBottom: 16 }} styles={{ body: { padding: 10 } }}>
+      <Card style={{ marginBottom: 16 }}>
+        {tabs}
         <div
           style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit,minmax(160px,1fr))',
             gap: 12,
-            marginBottom: 16,
+            alignItems: 'center',
           }}
         >
           <Input
@@ -214,22 +218,6 @@ export default function StockMovementTab() {
               { value: 'ADJUST', label: '재고조정' },
             ]}
           />
-          <Select
-            placeholder="발생업무"
-            value={sourceType || undefined}
-            onChange={(value) => {
-              setSourceType(value ?? '');
-              setSourceId(undefined);
-            }}
-            allowClear
-            options={[
-              { value: 'RECEIVING', label: '입고' },
-              { value: 'SHIPMENT_DETAIL', label: '출고' },
-              { value: 'RETURN', label: '반품' },
-              { value: 'DISPOSAL', label: '폐기' },
-              { value: 'ADJUST', label: '재고조정' },
-            ]}
-          />
           <InputNumber
             placeholder={
               sourceType === 'SHIPMENT_DETAIL' ? '출고상세번호' : sourceType === 'RECEIVING' ? '입고번호' : '업무번호'
@@ -249,6 +237,7 @@ export default function StockMovementTab() {
             alignItems: 'center',
             gap: 12,
             flexWrap: 'wrap',
+            marginTop: 16,
           }}
         >
           <Space wrap>

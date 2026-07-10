@@ -1,12 +1,17 @@
 'use client';
 
+import { ReactNode } from 'react';
 import { useState, useEffect } from 'react';
 import { Button, Card, Input, Select, Space, Table, Tag, Typography } from 'antd';
 import { ColumnsType } from 'antd/es/table';
 import { LotStock, stockMovementApi } from '@/lib/api';
 import { App } from 'antd';
 
-export default function LotStockTab() {
+type LotStockTabsProps = {
+  tabs: ReactNode;
+};
+
+export default function LotStockTab({ tabs }: LotStockTabsProps) {
   const { message } = App.useApp();
   const [lotStocks, setLotStocks] = useState<LotStock[]>([]);
   const [allLotStocks, setAllLotStocks] = useState<LotStock[]>([]);
@@ -126,6 +131,7 @@ export default function LotStockTab() {
   return (
     <>
       <Card style={{ marginBottom: 16 }}>
+        {tabs}
         <div
           style={{
             display: 'grid',
@@ -159,7 +165,7 @@ export default function LotStockTab() {
 
           <div />
 
-          <Space size={8}>
+          <Space style={{ width: '100%', justifyContent: 'flex-end', marginTop: 16 }}>
             <Button onClick={handleReset}>초기화</Button>
             <Button type="primary" onClick={handleSearch}>
               검색
