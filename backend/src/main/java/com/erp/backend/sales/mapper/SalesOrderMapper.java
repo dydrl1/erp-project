@@ -3,7 +3,6 @@ import com.erp.backend.sales.dto.SalesOrderStatusCountDTO;
 import com.erp.backend.sales.vo.*;
 import org.apache.ibatis.annotations.Mapper;
 import java.util.List;
-import java.util.Map;
 
 @Mapper
 public interface SalesOrderMapper {
@@ -39,6 +38,8 @@ public interface SalesOrderMapper {
     int currentSalesOrderDetailSeq();
     //요청 상태 주문 승인
     int approveRequest(SalesOrderVO salesOrderVO);
+    //요청 상태 주문 거절
+    int cancelRequest(SalesOrderVO salesOrderVO);
     //주문과 상세 금액의 일치여부 확인
     SalesOrderAmountCheckVO verifySalesOrderTotal(int salesOrderId);
     //FEFO 기준 출고가능 로트 목록 조회

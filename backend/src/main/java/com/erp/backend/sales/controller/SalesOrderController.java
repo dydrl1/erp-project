@@ -89,6 +89,17 @@ public class SalesOrderController {
         return ResponseEntity.ok(ApiResponse.success("주문이 승인되었습니다",updateSalesOrder));
     }
 
+    @PutMapping("/{salesOrderId}/reject")
+    public ResponseEntity<ApiResponse<String>> cancelRequest(@PathVariable int salesOrderId, @AuthenticationPrincipal long empId)
+        {
+            salesOrderService.findSalesOrderById(salesOrderId);
+            SalesOrderVO salesOrderVO = new SalesOrderVO();
+            salesOrderVO.setSoId(salesOrderId);
+            salesOrderVO.setAppEmployeeId(empId);
+            salesOrderService.cancelSalesOrderRequest(salesOrderVO);
+            return ResponseEntity.ok(ApiResponse.success("주문이 반려되었습니다."));
+        }
+
     //주문금액검증
     @GetMapping("/{salesOrderId}/amount-check")
     public ResponseEntity<ApiResponse<SalesOrderAmountCheckVO>> checkView(@PathVariable int salesOrderId){

@@ -40,4 +40,10 @@ public class AlertController {
     public ResponseEntity<ApiResponse<Integer>> countReadAlerts(@RequestParam int loginId){
         return ResponseEntity.ok(ApiResponse.success(alertService.countUnreadAlert(loginId)));
     }
+
+    @PutMapping("/readAll")
+    public ResponseEntity<ApiResponse<Void>> readALl(@AuthenticationPrincipal long loginId) {
+        alertService.readAllMessage(loginId);
+        return ResponseEntity.ok(ApiResponse.success("모든 알람 읽음처리", null));
+    }
 }

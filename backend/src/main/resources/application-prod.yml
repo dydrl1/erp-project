@@ -1,0 +1,61 @@
+spring:
+  datasource:
+    url: jdbc:oracle:thin:@${DB_HOST}:${DB_PORT}/${DB_SERVICE_NAME}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: oracle.jdbc.OracleDriver
+
+  mvc:
+    pathmatch:
+      matching-strategy: ant_path_matcher
+
+mybatis:
+  mapper-locations: classpath:mapper/**/*.xml
+  type-aliases-package: com.erp
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    local-cache-scope: statement
+
+server:
+  port: 8080
+  address: 0.0.0.0
+
+logging:
+  level:
+    com.erp: DEBUG
+    org.springframework.web.socket: DEBUG
+    org.springframework.messaging: DEBUG
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+  api-docs:
+    path: /api-docs
+
+jwt:
+  secret: ${JWT_SECRET}
+  access-token-expiration: 604800000 #30분 (ms)
+  refresh-token-expiration: 604800000 # 7일 (ms)
+
+  # CORS 허용 출처 (프론트엔드 주소)
+cors:
+  # allowed-origin: http://localhost:3000
+  allowed-origin: 'https://yak-tong.com,https://www.yak-tong.com'
+# Refresh Token 쿠키 설정
+cookie:
+  secure: true # 운영(HTTPS) 환경에서는 true
+  same-site: none # 교차 출처(다른 도메인)면 None + secure=true 필요
+
+api:
+  service-key: ${API_SERVICE_KEY}
+  drug:
+    basic-url: https://apis.data.go.kr/1471000/DrugPrdtPrmsnInfoService07/getDrugPrdtPrmsnInq07
+    detail-url: https://apis.data.go.kr/1471000/DrugPrdtPrmsnInfoService07/getDrugPrdtPrmsnDtlInq06
+    ingredient-url: https://apis.data.go.kr/1471000/DrugPrdtPrmsnInfoService07/getDrugPrdtMcpnDtlInq07
+    sync:
+      # API 한 페이지를 파싱하고 저장한 뒤 다음 페이지를 조회한다.
+      num-of-rows: 100
+      # 월간 배치: 매월 1일 03시에 실행한다.
+      monthly-cron: '0 0 3 1 * *'
+      zone: Asia/Seoul

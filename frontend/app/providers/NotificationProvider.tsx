@@ -13,13 +13,17 @@ interface NotificationContextValue {
   openDrawer: () => void;
   closeDrawer: () => void;
   markAsRead: (notificationId: number) => Promise<void>;
+  markAll: () => Promise<void>;
 }
 
 export const NotificationContext = createContext<NotificationContextValue | null>(null);
 
 export function NotificationProvider({ children }: { children: React.ReactNode }) {
   const [notificationApi, contextHolder] = notification.useNotification();
+  const notificationRef = useRef(notificationApi);
+  const clientRef = useRef<Client | null>(null);
   const [notifications, setNotifications] = useState<NotificationMessage[]>([]);
+
   const receivedIdsRef = useRef<Set<number>>(new Set());
   const [drawerOpen, setDrawerOpen] = useState(false);
 
@@ -44,44 +48,57 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     }
   }, []);
 
-  const handleMessage = useCallback(
-    (message: IMessage) => {
-      try {
-        const received = JSON.parse(message.body) as NotificationMessage;
-        if (receivedIdsRef.current.has(received.notificationId)) {
-          return;
-        }
-        receivedIdsRef.current.add(received.notificationId);
-        const newItem: NotificationMessage = {
-          notificationId: received.notificationId,
-          level: received.level,
-          receiver: received.receiver,
-          content: received.content,
-          dateTime: received.dateTime,
-          isRead: false,
-          alertType: received.alertType,
-        };
+  const markAll = useCallback(async () => {
+    try {
+      await alertApi.markAllAsRead();
+      setNotifications((prev) => prev.map((item) => ({ ...item, isRead: true })));
+    } catch (error) {
+      console.error('전체 읽음처리 실패 ');
+    }
+  }, []);
 
-        setNotifications((prev) => {
-          const duplicated = prev.some((item) => item.notificationId === newItem.notificationId);
-          return duplicated ? prev : [newItem, ...prev];
-        });
-
-        notificationApi.warning({
-          message: getNotificationTitle(received.level),
-          description: received.content,
-          placement: 'topRight',
-          duration: 15,
-        });
-      } catch (error) {
-        console.error('Failed to parse notification message:', error);
-      }
-    },
-    [notificationApi],
-  );
   useEffect(() => {
-    const loginId = Number(localStorage.getItem('empId'));
-    if (!loginId) return;
+    notificationRef.current = notificationApi;
+  }, [notificationApi]);
+
+  const handleMessage = useCallback((message: IMessage) => {
+    try {
+      const received = JSON.parse(message.body) as NotificationMessage;
+      if (receivedIdsRef.current.has(received.notificationId)) {
+        return;
+      }
+      receivedIdsRef.current.add(received.notificationId);
+      const newItem: NotificationMessage = {
+        notificationId: received.notificationId,
+        level: received.level,
+        receiver: received.receiver,
+        content: received.content,
+        dateTime: received.dateTime,
+        isRead: false,
+        alertType: received.alertType,
+      };
+
+      setNotifications((prev) => {
+        const duplicated = prev.some((item) => item.notificationId === newItem.notificationId);
+        return duplicated ? prev : [newItem, ...prev];
+      });
+
+      notificationRef.current.warning({
+        message: getNotificationTitle(received.level),
+        description: received.content,
+        placement: 'topRight',
+        duration: 15,
+      });
+    } catch (error) {
+      console.error('Failed to parse notification message:', error);
+    }
+  }, []);
+
+  const loadNotifications = useCallback(() => {
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+      return;
+    }
     alertApi
       .list()
       .then((result) => {
@@ -103,6 +120,15 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   }, []);
 
   useEffect(() => {
+    loadNotifications();
+    window.addEventListener('auth-changed', loadNotifications);
+    return () => {
+      window.removeEventListener('auth-changed', loadNotifications);
+    };
+  }, [loadNotifications]);
+
+  useEffect(() => {
+    if (clientRef.current) return;
     const user = userStorage.get();
     const role = user?.role ?? '';
     const department = user?.deptCode ?? '';
@@ -117,6 +143,8 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     const client = new Client({
       brokerURL: wsUrl,
       reconnectDelay: 5000,
+      heartbeatIncoming: 10000,
+      heartbeatOutgoing: 10000,
       onConnect: () => {
         client.subscribe('/topic/notifications', handleMessage);
         if (department) {
@@ -141,10 +169,12 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
       },
     });
 
+    clientRef.current = client;
     client.activate();
 
     return () => {
       void client.deactivate();
+      clientRef.current = null;
     };
   }, [handleMessage]);
 
@@ -156,8 +186,9 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
       openDrawer,
       closeDrawer,
       markAsRead,
+      markAll,
     }),
-    [notifications, unreadCount, drawerOpen, openDrawer, closeDrawer, markAsRead],
+    [notifications, unreadCount, drawerOpen, openDrawer, closeDrawer, markAsRead, markAll],
   );
 
   return (

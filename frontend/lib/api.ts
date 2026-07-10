@@ -279,6 +279,9 @@ export interface SalesOrderDetail {
   unitPrice: number;
   amount: number;
   productName: string;
+  returnQty: number;
+  finalQty: number;
+  finalPrice: number;
 }
 
 // ======Shipments=====
@@ -479,6 +482,7 @@ export const salesOrderApi = {
   customers: () => api.get<{ customerId: number; customerName: string }[]>(`/api/sales-order/customers`),
   products: () => api.get<Record<string, unknown>[]>(`/api/sales-order/products`),
   approve: (soId: number) => api.patch<SalesOrder>(`/api/sales-order/${soId}/approve`),
+  reject: (soId: number) => api.put<SalesOrder>(`/api/sales-order/${soId}/reject`),
   create: (data: { customerId: number; memo?: string; details: { productId: number; orderQty: number }[] }) =>
     api.post<SalesOrder>('/api/sales-order', data),
 };
@@ -499,6 +503,7 @@ export const shipmentApi = {
     if (status) params.set('status', status);
     if (salesOrderId) params.set('salesOrderId', String(salesOrderId));
     if (employeeName) params.set('employeeName', employeeName);
+    console.log(params.toString());
     return api.get<PageResult<Shipment>>(`/api/shipment?${params}`);
   },
   statusCount: () => api.get<Record<string, number>>(`/api/shipment/status-count`),
@@ -532,6 +537,9 @@ export const alertApi = {
   },
   markRead: (alertId: number) => {
     return api.put<void>(`/api/alert/${alertId}`);
+  },
+  markAllAsRead: () => {
+    return api.put<void>('/api/alert/readAll');
   },
 };
 
@@ -808,14 +816,12 @@ export const settlementApi = {
   list: (startDate?: string, endDate?: string) => {
     const params = new URLSearchParams();
 
-    if (startDate) params.set("startDate", startDate);
-    if (endDate) params.set("endDate", endDate);
+    if (startDate) params.set('startDate', startDate);
+    if (endDate) params.set('endDate', endDate);
 
     const query = params.toString();
 
-    return api.get<Settlement[]>(
-      `/api/settlement/settlements${query ? `?${query}` : ""}`
-    );
+    return api.get<Settlement[]>(`/api/settlement/settlements${query ? `?${query}` : ''}`);
   },
 
   detail: (settlementId: number) =>
@@ -823,6 +829,7 @@ export const settlementApi = {
 
   create: (data: SettlementCreateRequest) =>
     api.post<void>("/api/settlement/settlements", data),
+  create: (data: SettlementCreateRequest) => api.post<void>('/api/settlement/settlements', data),
 };
 
 export interface DashboardSummary {
@@ -845,13 +852,10 @@ export interface SalesChartItem {
 }
 
 export const settlementDashboardApi = {
-  summary: () => api.get<DashboardSummary>("/api/settlement/dashboard"),
-  salesChart: () =>
-    api.get<SalesChartItem[]>("/api/settlement/dashboard/sales-chart"),
-  customerTop5: () =>
-    api.get<SalesChartItem[]>("/api/settlement/dashboard/customer-top5"),
-  productTop5: () =>
-    api.get<SalesChartItem[]>("/api/settlement/dashboard/product-top5"),
+  summary: () => api.get<DashboardSummary>('/api/settlement/dashboard'),
+  salesChart: () => api.get<SalesChartItem[]>('/api/settlement/dashboard/sales-chart'),
+  customerTop5: () => api.get<SalesChartItem[]>('/api/settlement/dashboard/customer-top5'),
+  productTop5: () => api.get<SalesChartItem[]>('/api/settlement/dashboard/product-top5'),
 };
 
 export interface SalesInvoice {
@@ -866,28 +870,24 @@ export interface SalesInvoice {
 }
 
 export const settlementInvoiceApi = {
-  list: (params: {
-    customerName?: string;
-    status?: string;
-    startDate?: string;
-    endDate?: string;
-  }) => {
+  list: (params: { customerName?: string; status?: string; startDate?: string; endDate?: string }) => {
     const query = new URLSearchParams();
 
-    if (params.customerName) query.set("customerName", params.customerName);
-    if (params.status) query.set("status", params.status);
-    if (params.startDate) query.set("startDate", params.startDate);
-    if (params.endDate) query.set("endDate", params.endDate);
+    if (params.customerName) query.set('customerName', params.customerName);
+    if (params.status) query.set('status', params.status);
+    if (params.startDate) query.set('startDate', params.startDate);
+    if (params.endDate) query.set('endDate', params.endDate);
 
     const qs = query.toString();
 
-    return api.get<SalesInvoice[]>(
-      `/api/settlement/invoices${qs ? `?${qs}` : ""}`
-    );
+    return api.get<SalesInvoice[]>(`/api/settlement/invoices${qs ? `?${qs}` : ''}`);
   },
 
   detail: (salesInvoiceId: number) =>
     api.get<SalesInvoice>(`/api/settlement/invoices/${salesInvoiceId}`),
+  detail: (salesInvoiceId: number) => api.get<SalesInvoice>(`/api/settlement/invoices/${salesInvoiceId}`),
+
+  create: (data: SalesInvoiceCreateRequest) => api.post<void>('/api/settlement/invoices', data),
 };
 
 export interface AccountReceivable {
@@ -912,28 +912,32 @@ export interface PaymentCreateRequest {
 }
 
 export const settlementReceivableApi = {
-  list: (params: {
-    customerName?: string;
-    status?: string;
-    startDate?: string;
-    endDate?: string;
-  }) => {
+  list: (params: { customerName?: string; status?: string; startDate?: string; endDate?: string }) => {
     const query = new URLSearchParams();
 
-    if (params.customerName) query.set("customerName", params.customerName);
-    if (params.status) query.set("status", params.status);
-    if (params.startDate) query.set("startDate", params.startDate);
-    if (params.endDate) query.set("endDate", params.endDate);
+    if (params.customerName) query.set('customerName', params.customerName);
+    if (params.status) query.set('status', params.status);
+    if (params.startDate) query.set('startDate', params.startDate);
+    if (params.endDate) query.set('endDate', params.endDate);
 
     const qs = query.toString();
 
-    return api.get<AccountReceivable[]>(
-      `/api/settlement/receivables${qs ? `?${qs}` : ""}`
-    );
+    return api.get<AccountReceivable[]>(`/api/settlement/receivables${qs ? `?${qs}` : ''}`);
   },
 
   detail: (arId: number) =>
     api.get<AccountReceivable>(`/api/settlement/receivables/${arId}`),
+  detail: (arId: number) => api.get<AccountReceivable>(`/api/settlement/receivables/${arId}`),
+
+  customerSummary: (customerName?: string) => {
+    const params = new URLSearchParams();
+
+    if (customerName) params.set('customerName', customerName);
+
+    const qs = params.toString();
+
+    return api.get<CustomerReceivableSummary[]>(`/api/settlement/receivables/customer-summary${qs ? `?${qs}` : ''}`);
+  },
 };
 
 export interface PurchaseInvoice {
@@ -948,30 +952,21 @@ export interface PurchaseInvoice {
 }
 
 export const settlementPurchaseInvoiceApi = {
-  list: (params: {
-    supplierName?: string;
-    status?: string;
-    startDate?: string;
-    endDate?: string;
-  }) => {
+  list: (params: { supplierName?: string; status?: string; startDate?: string; endDate?: string }) => {
     const query = new URLSearchParams();
 
-    if (params.supplierName) query.set("supplierName", params.supplierName);
-    if (params.status) query.set("status", params.status);
-    if (params.startDate) query.set("startDate", params.startDate);
-    if (params.endDate) query.set("endDate", params.endDate);
+    if (params.supplierName) query.set('supplierName', params.supplierName);
+    if (params.status) query.set('status', params.status);
+    if (params.startDate) query.set('startDate', params.startDate);
+    if (params.endDate) query.set('endDate', params.endDate);
 
     const qs = query.toString();
 
-    return api.get<PurchaseInvoice[]>(
-      `/api/settlement/purchase-invoices${qs ? `?${qs}` : ""}`
-    );
+    return api.get<PurchaseInvoice[]>(`/api/settlement/purchase-invoices${qs ? `?${qs}` : ''}`);
   },
 
   detail: (purchaseInvoiceId: number) =>
-    api.get<PurchaseInvoice>(
-      `/api/settlement/purchase-invoices/${purchaseInvoiceId}`
-    ),
+    api.get<PurchaseInvoice>(`/api/settlement/purchase-invoices/${purchaseInvoiceId}`),
 };
 
 export interface PaymentHistory {
@@ -988,26 +983,31 @@ export interface PaymentHistory {
 }
 
 export const settlementPaymentApi = {
-  list: (params: {
-    customerName?: string;
-    startDate?: string;
-    endDate?: string;
-  }) => {
+  list: (params: { customerName?: string; startDate?: string; endDate?: string }) => {
     const query = new URLSearchParams();
 
-    if (params.customerName) query.set("customerName", params.customerName);
-    if (params.startDate) query.set("startDate", params.startDate);
-    if (params.endDate) query.set("endDate", params.endDate);
+    if (params.customerName) query.set('customerName', params.customerName);
+    if (params.startDate) query.set('startDate', params.startDate);
+    if (params.endDate) query.set('endDate', params.endDate);
 
     const qs = query.toString();
 
-    return api.get<PaymentHistory[]>(
-      `/api/settlement/payments${qs ? `?${qs}` : ""}`
-    );
+    return api.get<PaymentHistory[]>(`/api/settlement/payments${qs ? `?${qs}` : ''}`);
   },
 
   create: (data: PaymentCreateRequest) =>
     api.post<void>("/api/settlement/payments", data),
+  targets: (customerName?: string) => {
+    const query = new URLSearchParams();
+
+    if (customerName) query.set('customerName', customerName);
+
+    const qs = query.toString();
+
+    return api.get<PaymentTarget[]>(`/api/settlement/payments/receivables${qs ? `?${qs}` : ''}`);
+  },
+
+  create: (data: PaymentCreateRequest) => api.post<void>('/api/settlement/payments', data),
 };
 
 export interface AccountPayable {
@@ -1033,28 +1033,20 @@ export interface PayablePaymentCreateRequest {
 }
 
 export const settlementPayableApi = {
-  list: (params: {
-    supplierName?: string;
-    status?: string;
-    startDate?: string;
-    endDate?: string;
-  }) => {
+  list: (params: { supplierName?: string; status?: string; startDate?: string; endDate?: string }) => {
     const query = new URLSearchParams();
 
-    if (params.supplierName) query.set("supplierName", params.supplierName);
-    if (params.status) query.set("status", params.status);
-    if (params.startDate) query.set("startDate", params.startDate);
-    if (params.endDate) query.set("endDate", params.endDate);
+    if (params.supplierName) query.set('supplierName', params.supplierName);
+    if (params.status) query.set('status', params.status);
+    if (params.startDate) query.set('startDate', params.startDate);
+    if (params.endDate) query.set('endDate', params.endDate);
 
     const qs = query.toString();
 
-    return api.get<AccountPayable[]>(
-      `/api/settlement/payables${qs ? `?${qs}` : ""}`
-    );
+    return api.get<AccountPayable[]>(`/api/settlement/payables${qs ? `?${qs}` : ''}`);
   },
 
-  detail: (apId: number) =>
-    api.get<AccountPayable>(`/api/settlement/payables/${apId}`),
+  detail: (apId: number) => api.get<AccountPayable>(`/api/settlement/payables/${apId}`),
 };
 
 export interface PayablePayment {
@@ -1071,25 +1063,146 @@ export interface PayablePayment {
 }
 
 export const settlementPayablePaymentApi = {
-  list: (params: {
-    supplierName?: string;
-    startDate?: string;
-    endDate?: string;
-  }) => {
+  list: (params: { supplierName?: string; startDate?: string; endDate?: string }) => {
     const query = new URLSearchParams();
 
-    if (params.supplierName) query.set("supplierName", params.supplierName);
-    if (params.startDate) query.set("startDate", params.startDate);
-    if (params.endDate) query.set("endDate", params.endDate);
+    if (params.supplierName) query.set('supplierName', params.supplierName);
+    if (params.startDate) query.set('startDate', params.startDate);
+    if (params.endDate) query.set('endDate', params.endDate);
 
     const qs = query.toString();
 
-    return api.get<PayablePayment[]>(
-      `/api/settlement/payables/payments${qs ? `?${qs}` : ""}`
-    );
+    return api.get<PayablePayment[]>(`/api/settlement/payables/payments${qs ? `?${qs}` : ''}`);
   },
 
-  create: (data: PayablePaymentCreateRequest) =>
-    api.post<void>("/api/settlement/payables/payment", data),
+  create: (data: PayablePaymentCreateRequest) => api.post<void>('/api/settlement/payables/payment', data),
 };
 
+export interface ReturnItem {
+  returnId: number;
+  returnGroupId: number;
+  salesOrderId: number;
+  soDetailId: number;
+  shipmentDetailId: number;
+  productName: string;
+  lotNo: string;
+  productId: number;
+  inventoryLotId: number;
+  returnedQty: number;
+  returnableQty: number;
+  totalReturnQty: number;
+  returnQty: number;
+  reason: string;
+  customerId: number;
+  customerName: string;
+  outQty: number;
+  status: string;
+  createdBy: number;
+  createdByName: string;
+  createdAt: string;
+  approvedBy: number;
+  approvedByName: string;
+  approvedAt: string;
+  completedAt: string;
+  rejectReason: string;
+}
+
+export interface ReturnItemRequest {
+  salesOrderId: number;
+  shipmentDetailId: number;
+  returnQty: number;
+  reason: string;
+}
+
+export interface ReturnGroup {
+  returnGroupId: number;
+
+  salesOrderId: number;
+  customerId?: number;
+  customerName?: string;
+
+  itemCount: number;
+  totalReturnQty: number;
+  productSummary?: string;
+
+  reason?: string;
+  status: string;
+
+  createdBy?: number;
+  createdByName?: string;
+  createdAt?: string;
+
+  approvedBy?: number;
+  approvedByName?: string;
+  approvedAt?: string;
+
+  completedAt?: string;
+  rejectReason?: string;
+}
+
+export const returnItemApi = {
+  listPaging: (page: number, size: number, status?: string, salesOrderId?: number, returnGroupId?: number) => {
+    const params = new URLSearchParams();
+    params.set('page', String(page));
+    params.set('size', String(size));
+    if (status) {
+      params.set('status', status ?? '');
+    }
+    if (salesOrderId) {
+      params.set('salesOrderId', String(salesOrderId) ?? '');
+    }
+    if (returnGroupId) {
+      params.set('returnGroupId', String(returnGroupId) ?? '');
+    }
+    return api.get<PageResult<ReturnItem>>(`/api/return-item/paging?${params}`);
+  },
+  listGroupPaging: (page: number, size = 10, status?: string, salesOrderId?: string) => {
+    const params = new URLSearchParams();
+    params.set('page', String(page));
+    params.set('size', String(size));
+    if (status) {
+      params.set('status', status ?? '');
+    }
+    if (salesOrderId) {
+      params.set('salesOrderId', String(salesOrderId) ?? '');
+    }
+    return api.get<PageResult<ReturnGroup>>(`/api/return-item/groups/paging?${params}`);
+  },
+  statusCount: () => {
+    return api.get<Record<string, number>>(`/api/return-item/status-counts`);
+  },
+  getReturnTarget: (salesOrderId: number) => {
+    return api.get<ReturnItem[]>(`/api/return-item/targets/${salesOrderId}`);
+  },
+  request: (data: ReturnItemRequest[]) => api.post<ReturnItem>('/api/return-item/request', data),
+  approve: (returnGroupId: string) => api.put(`/api/return-item/${returnGroupId}/approve`),
+  reject: (returnGroupId: string, rejectReason: string) => {
+    return api.put(`/api/return-item/${returnGroupId}/reject`, { rejectReason });
+  },
+  complete: (returnGroupId: string) => api.put(`/api/return-item/${returnGroupId}/complete`),
+};
+
+export interface DisposalTarget {
+  inventoryLotId: number;
+  productId: number;
+  productCode?: string;
+  productName?: string;
+  lotNo?: string;
+  currentQty: number;
+  expiryDate?: string;
+  status: string;
+}
+
+export interface DisposalRequest {
+  inventoryLotId: number[];
+  reason: string;
+}
+export const disposalApi = {
+  listTargets: () => {
+    return api.get<DisposalTarget[]>('/api/disposals/targets');
+  },
+
+  process: (data: DisposalRequest) => {
+    return api.post<void>('/api/disposals/process', data);
+  },
+};

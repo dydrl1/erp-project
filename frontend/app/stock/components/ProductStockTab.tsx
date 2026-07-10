@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { ProductStock, stockMovementApi } from '@/lib/api';
 import { ColumnsType } from 'antd/es/table';
 import { App, Button, Card, Checkbox, Input, Select, Space, Tag, Table, Typography } from 'antd';
+import { tokenStorage } from '@/lib/api';
 
 export default function ProductStockTab() {
   const { message } = App.useApp();
@@ -61,6 +62,29 @@ export default function ProductStockTab() {
     });
 
     setProductStocks(filtered);
+  };
+
+  const print = async () => {
+    const token = tokenStorage.get();
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/shipment/product-stock/print`, {
+      method: 'GET',
+      credentials: 'include',
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+    });
+    if (!response.ok) {
+      throw new Error('엑셀 다운로드에 실패했습니다.');
+    }
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'product-stock.xlsx';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
   };
 
   const columns: ColumnsType<ProductStock> = [
@@ -149,6 +173,9 @@ export default function ProductStockTab() {
           <Button onClick={handleReset}>초기화</Button>
           <Button type="primary" onClick={handleSearch}>
             검색
+          </Button>
+          <Button type="primary" onClick={print}>
+            프린트
           </Button>
         </Space>
       </Card>

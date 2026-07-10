@@ -4,6 +4,9 @@ import com.erp.backend.common.CustomException;
 import com.erp.backend.common.ErrorCode;
 import com.erp.backend.disposal.mapper.DisposalMapper;
 import com.erp.backend.disposal.vo.DisposalDetailVO;
+import com.erp.backend.disposal.vo.DisposalRequestVO;
+import com.erp.backend.disposal.vo.DisposalTargetVO;
+import com.erp.backend.disposal.vo.DisposalVO;
 import com.erp.backend.shipment.mapper.ShipmentMapper;
 import com.erp.backend.shipment.vo.StockMovementVO;
 import lombok.RequiredArgsConstructor;
@@ -11,7 +14,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -32,34 +34,47 @@ public class DisposalService {
         return disposalMapper.findDisposalStatus(disposalId);
     }
 
-    private void insertDisposal(int disposalSeq, String reason, int empId) {
-        int result = disposalMapper.insertDisposalRequest(disposalSeq, reason, empId);
+    private void insertDisposal(int disposalSeq, String reason, long empId) {
+        int result = disposalMapper.insertDisposal(disposalSeq, reason, empId);
         if (result != 1) {
             throw new CustomException(ErrorCode.NOT_FOUND);//요청헤더 생성 실패
         }
     }
 
-    private DisposalDetailVO insertDisposalDetail(String reason, int disposalSeq, int disposalQty, int inventoryLotId) {
-        Map<String, Object> map = findInventoryLot(inventoryLotId);
-        if (map == null || map.isEmpty()) {
-            throw new CustomException(ErrorCode.NOT_FOUND);//상품이 존재하지 않음
-        }
-        int productId = ((Number) map.get("productId")).intValue();
-        DisposalDetailVO disposalDetail = new DisposalDetailVO();
-        disposalDetail.setDisposalDetailId(getDisposalDetailSeq());
-        disposalDetail.setDisposalId(disposalSeq);
-        disposalDetail.setInventoryLotId(inventoryLotId);
-        disposalDetail.setProductId(productId);
-        disposalDetail.setDisposalQty(disposalQty);
-        disposalDetail.setReason(reason);
-        int result = disposalMapper.insertDisposalDetail(disposalDetail);
-        if (result == 1) {
-            return disposalDetail;
-        }
-        throw new CustomException(ErrorCode.NOT_FOUND);//디테일 생성 실패
+    public List<DisposalTargetVO> findDisposalTargets() {
+        return disposalMapper.findDisposalTargets();
     }
 
-    public void approveDisposal(int empId, int disposalId) {
+    private DisposalDetailVO insertDisposalDetail(
+            int disposalId,
+            DisposalTargetVO lot,
+            int disposalQty,
+            String reason
+    ) {
+        int disposalDetailId = getDisposalDetailSeq();
+
+        if (disposalDetailId <= 0) {
+            throw new CustomException(ErrorCode.NOT_FOUND); // 폐기 상세 SEQ 조회 실패
+        }
+
+        DisposalDetailVO disposalDetail = new DisposalDetailVO();
+        disposalDetail.setDisposalDetailId(disposalDetailId);
+        disposalDetail.setDisposalId(disposalId);
+        disposalDetail.setInventoryLotId(lot.getInventoryLotId());
+        disposalDetail.setProductId(lot.getProductId());
+        disposalDetail.setDisposalQty(disposalQty);
+        disposalDetail.setReason(reason);
+
+        int result = disposalMapper.insertDisposalDetail(disposalDetail);
+
+        if (result != 1) {
+            throw new CustomException(ErrorCode.NOT_FOUND); // 폐기 상세 생성 실패
+        }
+
+        return disposalDetail;
+    }
+
+    public void approveDisposal(long empId, int disposalId) {
         int result = disposalMapper.approveDisposalRequest(empId, disposalId);
         if (result != 1) {
             throw new CustomException(ErrorCode.NOT_FOUND);//폐기 승인요청 실패
@@ -77,7 +92,7 @@ public class DisposalService {
         return disposalMapper.completeDisposal(disposalId);
     }
 
-    public Map<String, Object> findInventoryLot(int inventoryLotId) {
+    public DisposalTargetVO findInventoryLot(int inventoryLotId) {
         return disposalMapper.findInventoryLotForUpdate(inventoryLotId);
     }
 
@@ -93,16 +108,18 @@ public class DisposalService {
         return disposalMapper.findDisposalDetails(disposalId);
     }
 
-    @Transactional
-    public int requestDisposal(String reason, int empId, int disposalQty, int inventoryLotId) {
-        int disposalId = getDisposalSeq();
-        insertDisposal(disposalId, reason, empId);
-        insertDisposalDetail(reason, disposalId, disposalQty, inventoryLotId);
-        return disposalId;
-    }
+//    @Transactional
+//    public int requestDisposal(String reason, long empId, int disposalQty, int inventoryLotId) {
+//        int disposalId = getDisposalSeq();
+//        insertDisposal(disposalId, reason, empId);
+//        insertDisposalDetail(reason, disposalId, disposalQty, inventoryLotId);
+//        return disposalId;
+//    }
 
+    // 기존 승인형 폐기 플로우 보관용 메서드.
+    // 현재 즉시 폐기 처리 흐름에서는 사용하지 않음.
     @Transactional
-    public boolean processDisposal(int empId, int disposalId) {
+    public boolean processApprovedDisposalLegacy(long empId, int disposalId) {
         String status = findDisposalStatus(disposalId);
         if (!"APPROVED".equals(status)) {
             throw new CustomException(ErrorCode.NOT_FOUND);//상태에 맞는 제품으 존재하지 않음
@@ -112,13 +129,13 @@ public class DisposalService {
             throw new CustomException(ErrorCode.NOT_FOUND);//상세목록 가져오기 실패
         }
         for (DisposalDetailVO disposalDetail : disposalDetails) {
-            Map<String, Object> map = findInventoryLot(disposalDetail.getInventoryLotId());
+            DisposalTargetVO map = findInventoryLot(disposalDetail.getInventoryLotId());
             int inventoryLotId = disposalDetail.getInventoryLotId();
-            if (map == null || map.isEmpty()) {
+            if (map == null) {
                 throw new CustomException(ErrorCode.NOT_FOUND);//로트에 해당하는 아이템이 없음
             }
             int disposalQty = disposalDetail.getDisposalQty();
-            int beforeQty = ((Number) map.get("currentQty")).intValue();
+            int beforeQty = map.getCurrentQty();
             int afterQty = beforeQty - disposalQty;
             if (afterQty < 0) {
                 throw new CustomException(ErrorCode.NOT_FOUND);//폐기 차감 후 수가 잘못됨
@@ -148,5 +165,60 @@ public class DisposalService {
             throw new CustomException(ErrorCode.NOT_FOUND);//폐기완료상태변경실패
         }
         return true;
+    }
+
+    @Transactional
+    public void processDisposal(DisposalRequestVO request,long empId) {
+        if (request.getInventoryLotId() == null || request.getInventoryLotId().isEmpty()) {
+//            throw new CustomException(ErrorCode.INVALID_REQUEST);
+        }
+        if (request.getReason() == null || request.getReason().isBlank()) {
+//            throw new CustomException(ErrorCode.INVALID_REQUEST);
+        }
+        int disposalId = getDisposalSeq();
+        if(disposalId<=0){
+            throw new CustomException(ErrorCode.NOT_FOUND);
+        }
+        DisposalVO disposal = new DisposalVO();
+        disposal.setDisposalId(disposalId);
+        disposal.setReason(request.getReason());
+        disposal.setCreatedBy(empId);
+        insertDisposal(disposal.getDisposalId(),disposal.getReason(),disposal.getCreatedBy());
+        for (Integer inventoryLotId : request.getInventoryLotId()) {
+            DisposalTargetVO lot = findInventoryLot(inventoryLotId);
+            if (lot == null) {
+//                throw new CustomException(ErrorCode.INVALID_DISPOSAL_TARGET);
+            }
+            int beforeQty = lot.getCurrentQty();
+            int disposalQty = beforeQty;
+            int afterQty = beforeQty - disposalQty;
+            if(afterQty < 0) {
+//                throw new CustomException(ErrorCode.NOT_FOUND);
+            }
+            DisposalDetailVO detail = insertDisposalDetail(disposalId,lot,disposalQty,disposal.getReason());
+            int updated = reduceLotStock(disposalQty, inventoryLotId);
+            if (updated != 1) {
+//                throw new CustomException(ErrorCode.DISPOSAL_FAILED);
+            }
+            int stmvSeq = shipmentMapper.currentStockMovementSeq();
+            StockMovementVO stockMovement = new StockMovementVO();
+            stockMovement.setInventoryLotId(inventoryLotId);
+            stockMovement.setBeforeQty(beforeQty);
+            stockMovement.setQuantity(disposalQty);
+            stockMovement.setAfterQty(afterQty);
+            stockMovement.setEmployeeId(empId);
+            int insertedMovement = disposalMapper.insertStockMovement(stmvSeq, detail.getDisposalDetailId(), stockMovement);
+            if (insertedMovement != 1) {
+                throw new CustomException(ErrorCode.NOT_FOUND);//재고변동이력실패
+            }
+            Integer changedStatus = updateInventoryLotStatus(inventoryLotId);
+            if (changedStatus != 1) {
+                throw new CustomException(ErrorCode.NOT_FOUND);//상태변경실패
+            }
+        }
+        Integer result = completeDisposal(disposalId);
+        if (result != 1) {
+            throw new CustomException(ErrorCode.NOT_FOUND);//폐기완료상태변경실패
+        }
     }
 }

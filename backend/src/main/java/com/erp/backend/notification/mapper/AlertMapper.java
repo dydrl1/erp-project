@@ -25,4 +25,6 @@ public interface AlertMapper {
     void markAlertDelivered(@Param("alertId")int alertId,@Param("empId")int empId);
     List<AlertVO> findUndeliveredAlertList();
     int countUnreadAlert(int empId);
+
+    int markAllRead(long loginId);
 }

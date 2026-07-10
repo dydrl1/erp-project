@@ -10,7 +10,7 @@
         SELECT SEQ_DISPOSAL_DETAIL.nextval
         FROM dual
     </select>
-    <insert id="insertDisposalRequest">
+    <insert id="insertDisposal">
         INSERT INTO disposal (disposal_id,
                               reason,
                               status,
@@ -61,15 +61,18 @@
         SET status      = 'COMPLETED',
             completed_at=SYSTIMESTAMP
         WHERE disposal_id = #{disposalId}
-          AND status = 'APPROVED'
+          AND status = 'REQUESTED'
     </update>
-    <select id="findInventoryLotForUpdate" resultType="map">
+    <select id="findInventoryLotForUpdate" resultType="DisposalTargetVO">
         SELECT inventory_lot_id as "inventoryLotId",
                product_id       as "productId",
                current_qty      as "currentQty",
                status           as "status"
         FROM inventory_lot
         WHERE inventory_lot_id = #{inventoryLotId}
+        AND current_qty > 0
+        AND status='NORMAL'
+        AND expiry_date <![CDATA[<]]> TRUNC(SYSDATE)
             FOR UPDATE WAIT 5
     </select>
     <update id="reduceLotStock">
@@ -89,16 +92,18 @@
                                     after_qty,
                                     created_by,
                                     created_at)
-        VALUES (#{stmvSeq},
-                #{inventoryLotId},
-                'DISPOSAL',
-                'DISPOSAL_DETAIL',
-                #{disposalDetailId},
-                #{beforeQty},
-                #{disposalQty},
-                #{afterQty},
-                #{empId},
-                SYSTIMESTAMP)
+        VALUES (
+                   #{stmvSeq},
+                   #{stockMovement.inventoryLotId},
+                   'DISPOSAL',
+                   'DISPOSAL_DETAIL',
+                   #{disposalDetailId},
+                   #{stockMovement.beforeQty},
+                   #{stockMovement.quantity},
+                   #{stockMovement.afterQty},
+                   #{stockMovement.employeeId},
+                   SYSTIMESTAMP
+               )
     </insert>
     <select id="findDisposalDetails" resultType="DisposalDetailVO">
         SELECT disposal_detail_id,
@@ -119,4 +124,21 @@
             END
         WHERE inventory_lot_id = #{inventoryLotId}
     </update>
+    <select id="findDisposalTargets" resultType="DisposalTargetVO">
+    SELECT il.inventory_lot_id AS "inventoryLotId",
+    il.product_id       AS "productId",
+    p.product_code      AS "productCode",
+    p.product_name      AS "productName",
+    il.lot_no           AS "lotNo",
+    il.current_qty      AS "currentQty",
+    il.expiry_date      AS "expiryDate",
+    il.status           AS "status"
+    FROM inventory_lot il
+    JOIN product p
+    ON p.product_id = il.product_id
+    WHERE il.current_qty > 0
+    AND il.status = 'NORMAL'
+    AND il.expiry_date <![CDATA[ < ]]> TRUNC(SYSDATE)
+    ORDER BY il.expiry_date ASC, il.lot_no ASC
+</select>
 </mapper>

@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { Suspense, useEffect, useMemo, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Badge, Button, Card, Flex, Space, Table, Tabs, Typography } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import ErpLayout from '@/components/ErpLayout';
@@ -16,17 +16,38 @@ const TABS = [
   { key: 'CANCELED', label: '취소' },
 ];
 
-export default function SalesOrderListPage() {
+function SalesOrderListContent() {
   const router = useRouter();
-
   const [orders, setOrders] = useState<SalesOrder[]>([]);
   const [counts, setCounts] = useState<Record<string, number>>({});
-  const [tab, setTab] = useState('');
-  const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
 
   const totalCount = Object.values(counts).reduce((a, b) => a + b, 0);
+
+  const searchParams = useSearchParams();
+  const status = searchParams.get('status') ?? '';
+  const page = Number(searchParams.get('page') ?? '1');
+
+  const handleTabChange = (key: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (key) {
+      params.set('status', key);
+    } else {
+      params.delete('status');
+    }
+    params.set('page', '1');
+    router.push(`/sales-orders?${params.toString()}`);
+  };
+
+  const handlePageChange = (page: number) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (status) {
+      params.set('status', status);
+    }
+    params.set('page', String(page));
+    router.push(`/sales-orders?${params.toString()}`);
+  };
 
   useEffect(() => {
     salesOrderApi
@@ -39,7 +60,7 @@ export default function SalesOrderListPage() {
     const timer = setTimeout(() => {
       setLoading(true);
       salesOrderApi
-        .listPaging(tab, page, 20)
+        .listPaging(status, page, 20)
         .then((res) => {
           setOrders(res.list);
           setTotal(res.total);
@@ -47,7 +68,7 @@ export default function SalesOrderListPage() {
         .finally(() => setLoading(false));
     }, 0);
     return () => clearTimeout(timer);
-  }, [tab, page]);
+  }, [status, page]);
 
   const columns = useMemo<ColumnsType<SalesOrder>>(
     () => [
@@ -97,11 +118,8 @@ export default function SalesOrderListPage() {
     <ErpLayout title="판매 주문 관리">
       <Card>
         <Tabs
-          activeKey={tab}
-          onChange={(key) => {
-            setTab(key);
-            setPage(1);
-          }}
+          activeKey={status}
+          onChange={handleTabChange}
           items={TABS.map((item) => ({
             key: item.key,
             label: (
@@ -110,7 +128,7 @@ export default function SalesOrderListPage() {
                 <Badge
                   count={item.key === '' ? totalCount : (counts[item.key] ?? 0)}
                   showZero
-                  color={tab === item.key ? '#69B981' : '#B8C7BA'}
+                  color={status === item.key ? '#69B981' : '#B8C7BA'}
                 />
               </Space>
             ),
@@ -135,7 +153,7 @@ export default function SalesOrderListPage() {
             pageSize: 20,
             total,
             showSizeChanger: false,
-            onChange: setPage,
+            onChange: handlePageChange,
           }}
           locale={{ emptyText: '주문 내역이 없습니다.' }}
           onRow={(record) => ({
@@ -147,5 +165,12 @@ export default function SalesOrderListPage() {
         />
       </Card>
     </ErpLayout>
+  );
+}
+export default function SalesOrderListPage() {
+  return (
+    <Suspense fallback={null}>
+      <SalesOrderListContent />
+    </Suspense>
   );
 }

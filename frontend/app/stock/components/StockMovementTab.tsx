@@ -75,6 +75,7 @@ export default function StockMovementTab() {
 
   useEffect(() => {
     const loadingInitialData = async () => {
+      setLoading(true);
       try {
         const result = await stockMovementApi.search({});
         setStockMovement(result);
@@ -123,6 +124,7 @@ export default function StockMovementTab() {
         };
         return <Tag>{labels[value] ?? value}</Tag>;
       },
+      responsive: ['md'],
     },
     {
       title: '업무구분',
@@ -141,6 +143,7 @@ export default function StockMovementTab() {
         };
         return <Tag>{labels[value] ?? value}</Tag>;
       },
+      responsive: ['md'],
     },
     {
       title: '변경 전',
@@ -175,16 +178,11 @@ export default function StockMovementTab() {
 
   return (
     <>
-      <Card
-        style={{ marginBottom: 16 }}
-        title="재고 이동 이력"
-        extra={<Typography.Text type="secondary">총 {StockMovement.length.toLocaleString()}건</Typography.Text>}
-        styles={{ body: { padding: 10 } }}
-      >
+      <Card style={{ marginBottom: 16 }} styles={{ body: { padding: 10 } }}>
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: '1.2fr 1fr 160px 180px 140px',
+            gridTemplateColumns: 'repeat(auto-fit,minmax(160px,1fr))',
             gap: 12,
             marginBottom: 16,
           }}
@@ -253,7 +251,7 @@ export default function StockMovementTab() {
             flexWrap: 'wrap',
           }}
         >
-          <Space>
+          <Space wrap>
             <DatePicker
               placeholder="시작일"
               value={startDate}
@@ -270,7 +268,7 @@ export default function StockMovementTab() {
           </Space>
           <Space>
             <Button onClick={handleReset}>초기화</Button>
-            <Button type="primary" loading={loading} disabled={loading} onClick={handleSearch}>
+            <Button type="primary" onClick={handleSearch} style={{ width: 80 }}>
               검색
             </Button>
           </Space>
@@ -300,6 +298,7 @@ export default function StockMovementTab() {
               setPageSize(size);
             },
           }}
+          scroll={{ x: 1200 }}
         />
       </Card>
     </>

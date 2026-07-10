@@ -57,6 +57,7 @@ public enum ErrorCode {
     // 주문
     SALES_ORDER_REQUEST_INVALID(HttpStatus.BAD_REQUEST,"주문 요청이 유효하지 않습니다"),
     SALES_ORDER_FAILED(HttpStatus.BAD_REQUEST,"주문을 요청할 수 없습니다"),
+    SALES_ORDER_REQUEST_CANCEL_FAILED(HttpStatus.BAD_REQUEST,"반려 요청이 실패했습니다."),
     SALES_NOT_AVAILABLE_STOCK(HttpStatus.BAD_REQUEST,"재고가 부족합니다."),
     SALES_NOT_AMOUNT_MATCHED(HttpStatus.BAD_REQUEST,"금액이 일치하지 않습니다"),
     SALES_APPROVE_FAILED(HttpStatus.BAD_REQUEST,"승인이 되지 않았습니다"),
@@ -92,6 +93,7 @@ public enum ErrorCode {
     RETURN_REQUEST_NOT_FOUND(HttpStatus.NOT_FOUND, "반품 요청을 찾을 수 없습니다."),
     RETURN_REQUEST_NOT_REQUESTED(HttpStatus.CONFLICT, "요청 상태의 반품만 승인하거나 반려할 수 있습니다."),
     RETURN_REQUEST_NOT_APPROVED(HttpStatus.CONFLICT, "승인된 반품만 완료 처리할 수 있습니다."),
+    RETURN_REQUEST_NOT_COMPLETED(HttpStatus.CONFLICT, "반품이 완료된 상태가 아닙니다."),
     RETURN_APPROVAL_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "반품 승인 처리에 실패했습니다."),
     RETURN_REJECTION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "반품 반려 처리에 실패했습니다."),
     REJECT_REASON_REQUIRED(HttpStatus.BAD_REQUEST, "반려 사유를 입력해야 합니다.");

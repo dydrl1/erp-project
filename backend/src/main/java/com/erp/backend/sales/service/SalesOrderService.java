@@ -97,7 +97,10 @@ public class SalesOrderService {
 
     //1건 주문 조회
     public SalesOrderVO findSalesOrderById(int soId) {
-        return salesOrderMapper.findOrderHeaderById(soId);
+        if (salesOrderMapper.findOrderHeaderById(soId) != null) {
+            return salesOrderMapper.findOrderHeaderById(soId);
+        }
+        throw new CustomException(ErrorCode.SALES_ORDER_FAILED);
     }
 
     //1건 주문상세목록 조회
@@ -222,6 +225,14 @@ public class SalesOrderService {
             throw new CustomException(ErrorCode.SALES_APPROVE_FAILED);
         }
         return salesOrderMapper.findOrderHeaderById(salesOrderVO.getSoId());
+    }
+
+    @Transactional
+    public void cancelSalesOrderRequest(SalesOrderVO salesOrderVO) {
+        int result = salesOrderMapper.cancelRequest(salesOrderVO);
+        if (result != 1) {
+            throw new CustomException(ErrorCode.SALES_ORDER_REQUEST_CANCEL_FAILED);
+        }
     }
 
     //주문서 금액 검사
