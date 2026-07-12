@@ -299,6 +299,7 @@ public class ShipmentService {
                 row.createCell(2).setCellValue(product.getShippableQty());
             });
             workbook.write(outputStream);
+            workbook.close();
         } catch (Exception e) {
             e.printStackTrace();
         }
