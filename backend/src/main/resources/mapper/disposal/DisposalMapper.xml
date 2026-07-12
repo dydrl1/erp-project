@@ -72,7 +72,7 @@
         WHERE inventory_lot_id = #{inventoryLotId}
         AND current_qty > 0
         AND status='NORMAL'
-        AND expiry_date <![CDATA[<]]> TRUNC(SYSDATE)
+        AND expiry_date <![CDATA[<=]]> TRUNC(SYSDATE)
             FOR UPDATE WAIT 5
     </select>
     <update id="reduceLotStock">
