@@ -142,6 +142,7 @@ export default function StockMovementTab({ tabs }: StockMovementTabProps) {
           RETURN: '반품 처리',
           RETURN_REQUEST: '반품 처리',
           DISPOSAL: '폐기 처리',
+          DISPOSAL_DETAIL: '폐기 처리',
           ADJUST: '재고 조정',
         };
         return <Tag>{labels[value] ?? value}</Tag>;
