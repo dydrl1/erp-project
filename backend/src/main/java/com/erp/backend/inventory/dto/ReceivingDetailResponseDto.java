@@ -19,4 +19,5 @@ public class ReceivingDetailResponseDto {
     private Date expityDate;
     private Integer receivedQty;
     private BigDecimal unitPrice;
+    private Integer orderQty;
 }
