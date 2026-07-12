@@ -24,7 +24,13 @@ export default function StockMovementTab({ tabs }: StockMovementTabProps) {
   const [endDate, setEndDate] = useState<Dayjs | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-
+  const sourceIdPlaceholder: Record<string, string> = {
+    IN: '입고번호',
+    OUT: '출고상세번호',
+    RETURN: '반품번호',
+    DISPOSAL: '폐기번호',
+    ADJUST: '조정번호',
+  };
   const handleReset = async () => {
     setProductName('');
     setLotNo('');
@@ -209,7 +215,10 @@ export default function StockMovementTab({ tabs }: StockMovementTabProps) {
           <Select
             placeholder="이동유형"
             value={movementType || undefined}
-            onChange={(value) => setMovementType(value)}
+            onChange={(value) => {
+              setMovementType(value);
+              setSourceId(undefined);
+            }}
             allowClear
             options={[
               { value: 'IN', label: '입고' },
@@ -220,9 +229,7 @@ export default function StockMovementTab({ tabs }: StockMovementTabProps) {
             ]}
           />
           <InputNumber
-            placeholder={
-              sourceType === 'SHIPMENT_DETAIL' ? '출고상세번호' : sourceType === 'RECEIVING' ? '입고번호' : '업무번호'
-            }
+            placeholder={sourceIdPlaceholder[movementType] ?? '업무번호'}
             value={sourceId}
             onChange={(value) => setSourceId(value ?? undefined)}
             min={1}
