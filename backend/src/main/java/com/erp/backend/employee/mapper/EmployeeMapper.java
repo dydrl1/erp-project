@@ -35,4 +35,7 @@ public interface EmployeeMapper {
 
     // 계정 활성/비활성 토글
     int updateAccountStatus(@Param("empId") Long empId, @Param("status") String status);
+
+    //사원 번호로 이름 조회
+    String findEmployeeName(long empId);
 }

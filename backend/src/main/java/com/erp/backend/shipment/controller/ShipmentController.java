@@ -20,11 +20,12 @@ import java.util.Map;
 public class ShipmentController {
 
     private final ShipmentService shipmentService;
-    private EmployeeService employeeService;
+    private final EmployeeService employeeService;
 
     @Autowired
-    public ShipmentController(ShipmentService shipmentService) {
+    public ShipmentController(ShipmentService shipmentService, EmployeeService employeeService) {
         this.shipmentService = shipmentService;
+        this.employeeService = employeeService;
     }
 
     //출고 목록 조회
