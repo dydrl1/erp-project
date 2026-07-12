@@ -31,7 +31,7 @@ public class ExcelUtil {
         titleRow.setHeightInPoints(30);
 
         CellStyle employeeStyle = workbook.createCellStyle();
-        employeeStyle.setAlignment(HorizontalAlignment.CENTER);
+        employeeStyle.setAlignment(HorizontalAlignment.RIGHT);
         employeeStyle.setVerticalAlignment(VerticalAlignment.CENTER);
 
         Row employeeNameRow = sheet.createRow(rowIndex++);
@@ -51,7 +51,7 @@ public class ExcelUtil {
         headerStyle.setAlignment(HorizontalAlignment.CENTER);
         headerStyle.setVerticalAlignment(VerticalAlignment.CENTER);
         headerStyle.setFillForegroundColor(
-                IndexedColors.LIGHT_CORNFLOWER_BLUE.getIndex()
+                IndexedColors.LIGHT_GREEN.getIndex()
         );
         headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
         headerStyle.setBorderTop(BorderStyle.THIN);
