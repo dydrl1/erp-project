@@ -226,7 +226,6 @@ export default function StockMovementTab({ tabs }: StockMovementTabProps) {
             onChange={(value) => setSourceId(value ?? undefined)}
             min={1}
             controls={false}
-            disabled={!sourceType}
             style={{ width: '100%' }}
           />
         </div>
