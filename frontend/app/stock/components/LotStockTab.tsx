@@ -194,6 +194,7 @@ export default function LotStockTab({ tabs }: LotStockTabsProps) {
               setCurrentPage(page);
             },
           }}
+          scroll={{ x: 1200 }}
         />
       </Card>
     </>

@@ -198,6 +198,7 @@ export default function ProductStockTab({ tabs }: ProductStockTabProps) {
           locale={{
             emptyText: '조회된 상품 재고가 없습니다.',
           }}
+          scroll={{ x: 1200 }}
         />
       </Card>
     </>
