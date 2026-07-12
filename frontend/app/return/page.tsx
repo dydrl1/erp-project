@@ -6,6 +6,7 @@ import { Badge, Flex, Space, Table, Tabs, Typography } from 'antd';
 import { ColumnsType } from 'antd/es/table';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useMemo, useState } from 'react';
+import StatusBadge from '@/components/StatusBadge';
 
 function ReturnPage() {
   const router = useRouter();
@@ -112,7 +113,7 @@ function ReturnPage() {
       {
         title: '상태',
         dataIndex: 'status',
-        render: (value: string) => value ?? '-',
+        render: (value: string) => <StatusBadge status={value} />,
       },
     ],
     [],
