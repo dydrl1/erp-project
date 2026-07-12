@@ -142,4 +142,9 @@ public class EmployeeService {
             refreshTokenMapper.deleteByEmpId(empId);
         }
     }
+
+    //로그인 사용자의 이름 받아오기
+    public String findEmployeeName(Long empId) {
+        return employeeMapper.findEmployeeName(empId);
+    }
 }

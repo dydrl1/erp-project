@@ -182,4 +182,10 @@
           AND STATUS IN ('ACTIVE', 'INACTIVE')
     </update>
 
+    <!-- 로그인 사원이 이름 조회 -->
+    <select id="findEmployeeName">
+        SELECT emp_name
+        FROM employee
+        WHERE emp_id = #{empId}
+    </select>
 </mapper>

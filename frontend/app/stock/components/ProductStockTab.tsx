@@ -181,7 +181,7 @@ export default function ProductStockTab({ tabs }: ProductStockTabProps) {
             검색
           </Button>
           <Button type="primary" onClick={print}>
-            프린트
+            엑셀 내보내기
           </Button>
         </Space>
       </Card>

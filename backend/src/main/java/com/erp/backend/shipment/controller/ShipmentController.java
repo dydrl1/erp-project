@@ -2,6 +2,7 @@ package com.erp.backend.shipment.controller;
 
 import com.erp.backend.common.ApiResponse;
 import com.erp.backend.common.PageResponse;
+import com.erp.backend.employee.service.EmployeeService;
 import com.erp.backend.shipment.service.ShipmentService;
 import com.erp.backend.shipment.vo.*;
 import jakarta.servlet.http.HttpServletResponse;
@@ -19,6 +20,7 @@ import java.util.Map;
 public class ShipmentController {
 
     private final ShipmentService shipmentService;
+    private EmployeeService employeeService;
 
     @Autowired
     public ShipmentController(ShipmentService shipmentService) {
@@ -96,9 +98,10 @@ public class ShipmentController {
     }
 
     @GetMapping("/product-stock/print")
-    public void downloadProductStockExcel(HttpServletResponse response) throws IOException {
+    public void downloadProductStockExcel(HttpServletResponse response, @AuthenticationPrincipal long empId) throws IOException {
         response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8");
         response.setHeader("Content-Disposition", "attachment; filename=\"product-stock.xlsx\"");
-        shipmentService.printFindProductStockList(response.getOutputStream());
+        String employeeName = employeeService.findEmployeeName(empId);
+        shipmentService.printFindProductStockList(response.getOutputStream(), employeeName);
     }
 }

@@ -290,10 +290,10 @@ public class ShipmentService {
         return shipmentMapper.findProductStockList();
     }
 
-    public void printFindProductStockList(OutputStream outputStream){
+    public void printFindProductStockList(OutputStream outputStream, String employeeName) {
         List<ProductStockVO> products = shipmentMapper.findProductStockList();
         try {
-            Workbook workbook = ExcelUtil.createExcel("상품목록",List.of("상품코드","상품명","배송가능 수량"),List.of(4000,6000,4000),products,(row,product)->{
+            Workbook workbook = ExcelUtil.createExcel("상품 목록", employeeName, List.of("상품코드", "상품명", "배송가능 수량"), List.of(4000, 6000, 4000), products, (row, product) -> {
                 row.createCell(0).setCellValue(product.getProductCode());
                 row.createCell(1).setCellValue(product.getProductName());
                 row.createCell(2).setCellValue(product.getShippableQty());
