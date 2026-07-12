@@ -51,18 +51,18 @@ public enum ErrorCode {
     INVALID_ORDER_STATUS(HttpStatus.BAD_REQUEST, "처리할 수 없는 발주 상태입니다."),
     SELF_APPROVE_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "본인이 기안한 발주는 승인 할 수 없습니다."),
 
-    ALREADY_RECEIVED(HttpStatus.BAD_REQUEST,"이미 입고 처리된 발주입니다."),
+    ALREADY_RECEIVED(HttpStatus.BAD_REQUEST, "이미 입고 처리된 발주입니다."),
     INVALID_EXPIRY_DATE(HttpStatus.BAD_REQUEST, "유효기간이 만료된 의약품입니다."),
 
     // 주문
-    SALES_ORDER_REQUEST_INVALID(HttpStatus.BAD_REQUEST,"주문 요청이 유효하지 않습니다"),
-    SALES_ORDER_FAILED(HttpStatus.BAD_REQUEST,"주문을 요청할 수 없습니다"),
-    SALES_ORDER_REQUEST_CANCEL_FAILED(HttpStatus.BAD_REQUEST,"반려 요청이 실패했습니다."),
-    SALES_NOT_AVAILABLE_STOCK(HttpStatus.BAD_REQUEST,"재고가 부족합니다."),
-    SALES_NOT_AMOUNT_MATCHED(HttpStatus.BAD_REQUEST,"금액이 일치하지 않습니다"),
-    SALES_APPROVE_FAILED(HttpStatus.BAD_REQUEST,"승인이 되지 않았습니다"),
-    SALES_ALREADY_APPROVED(HttpStatus.BAD_REQUEST,"승인이 이미 되었습니다"),
-    SALES_LOT_ALLOCATE_FAILED(HttpStatus.CONFLICT,"로트번호 배정 작업이 실패했습니다"),
+    SALES_ORDER_REQUEST_INVALID(HttpStatus.BAD_REQUEST, "주문 요청이 유효하지 않습니다"),
+    SALES_ORDER_FAILED(HttpStatus.BAD_REQUEST, "주문을 요청할 수 없습니다"),
+    SALES_ORDER_REQUEST_CANCEL_FAILED(HttpStatus.BAD_REQUEST, "반려 요청이 실패했습니다."),
+    SALES_NOT_AVAILABLE_STOCK(HttpStatus.BAD_REQUEST, "재고가 부족합니다."),
+    SALES_NOT_AMOUNT_MATCHED(HttpStatus.BAD_REQUEST, "금액이 일치하지 않습니다"),
+    SALES_APPROVE_FAILED(HttpStatus.BAD_REQUEST, "승인이 되지 않았습니다"),
+    SALES_ALREADY_APPROVED(HttpStatus.BAD_REQUEST, "승인이 이미 되었습니다"),
+    SALES_LOT_ALLOCATE_FAILED(HttpStatus.CONFLICT, "로트번호 배정 작업이 실패했습니다"),
     SALES_INSUFFICIENT_STOCK(HttpStatus.BAD_REQUEST, "재고가 충분하지 않습니다"),
     SALES_CREDIT_LIMIT_EXCEED(HttpStatus.BAD_REQUEST, "여신 한도를 초과하여 주문 등록 불가합니다"),
 
@@ -74,9 +74,9 @@ public enum ErrorCode {
     BUSINESS_NO_REQUIRED(HttpStatus.BAD_REQUEST, "사업자번호는 필수입니다."),
 
     // 배송
-    SHIPMENT_ALREADY_EXISTS(HttpStatus.CONFLICT,"이미 배정된 배송이 있습니다."),
-    SHIPMENT_NOT_FOUND(HttpStatus.NOT_FOUND,"배송중인 주문이 없습니다."),
-    SHIPMENT_DETAIL_FAILED(HttpStatus.BAD_REQUEST,"배송 세부내역 생성에 실패했습니다"),
+    SHIPMENT_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 배정된 배송이 있습니다."),
+    SHIPMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "배송중인 주문이 없습니다."),
+    SHIPMENT_DETAIL_FAILED(HttpStatus.BAD_REQUEST, "배송 세부내역 생성에 실패했습니다"),
 
     // 재고
     STOCK_MOVEMENT_FAILED(HttpStatus.BAD_REQUEST, "재고변동이력 생성에 실패했습니다."),
@@ -96,7 +96,25 @@ public enum ErrorCode {
     RETURN_REQUEST_NOT_COMPLETED(HttpStatus.CONFLICT, "반품이 완료된 상태가 아닙니다."),
     RETURN_APPROVAL_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "반품 승인 처리에 실패했습니다."),
     RETURN_REJECTION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "반품 반려 처리에 실패했습니다."),
-    REJECT_REASON_REQUIRED(HttpStatus.BAD_REQUEST, "반려 사유를 입력해야 합니다.");
+    REJECT_REASON_REQUIRED(HttpStatus.BAD_REQUEST, "반려 사유를 입력해야 합니다."),
+
+    // 폐기
+    DISPOSAL_TARGET_REQUIRED(HttpStatus.BAD_REQUEST, "폐기할 재고 LOT를 선택해 주세요."),
+    DISPOSAL_REASON_REQUIRED(HttpStatus.BAD_REQUEST, "폐기 사유를 입력해 주세요."),
+    DISPOSAL_INVALID_INVENTORY_LOT_ID(HttpStatus.BAD_REQUEST, "올바르지 않은 재고 LOT 번호입니다."),
+    DISPOSAL_TARGET_EMPTY_STOCK(HttpStatus.BAD_REQUEST, "재고가 없는 LOT은 폐기할 수 없습니다."),
+    DISPOSAL_QUANTITY_EXCEEDED(HttpStatus.BAD_REQUEST, "폐기 수량이 현재 재고 수량을 초과했습니다."),
+    DISPOSAL_INVALID_DISPOSAL_STATUS(HttpStatus.BAD_REQUEST, "현재 상태에서는 폐기를 처리할 수 없습니다."),
+    DISPOSAL_DETAIL_NOT_FOUND(HttpStatus.NOT_FOUND, "폐기 상세 정보를 찾을 수 없습니다."),
+    DISPOSAL_TARGET_NOT_FOUND(HttpStatus.NOT_FOUND, "폐기 대상 재고 LOT를 찾을 수 없습니다."),
+    DISPOSAL_ID_GENERATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "폐기 번호 생성에 실패했습니다."),
+    DISPOSAL_CREATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "폐기 정보 생성에 실패했습니다."),
+    DISPOSAL_STOCK_REDUCTION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "폐기 재고 차감에 실패했습니다."),
+    DISPOSAL_STOCK_MOVEMENT_CREATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "폐기 재고 이동 이력 생성에 실패했습니다."),
+    DISPOSAL_INVENTORY_LOT_STATUS_UPDATE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "재고 LOT 상태 변경에 실패했습니다."),
+    DISPOSAL_APPROVAL_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "폐기 승인 처리에 실패했습니다."),
+    DISPOSAL_REJECTION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "폐기 반려 처리에 실패했습니다."),
+    DISPOSAL_COMPLETION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "폐기 완료 처리에 실패했습니다.");
 
     private final HttpStatus status;
     private final String message;
