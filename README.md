@@ -26,8 +26,9 @@
 | --- | --- |
 | **Frontend** | Next.js, React |
 | **Backend** | Java 17, Spring Boot 3.5, MyBatis |
-| **Database** | Oracle 21c XE |
+| **Database** | Oracle 21c XE (로컬) / Oracle Cloud Autonomous DB 19c (배포) |
 | **인증** | JWT (Access / Refresh), Spring Security |
+| **배포** | Docker, Kubernetes, GitHub Actions, 가비아 클라우드 |
 | **협업** | Notion, Discord, Jira, Git |
 | **Tool** | Swagger, Postman, Figma, ERDCloud |
 
@@ -45,47 +46,54 @@
 
 ---
 
-## 🌿 Git 브랜치 전략
+## ☁️ 배포 (Deployment)
+
+로컬에서 검증한 애플리케이션을 **Docker로 컨테이너화**하고 **Kubernetes**로 오케스트레이션하여 **가비아 클라우드(Gabia Cloud)** 에 배포했습니다.
+데이터베이스는 애플리케이션 서버와 분리하여 **Oracle Cloud Autonomous Database** 로 운영하며, 코드가 반영되면 **GitHub Actions** 가 빌드부터 배포까지 자동으로 처리합니다.
+
+### 배포 아키텍처
 
 ```
-main
-└── dev
-    ├── feature/init-setup       (공통 모듈·인증)
-    ├── feature/purchase-order   (발주·입고)
-    ├── feature/inventory        (출고·재고)
-    ├── feature/master           (거래처·의약품)
-    ├── feature/hr               (인사·근태)
-    └── feature/settlement       (정산·매출)
+        [ 개발자 git push ]
+                │
+                ▼
+      ┌────────────────────┐
+      │   GitHub Actions    │   빌드 → 이미지 push → 배포
+      └─────────┬──────────┘
+                │
+                ▼
+ ┌──────── Gabia Cloud (Kubernetes) ────────┐
+ │                                            │
+ │   ┌──────────────┐   ┌────────────────┐   │
+ │   │ Next.js Pod  │   │ Spring Boot Pod │   │
+ │   │  (Frontend)  │   │   (Backend)     │   │
+ │   └──────────────┘   └───────┬────────┘   │
+ └──────────────────────────────┼────────────┘
+                                 │  Wallet (mTLS)
+                                 ▼
+              Oracle Cloud — Autonomous Database
 ```
 
-| 브랜치 | 설명 |
+### 배포 스택
+
+| 분류 | 기술 |
 | --- | --- |
-| `main` | 최종 배포 브랜치 |
-| `dev` | 개발 통합 브랜치 |
-| `feature/기능명` | 기능별 작업 브랜치 |
+| **컨테이너** | Docker |
+| **오케스트레이션** | Kubernetes |
+| **호스팅** | 가비아 클라우드 (Gabia Cloud) |
+| **데이터베이스** | Oracle Cloud Autonomous Database (19c) |
+| **CI/CD** | GitHub Actions |
+| **레지스트리** | Docker Hub |
 
----
+### 배포 흐름
 
-## ✍️ 커밋 메시지 규칙
+1. 코드를 원격 저장소에 반영
+2. GitHub Actions가 프론트엔드·백엔드 Docker 이미지 빌드
+3. Docker Hub에 이미지 push
+4. 가비아 클라우드 Kubernetes 클러스터에 배포 (Pod 롤아웃)
+5. Spring Boot ↔ Oracle Cloud DB를 Wallet(mTLS)로 연결
 
-```
-feat     : 새로운 기능 추가
-fix      : 버그 수정
-docs     : 문서 수정
-style    : 코드 포맷 변경 (기능 변경 없음)
-refactor : 코드 리팩토링
-test     : 테스트 코드 추가/수정
-chore    : 빌드, 패키지 수정
-```
-
-**예시**
-```
-feat: 직원 근태 조회 API 추가
-fix: 발주 등록 시 유효성 검사 오류 수정
-docs: README 브랜치 전략 업데이트
-```
-
-> Jira 연동 시 `ERP-{번호} feat: 설명` 형식 사용
+> DB를 애플리케이션 서버와 분리해 배포 서버는 가볍게 유지하고, Oracle 쿼리는 수정 없이 그대로 사용했습니다.
 
 ---
 
@@ -103,6 +111,7 @@ npm run dev
 > `.env.local` 에 `NEXT_PUBLIC_API_URL=http://localhost:8080` 설정 필요
 
 ### Backend
+
 ```bash
 cd backend
 ./gradlew bootRun
@@ -140,6 +149,12 @@ erp-project/
 
 - Swagger : `http://localhost:8080/swagger-ui/index.html`
 - Postman : 팀 워크스페이스 공유
+
+---
+
+## 🤝 협업 규칙
+
+브랜치 전략과 커밋 메시지 컨벤션은 [CONTRIBUTING.md](./CONTRIBUTING.md)를 참고하세요.
 
 ---
 
