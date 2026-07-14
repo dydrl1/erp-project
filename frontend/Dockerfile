@@ -11,12 +11,13 @@ WORKDIR /app
 
 # 의존성 먼저 (캐시 활용)
 COPY package.json package-lock.json* ./
-RUN npm install
+RUN npm install --prefer-offline
 
 # 소스 복사 후 빌드
 COPY . .
 
-ENV NEXT_PUBLIC_API_URL=http://54.180.88.125:8080
+ARG NEXT_PUBLIC_API_URL=""
+ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 
 RUN npm run build
 

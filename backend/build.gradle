@@ -32,6 +32,7 @@ dependencies {
     implementation 'com.oracle.database.security:oraclepki:21.9.0.0'
     implementation 'com.oracle.database.security:osdt_core:21.9.0.0'
     implementation 'com.oracle.database.security:osdt_cert:21.9.0.0'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
 
     annotationProcessor 'org.projectlombok:lombok'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'

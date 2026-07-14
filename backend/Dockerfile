@@ -3,18 +3,26 @@
 # 사전 준비: ./gradlew build 로 jar 생성되어 있어야 함
 # 빌드 위치: backend/ 폴더에서 실행
 # ============================================================
+FROM eclipse-temurin:17-jdk AS builder
+
+WORKDIR /workspace
+
+COPY gradlew gradlew.bat build.gradle settings.gradle ./
+COPY gradle ./gradle
+
+COPY src ./src
+RUN sed -i 's/\r$//' ./gradlew && chmod +x ./gradlew && ./gradlew clean bootJar -x test --no-daemon
+
 FROM eclipse-temurin:17-jre
 
 WORKDIR /app
 
-# 빌드된 jar 복사 (plain.jar 제외하고 실행 가능한 jar만)
-COPY build/libs/*SNAPSHOT.jar app.jar
+COPY --from=builder \
+/workspace/build/libs/backend-0.0.1-SNAPSHOT.jar \
+app.jar
 
-# 컨테이너 안 Wallet 경로 (application.yml의 ${TNS_ADMIN_PATH}가 받음)
-ENV TNS_ADMIN_PATH=/app/Wallet
-
-# 타임존 (한국)
 ENV TZ=Asia/Seoul
+ENV TNS_ADMIN_PATH=/app/Wallet
 
 EXPOSE 8080
 
