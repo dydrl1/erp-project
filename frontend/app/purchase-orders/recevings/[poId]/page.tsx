@@ -65,6 +65,10 @@ export default function ReceivingProcessPage() {
         message.warning(`${row.productName}: 입고 수량을 확인해주세요.`);
         return;
       }
+      if (!memo.trim()) {
+        message.warning("메모를 입력해주세요.");
+        return;
+      }
     }
 
     modal.confirm({

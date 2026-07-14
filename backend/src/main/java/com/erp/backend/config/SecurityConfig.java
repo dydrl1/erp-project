@@ -86,6 +86,11 @@ public class SecurityConfig {
                         // 수주 = 영업팀, 출하 = 물류팀
                         .requestMatchers("/api/sales-order/**").hasAuthority("DEPT_SAL")
                         .requestMatchers("/api/shipment/**").hasAuthority("DEPT_LOG")
+                        .requestMatchers(
+                                "/swagger-ui/**",
+                                "/v3/api-docs/**",
+                                "/swagger-resources/**"
+                        ).permitAll()
                         // 나머지는 모두 인증 필요
                         .anyRequest().authenticated())
                 .addFilterBefore(new JwtAuthFilter(jwtTokenProvider),

@@ -56,7 +56,6 @@ export default function PurchaseOrderCreatePage() {
 
   const [pickerOpen, setPickerOpen] = useState(false);
   const [productKeyword, setProductKeyword] = useState('');
-  console.log('★★★ productKeyword 현재값:', productKeyword);
   const [checked, setChecked] = useState<Set<number>>(new Set());
 
   useEffect(() => {
@@ -67,22 +66,24 @@ export default function PurchaseOrderCreatePage() {
   }, [message]);
 
   useEffect(() => {
-  console.log('🔵 useEffect 실행, productKeyword =', JSON.stringify(productKeyword));
-
   if (!productKeyword.trim()) {
-    console.log('🔴 검색어 비어서 return');
     setProductResults([]);
     return;
   }
 
-  console.log('🟢 검색 타이머 시작');
   const timer = setTimeout(() => {
-    console.log('🟡 API 호출 직전');
     purchaseOrderApi
       .searchProducts(productKeyword)
       .then((data) => {
-        console.log('✅ 검색 결과:', data);
-        setProductResults(data as unknown as Product[]);
+        const list = data as unknown as Product[];
+        setProductResults(list);
+
+        // 검색으로 본 의약품을 products에 누적 (addChecked·productMap이 이걸 참조함)
+        setProducts((prev) => {
+          const map = new Map(prev.map((p) => [p.productId, p]));
+          list.forEach((p) => map.set(p.productId, p));
+          return Array.from(map.values());
+        });
       })
       .catch((e) => {
         console.log('❌ 에러:', e);
