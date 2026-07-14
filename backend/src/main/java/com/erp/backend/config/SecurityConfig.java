@@ -91,6 +91,7 @@ public class SecurityConfig {
                                 "/v3/api-docs/**",
                                 "/swagger-resources/**"
                         ).permitAll()
+                        .requestMatchers("/actuator/health/**").permitAll()
                         // 나머지는 모두 인증 필요
                         .anyRequest().authenticated())
                 .addFilterBefore(new JwtAuthFilter(jwtTokenProvider),
