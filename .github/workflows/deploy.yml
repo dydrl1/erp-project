@@ -1,15 +1,79 @@
 name: Build & Deploy
 
+# main 브랜치에 코드가 push되면 배포 워크플로우 실행
 on:
   push:
     branches: [main]
+
+# 여러 배포가 동시에 실행되는 것을 방지
+concurrency:
+  group: production-deployment
+  cancel-in-progress: false
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      # 저장소 코드 체크아웃
+      - name: Source code checkout
+        uses: actions/checkout@v4
+
+      # 백엔드 테스트 실행 및 실행 가능한 JAR 생성
+      - name: backend test & packaging
+        working-directory: backend
+        run: |
+          chmod +x gradlew
+          ./gradlew clean test bootJar
+
+      # 백엔드 빌드에 사용할 Java 17 설정
+      - name: Java 17 설정
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+          # Gradle 의존성 캐시 사용
+          cache: gradle
+          cache-dependency-path: |
+            backend/*.gradle*
+            backend/gradle/wrapper/gradle-wrapper.properties
+
+      # 프론트엔드 빌드에 사용할 Node.js 20 설정
+      - name: Node.js 20 설정
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+          # npm 의존성 캐시 사용
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      # 프론트엔드 의존성 설치, 린트 검사 및 프로덕션 빌드
+      - name: frotnend check & build
+        working-directory: frontend
+        env:
+          # 빈 값이면 /api 상대 경로를 사용하여 동일 출처로 요청
+          NEXT_PUBLIC_API_URL: ""
+        run: |
+          npm ci
+          npm run lint
+          npm run build
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Check frontend
+        working-directory: frontend
+        env:
+          NEXT_PUBLIC_API_URL: ""
+        run: |
+          npm ci
+          npm run lint
+          npm run build
 
       # Docker Hub 로그인
       - uses: docker/login-action@v3
@@ -23,7 +87,8 @@ jobs:
         with:
           context: ./backend
           push: true
-          tags: marshall10823/yaktong-backend:latest
+          # 커밋 SHA를 이미지 태그로 사용하여 각 배포 버전을 구분
+          tags: marshall10823/yaktong-backend:${{ github.sha }}
 
       # 프론트엔드 이미지 빌드 & 푸시
       - name: Build & push frontend
@@ -31,7 +96,12 @@ jobs:
         with:
           context: ./frontend
           push: true
-          tags: marshall10823/yaktong-frontend:latest
+
+          # 프로덕션에서는 동일 출처의 /api 경로를 사용
+          build-args: |
+            NEXT_PUBLIC_API_URL=
+          # 커밋 SHA를 이미지 태그로 사용하여 각 배포 버전을 구분
+          tags: marshall10823/yaktong-frontend:${{ github.sha }}
 
       # kubeconfig 설정
       - name: Set up kubeconfig
@@ -42,7 +112,7 @@ jobs:
       # K8s 재배포 (새 이미지로 롤링 업데이트)
       - name: Deploy to K8s
         run: |
-          kubectl set image deployment/backend backend=marshall10823/yaktong-backend:latest
-          kubectl set image deployment/frontend frontend=marshall10823/yaktong-frontend:latest
-          kubectl rollout status deployment/backend
-          kubectl rollout status deployment/frontend
+          kubectl set image deployment/backend backend=marshall10823/yaktong-backend:${{ github.sha }}
+          kubectl set image deployment/frontend frontend=marshall10823/yaktong-frontend:${{ github.sha }}
+          kubectl rollout status deployment/backend --timeout=300s
+          kubectl rollout status deployment/frontend --timeout=300s
